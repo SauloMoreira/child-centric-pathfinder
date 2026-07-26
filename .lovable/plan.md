@@ -1,76 +1,104 @@
+## Múltiplos vínculos de Defensor + contexto operacional por órgão
 
-## Diagnóstico prévio (necessário antes de codificar)
+Reescreve o modelo institucional para separar **vínculo** (autorização) de **contexto operacional** (órgão em uso agora), permitindo N Defensores por órgão e N órgãos por Defensor, com seletor no cabeçalho.
 
-Antes de iniciar preciso inspecionar o estado real do banco para respeitar as regras do prompt (não duplicar tabelas, continuar numeração real das migrations, reutilizar enums). Farei:
+### Diagnóstico confirmado
+- `private.user_org_memberships` usa `orgao_id`, `ativo`, `since/until`, `granted_by/ended_by` — ainda **não** tem `tipo_vinculo`.
+- Índice `user_org_memberships_one_active_per_user UNIQUE(user_id) WHERE ativo` — bloqueia múltiplos vínculos, **precisa ser removido**.
+- `private.current_active_org_id()` retorna o único membership ativo; usado por RLS de assistidos/processos/workspaces.
+- RPC `defensor_alterar_orgao_ativo` encerra+recria vínculo (destrutiva).
+- `meu_estado_institucional` devolve `orgao_ativo` singular; frontend consome como campo único.
+- Não existe `private.idempotency_operations` (criaremos).
+- `private.audit_events.action` é texto livre (sem migration de enum).
 
-1. `ls supabase/migrations/` — identificar próximo número disponível.
-2. `SELECT` em `information_schema` e `pg_enum` para confirmar:
-   - Colunas atuais de `public.assistidos` (já vejo `nome_completo`, `sexo_registral_enum`, `foto_url`, `search_text`).
-   - Se existe `public.processos` ou apenas `public.assistido_processos` (tabela atual parece ser esta última, sem N:N real).
-   - Enums existentes: `sexo_registral_enum`, `situacao_processo_enum`, `parentesco_enum`, `prioridade_enum`, `tipo_acolhimento_enum`.
-   - Buckets de Storage existentes.
-   - Função `buscar_assistidos` e função de normalização (`private.normalize_search_text`).
-3. Contar registros existentes em `assistidos` e `assistido_processos` para dimensionar backfill.
+### Migrations (numeração sequencial real após a última existente)
 
-Só depois do diagnóstico começo as migrations, para não recriar estrutura.
+1. **membership_type_and_multiple_defender_memberships**
+   - Cria enum `private.membership_type_enum` (`defensor`, `membro_equipe`, `administrativo`).
+   - Adiciona `tipo_vinculo membership_type_enum` em `user_org_memberships` (nullable inicial).
+   - Backfill: `defensor` para users com role `defensor_publico`, `membro_equipe` para `membro_equipe`, `administrativo` para demais legados.
+   - `ALTER COLUMN tipo_vinculo SET NOT NULL` após validação.
+   - Dropa `user_org_memberships_one_active_per_user`.
+   - Cria `uq_membership_active_user_org_type (user_id, orgao_id, tipo_vinculo) WHERE ativo AND until IS NULL`.
+   - Cria `uq_team_member_single_active_org (user_id) WHERE ativo AND until IS NULL AND tipo_vinculo='membro_equipe'`.
+   - Corrige registros com inconsistência `ativo`/`until` antes.
 
-## Escopo da entrega
+2. **user_operational_context**
+   - Cria `private.user_operational_context` (user_id PK, orgao_id FK RESTRICT, selected_at, selected_by FK, updated_at, version bigint).
+   - Trigger `updated_at`.
+   - `REVOKE ALL ... FROM public, anon, authenticated` (acesso só via funções SECURITY DEFINER).
 
-### A. Frontend — Área de trabalho
+3. **idempotency_operations**
+   - Cria `private.idempotency_operations` (id, idempotency_key, operation_name, actor_user_id, request_hash, status, result jsonb, created_at, completed_at, expires_at).
+   - `UNIQUE (actor_user_id, operation_name, idempotency_key)`.
+   - Helper `private.claim_idempotency_v2(...)` retornando status/resultado.
 
-`src/routes/_authenticated/area-de-trabalho.tsx`: adicionar, à direita do input de busca, três botões `variant="outline" size="icon" h-10 w-10` (`Baby`, `UserRound`, `Scale`) com tooltip, `aria-label`, foco visível, e wrap em `flex-wrap` para mobile.
+4. **operational_context_security_functions**
+   - `private.current_operational_org_id()` — lê contexto, revalida acessibilidade, retorna null se inválido; nunca escolhe automaticamente entre vários vínculos.
+   - `private.user_can_select_org(uuid)` — regras por papel.
+   - `private.user_can_access_org(uuid)` — considera membership OU papel administrativo.
+   - `private.user_has_active_org_membership(user_id, orgao_id, tipo_vinculo)`.
+   - Todas `SECURITY DEFINER SET search_path=''` com identificadores qualificados.
+   - `current_active_org_id()` marcada como legada, reescrita para delegar a `current_operational_org_id()` **somente** em usos operacionais; usos administrativos migrados para funções novas.
 
-### B. Componentes novos
+5. **backfill_operational_context**
+   - Para user com exatamente 1 membership ativo: cria contexto naquele órgão.
+   - Defensor com N vínculos: usa `orgao_ativo` histórico se identificável; senão vínculo com `since` mais recente; senão deixa nulo.
+   - Membro: contexto = único vínculo ativo.
+   - Admin técnico: preserva órgão anterior se houver; senão nulo (mantém acesso admin).
+   - Não encerra memberships, não altera papéis, não move dados. Emite `RAISE NOTICE` com contagens.
 
-- `src/components/common/{form-section,form-actions,date-field,cpf-field}.tsx`
-- `src/components/assistidos/{cadastrar-crianca-sheet,cadastrar-adulto-sheet,vinculo-assistido-picker,foto-assistido-field}.tsx`
-- `src/components/processos/cadastrar-processo-sheet.tsx`
+6. **operational_context_rpcs**
+   - `public.selecionar_contexto_orgao(p_orgao_id, p_expected_version, p_idempotency_key)` — transacional, idempotente, sem MFA. Retorna `{ok, code, contextoAtual, version, correlationId}`. Erros de domínio como retorno estruturado (não `RAISE`), para preservar auditoria.
+   - `public.admin_add_defensor_org_membership(p_user_id, p_orgao_id, p_idempotency_key)` — preserva outros vínculos, exigências atuais de MFA/role admin mantidas.
+   - `public.admin_end_defensor_org_membership(p_membership_id, p_motivo, p_idempotency_key)` — encerra só o vínculo alvo; se era o contexto: limpa; se resta exatamente 1, seleciona; se restam vários, deixa nulo.
+   - `public.admin_list_defensor_memberships(p_user_id)`.
+   - Remove/marca legada `defensor_alterar_orgao_ativo` — vira wrapper que chama `selecionar_contexto_orgao` (sem encerrar vínculo).
 
-### C. Hooks e validadores
+7. **institutional_state_v2**
+   - Reescreve `meu_estado_institucional` para devolver `papel`, `status`, `acessoGlobal`, `contextoAtual`, `orgaosDisponiveis` (null para admin técnico), `contextVersion`.
+   - Mantém `orgao_ativo` como espelho de `contextoAtual` (compat).
 
-- `src/hooks/{use-cadastro-assistido,use-cadastro-processo,use-upload-foto-assistido,use-buscar-assistidos-picker}.ts`
-- `src/lib/validators/{cpf,cnj,age,file-upload}.ts` (com `calculateAgeAtDate` timezone `America/Sao_Paulo`).
+8. **accessible_organizations_rpc**
+   - `public.listar_orgaos_acessiveis(p_termo, p_cursor, p_limit)` — paginação por cursor keyset; retorna somente id/nome/comarcas/comarca principal/membership_id/selecionado. Limite máx 100. Escopo por papel.
 
-### D. Migrations versionadas (numeração real a definir após diagnóstico)
+9. **operational_context_rls**
+   - Reescreve policies operacionais (assistidos, assistido_familiares, assistido_processos, assistido_acolhimentos, assistido_providencias, assistido_vinculos, processos, processo_assistidos, orgao_workspaces, workspace_columns) para `user_can_access_org(orgao_id) AND orgao_id = current_operational_org_id()`.
+   - Remove bypasses `USING(true)` operacionais; admin técnico opera pelo contexto.
+   - Mantém policies administrativas específicas (listagem admin de usuários/órgãos) inalteradas.
 
-Divididas por responsabilidade:
+### Frontend
 
-1. **assistidos_extensoes** — enum `assistido_categoria_enum` (`crianca_adolescente|adulto`); adicionar `prenome`, `sobrenome`, `cpf`, `nome_mae`, `nome_pai`, `categoria`, `foto_path` em `public.assistidos`. Backfill de `prenome/sobrenome` a partir de `nome_completo` e `categoria` a partir de `data_nascimento` (registros sem data → categoria NULL + relatório). Índice único parcial em `cpf` (11 dígitos, não excluído). Atualizar `tg_assistidos_prepare` para normalizar espaços, recompor `nome_completo`, normalizar CPF, recalcular `categoria`, rejeitar nascimento futuro e categoria incompatível.
-2. **assistido_vinculos** — enum `vinculo_enum` (`pai|mae|familia_extensa|irmao`); tabela `public.assistido_vinculos` com `origem_id`/`destino_id`/`tipo`/`orgao_execucao_id`, GRANT, RLS que exige acesso a ambos os assistidos, unique constraint canônica para irmãos (menor UUID → origem), CHECK impedindo self-link, trigger validando idades por tipo e mesmo órgão.
-3. **storage_assistidos_fotos** — bucket privado `assistidos-fotos` (via `supabase--storage_create_bucket`), policies em `storage.objects` amarrando `<orgao_id>/<assistido_id>/…` ao acesso em `public.assistidos`.
-4. **processos_n_n** — nova `public.processos` (com `numero_processo_normalizado char(20)`, `data_inicio`, `status`, `orgao_execucao_id`, `deleted_at`) + `public.processo_assistidos` (PK composta). Não removo `assistido_processos` na mesma migration; mantenho documentado como estrutura legada de "processos vinculados diretamente a 1 assistido". Índice único `(orgao_execucao_id, numero_processo_normalizado)`. RLS por acesso ao órgão e ao processo.
-5. **rpcs_cadastro_assistidos** — `cadastrar_assistido_crianca`, `cadastrar_assistido_adulto`, `vincular_foto_assistido` (SECURITY DEFINER, `search_path=''`, REVOKE PUBLIC/anon, GRANT authenticated). Órgão vem do vínculo ativo; Admin Técnico exige `orgao_id` + justificativa (audit). Detectam `POSSIBLE_DUPLICATE_ASSISTIDO`, `CPF_ALREADY_EXISTS`, gravam auditoria, retornam JSON estruturado. `duplicateOverrideReason` obrigatório para prosseguir após alerta.
-6. **rpc_cadastro_processo** — `cadastrar_processo`: transacional, valida CNJ mod-97, cria processo + N:N, exige ≥1 assistido, verifica acesso a todos, bloqueia número duplicado no escopo, audita.
-7. **rls_e_indices** — índices de busca (trgm em `nome_mae`, categoria, etc.) e revisão final de policies.
+- **`src/lib/institutional/keys.ts`** — fábricas `institutionalKeys`, `workspaceKeys(orgaoId)`, `assistidoKeys(orgaoId)`, `processoKeys(orgaoId)`, `equipeKeys(orgaoId)`, `documentoKeys(orgaoId)`.
+- **`use-estado-institucional.ts`** — novo tipo `EstadoInstitucional` (papel/status/acessoGlobal/contextoAtual/orgaosDisponiveis/contextVersion). Mantém `orgao_ativo` legado.
+- **`use-selecionar-contexto-orgao.ts`** — chama a RPC; cancela/remove **apenas** query keys operacionais do órgão anterior (via predicate por prefixo com orgaoId antigo); invalida router; refetch estado; toast; UUID de idempotência por clique.
+- **`use-orgaos-acessiveis.ts`** — infinite query paginada; enabled só quando `open`.
+- **`src/components/app-shell/operational-org-switcher.tsx`** — botão compacto no header (badge com Building2 + nome + comarca principal). Popover + Command com busca (nome/comarca). Estados: único órgão (badge estático), sem vínculos (mensagem orientativa), admin técnico (badge "ACESSO GLOBAL" + busca global paginada). Check no atual, "Em uso".
+- **`app-shell.tsx`** — insere switcher no header (direita do breadcrumb), badge global do admin técnico, skeleton via `React.Suspense`/loading key quando `contextVersion` muda; sidebar recolhível preservada.
+- **`conta.tsx`** — nova seção "Órgãos vinculados": lista com nome/comarcas/data início/status/"Em uso" + botão "Usar este órgão". Remove ChangeOrgSheet destrutivo (mantém arquivo apenas se usado noutro fluxo; caso contrário, remoção).
+- **`use-workspace.ts` + cadastros** — troca `orgaoId` local pelo `contextoAtual.orgaoId`; queries `enabled` apenas quando há contexto; passam a usar as novas fábricas de keys. Cadastros já derivam órgão no backend — não enviarão `orgao_id`.
+- **`alterar-orgao.tsx`** — redirect para `/conta` (já é stub); remover link/menções.
+- **Textos** — substituir "Alterar órgão de execução" por "Selecionar órgão de trabalho"; remover avisos de perda de vínculo em toda a UI.
 
-### E. Regras críticas de segurança
+### Segurança/invariantes
+- Nenhum vínculo apagado; nenhum papel alterado; nenhum dado movido.
+- `SECURITY DEFINER` + `search_path=''` com nomes qualificados.
+- Erros de domínio como retorno estruturado (não `RAISE`) para não perder auditoria.
+- Frontend nunca envia `orgao_id` divergente do contexto.
+- Cancelamento de queries por predicate (evita `cancelQueries()` sem filtro).
 
-- Categoria SEMPRE recalculada por trigger a partir de `data_nascimento`; payload do frontend nunca é fonte de verdade.
-- CPF armazenado como 11 dígitos, mascarado na UI, ausente de logs/auditoria (auditoria grava só ID).
-- Upload de foto fora da transação SQL: fluxo (a) RPC cria assistido; (b) client faz upload privado; (c) RPC `vincular_foto_assistido` grava `foto_path`. Falha de upload não desfaz cadastro; falha em (c) tenta remover objeto órfão.
-- Vínculos irmão armazenados em forma canônica (ordenação UUID) — consulta é simétrica.
-- Nenhuma mutation direta do cliente em `assistidos`/`assistido_vinculos`/`processos` — tudo via RPC.
-- `service_role` nunca no cliente.
+### Verificação
+- `supabase--linter` após cada migration.
+- `psql` para confirmar novos índices e drop do antigo.
+- Build/typecheck automáticos.
+- Smoke: login como `saulocmoreira@gmail.com`, criar 2º vínculo via RPC admin, alternar contexto, confirmar isolamento de dados.
 
-### F. Fora de escopo desta entrega
+### Fora do escopo
+- Tela administrativa dedicada de gestão de vínculos (RPCs ficarão prontas).
+- Mudar regra de Membro de Equipe.
+- Encerrar vínculo pela "Minha conta".
+- Realtime/WebSocket.
 
-- Edição/soft-delete de vínculos existentes via UI (apenas criação).
-- Merge automático de duplicidades.
-- Migração de `assistido_processos` legado para o novo modelo N:N (documentado, não executado agora para preservar dados existentes).
-- Rotina automática de limpeza de fotos órfãs (deixo função SQL preparada mas sem cron).
+---
 
-### G. Verificação final
-
-- Regenerar `src/integrations/supabase/types.ts` após as migrations serem aprovadas.
-- Rodar typecheck e build.
-- Checklist visual dos três Sheets no preview.
-
-## Ordem de execução
-
-1. Diagnóstico (SELECTs + `ls migrations`).
-2. Migrations 1–7 (uma chamada `supabase--migration` cada, respeitando ordem).
-3. Storage bucket via tool.
-4. Após aprovação, regenerar types e implementar frontend (validadores → hooks → componentes → integração na página).
-5. Verificação (typecheck + preview).
-
-Confirma para eu prosseguir? Se quiser posso começar o diagnóstico já na próxima resposta e emendar a primeira migration em seguida.
+**Ordem de execução:** aplico as migrations 1→9 em série (validando cada uma), depois entrego o frontend em um único bloco coerente. Custo alto de tokens/tempo — confirme para prosseguir.
