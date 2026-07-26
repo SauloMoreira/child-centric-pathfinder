@@ -211,8 +211,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
       {/* Sidebar desktop */}
       <DesktopSidebar>
         <SidebarHeader collapsed={collapsed} />
-        {sidebarNav}
         {sidebarOrgBlock}
+        {sidebarNav}
         {sidebarUserBlock}
       </DesktopSidebar>
 
@@ -228,12 +228,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
-            {sidebarNav}
             {sidebarOrgBlock}
+            {sidebarNav}
             {sidebarUserBlock}
           </div>
         </SheetContent>
       </Sheet>
+
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-12 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden lg:px-8">
