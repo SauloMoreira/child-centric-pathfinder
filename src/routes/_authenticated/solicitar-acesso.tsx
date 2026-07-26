@@ -1,10 +1,15 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
+import {
+  useEstadoInstitucional,
+  isAtivo,
+  isAdminTecnico,
+  type EstadoInstitucional,
+} from "@/hooks/use-estado-institucional";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
@@ -24,8 +30,22 @@ export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
+  beforeLoad: async () => {
+    const { data, error } = await supabase.rpc("meu_estado_institucional");
+    if (error) return;
+    const estado = data as EstadoInstitucional | null;
+    if (!estado) return;
+    // Perfil já ativo ou admin técnico: não deve ver o formulário.
+    if (isAtivo(estado) || isAdminTecnico(estado)) {
+      throw redirect({ to: "/area-de-trabalho", replace: true });
+    }
+    if (estado.profile?.status === "suspenso" || estado.profile?.status === "inativo") {
+      throw redirect({ to: "/conta", replace: true });
+    }
+  },
   component: SolicitarAcesso,
 });
+
 
 const NOVO = "__novo__";
 const CARGO_DEFENSOR = "Defensor Público";
