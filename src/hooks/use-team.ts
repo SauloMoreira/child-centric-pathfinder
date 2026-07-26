@@ -216,14 +216,15 @@ export function useChangeDefenderOrg() {
   return useMutation({
     mutationFn: async (input: {
       newOrgaoId: string;
-      expectedCurrentMembershipId: string;
+      expectedCurrentMembershipId?: string | null;
     }) => {
       const idempotencyKey = crypto.randomUUID();
       const { data, error } = await supabase.rpc(
         "defensor_alterar_orgao_ativo",
         {
           p_new_orgao_id: input.newOrgaoId,
-          p_expected_current_membership_id: input.expectedCurrentMembershipId,
+          p_expected_current_membership_id:
+            (input.expectedCurrentMembershipId ?? undefined) as string,
           p_idempotency_key: idempotencyKey,
         },
       );
