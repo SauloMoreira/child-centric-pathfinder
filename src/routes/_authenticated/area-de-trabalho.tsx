@@ -121,8 +121,6 @@ function AreaDeTrabalhoPage() {
   const {
     data: workspace,
     isLoading: wsLoading,
-    refetch,
-    isFetching,
   } = useWorkspace(context, orgaoId, selectedWorkspaceId);
   const mutations = useWorkspaceMutations(context, orgaoId);
   const boardMutations = useWorkspaceBoardMutations(orgaoId);
