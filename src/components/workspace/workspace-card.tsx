@@ -90,10 +90,10 @@ export function WorkspaceCard({
       >
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs font-semibold text-muted-foreground">
-            {data.foto_url ? (
+            {fotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={data.foto_url}
+                src={fotoUrl}
                 alt=""
                 className="h-full w-full rounded-md object-cover"
               />
