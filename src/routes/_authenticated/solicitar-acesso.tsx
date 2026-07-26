@@ -177,9 +177,32 @@ function SolicitarAcesso() {
       toast.error(msg || "Falha ao enviar solicitação.");
       return;
     }
+    toast.success("Solicitação enviada. Aguarde aprovação institucional.");
+    await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
+    navigate({ to: "/area-de-trabalho", replace: true });
+  }
 
+  if (estadoLoading) {
+    return (
+      <div className="mx-auto max-w-2xl p-6 lg:p-8" aria-busy="true">
+        <p className="text-sm text-muted-foreground">Verificando seu acesso institucional…</p>
+        <div className="mt-6 space-y-3">
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // Segunda camada: se o estado indicar perfil ativo, sair do formulário.
+  if (isAtivo(estado) || isAdminTecnico(estado)) {
+    navigate({ to: "/area-de-trabalho", replace: true });
+    return null;
+  }
 
   if (solicitacaoAberta) {
+
     return (
       <div className="mx-auto max-w-2xl p-6 lg:p-8">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
