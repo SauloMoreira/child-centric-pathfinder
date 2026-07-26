@@ -266,11 +266,26 @@ export function CadastrarAdultoSheet({
                 </div>
               </FormSection>
 
-              {!isEdit && (
-                <FormSection title="Foto (opcional)">
-                  <FotoAssistidoField file={file} onChange={setFile} />
-                </FormSection>
-              )}
+              <FormSection title={isEdit ? "Foto" : "Foto (opcional)"}>
+                <FotoAssistidoField
+                  file={file}
+                  onChange={setFile}
+                  currentFotoPath={isEdit ? full.data?.record?.foto_path ?? null : null}
+                  onRemoveCurrent={
+                    isEdit && assistidoId
+                      ? async () => {
+                          try {
+                            await removerFoto.mutateAsync({ assistidoId });
+                            toast.success("Foto removida.");
+                          } catch {
+                            toast.error("Não foi possível remover a foto.");
+                          }
+                        }
+                      : undefined
+                  }
+                  removeLoading={removerFoto.isPending}
+                />
+              </FormSection>
 
               <FormSection
                 title="Crianças ou adolescentes vinculados"
