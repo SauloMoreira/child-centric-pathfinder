@@ -929,22 +929,13 @@ export type Database = {
         Args: { p_nome: string; p_orgao_id: string }
         Returns: Json
       }
-      defensor_alterar_orgao_ativo:
-        | {
-            Args: {
-              p_expected_current_membership_id?: string
-              p_new_orgao_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_expected_current_membership_id: string
-              p_idempotency_key?: string
-              p_new_orgao_id: string
-            }
-            Returns: Json
-          }
+      defensor_alterar_orgao_ativo: {
+        Args: {
+          p_expected_current_membership_id?: string
+          p_new_orgao_id: string
+        }
+        Returns: Json
+      }
       defensor_autovincular_orgao: {
         Args: { p_idempotency_key?: string; p_orgao_id: string }
         Returns: Json
