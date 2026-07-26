@@ -835,6 +835,18 @@ export type Database = {
         }
         Returns: Json
       }
+      atualizar_anotacoes_assistido: {
+        Args: { p_assistido_id: string; p_observacoes: string }
+        Returns: Json
+      }
+      atualizar_assistido_adulto: {
+        Args: { p_assistido_id: string; p_payload: Json }
+        Returns: Json
+      }
+      atualizar_assistido_crianca: {
+        Args: { p_assistido_id: string; p_payload: Json }
+        Returns: Json
+      }
       atualizar_membro_equipe: {
         Args: {
           p_funcao_interna: string
