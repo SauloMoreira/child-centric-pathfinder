@@ -256,7 +256,7 @@ function DialogAprovar({
               uf: "RS",
             }
           : null,
-      });
+      } as never);
       if (error) throw error;
       return data;
     },
