@@ -1,9 +1,25 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Building2, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,11 +30,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useEstadoInstitucional, isDefensor } from "@/hooks/use-estado-institucional";
+import {
+  useEstadoInstitucional,
+  isDefensor,
+} from "@/hooks/use-estado-institucional";
 import { useTeamMembers, useChangeDefenderOrg } from "@/hooks/use-team";
-import { ComarcaCombobox } from "@/components/comarca-combobox";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { friendlyTeamError } from "@/lib/team-errors";
 
 export const Route = createFileRoute("/_authenticated/alterar-orgao")({
@@ -42,25 +58,18 @@ function AlterarOrgaoPage() {
   const defensor = isDefensor(estado);
   const team = useTeamMembers();
   const change = useChangeDefenderOrg();
-  const [selected, setSelected] = useState<{
-    id: string;
-    nome: string;
-    comarca: string;
-  } | null>(null);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Buscar dados completos do órgão selecionado
-  const orgQuery = useQuery({
-    queryKey: ["orgao-detalhes", selected?.id],
-    enabled: !!selected,
+  const orgaosQ = useQuery({
+    queryKey: ["orgaos-execucao-todos"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orgaos_execucao")
         .select("id, nome, comarca")
-        .eq("id", selected!.id)
-        .maybeSingle();
+        .order("nome");
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
@@ -80,23 +89,16 @@ function AlterarOrgaoPage() {
   }
 
   const orgaoAtual = estado?.orgao_ativo;
-  const membershipId = "membership_id"; // will read below
-  // Precisamos do membership_id atual. meu_estado_institucional não devolve.
-  // Vamos buscar via listar_equipe do próprio Defensor? Não, o defensor
-  // não aparece em listar_equipe. Vamos usar RPC de estado + fallback via
-  // consulta direta ao público não é possível (schema privado).
-  // Solução: enviar undefined como expected — o backend só checa se != null.
-
   const membrosCount = team.data?.length ?? 0;
+  const selected =
+    orgaosQ.data?.find((o) => o.id === selectedId) ?? null;
 
   async function confirmar() {
-    if (!selected || !orgaoAtual) return;
+    if (!selectedId) return;
     try {
       await change.mutateAsync({
-        newOrgaoId: selected.id,
-        expectedCurrentMembershipId:
-          (orgaoAtual as unknown as { membership_id?: string }).membership_id ??
-          "00000000-0000-0000-0000-000000000000",
+        newOrgaoId: selectedId,
+        expectedCurrentMembershipId: null,
       });
       toast.success("Órgão alterado com sucesso");
       navigate({ to: "/painel" });
@@ -130,7 +132,10 @@ function AlterarOrgaoPage() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-start gap-3">
-            <Building2 className="mt-0.5 h-5 w-5 text-muted-foreground" aria-hidden />
+            <Building2
+              className="mt-0.5 h-5 w-5 text-muted-foreground"
+              aria-hidden
+            />
             <div className="min-w-0 flex-1">
               <p className="font-medium">
                 {orgaoAtual?.nome ?? "Sem órgão ativo"}
@@ -150,41 +155,55 @@ function AlterarOrgaoPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Novo órgão</CardTitle>
           <CardDescription>
-            Selecione ou pesquise o órgão de destino.
+            Selecione o órgão de execução de destino.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0 space-y-3">
-          <ComarcaCombobox
-            value={selected?.comarca ?? ""}
-            onSelect={(o) => {
-              if (o) setSelected({ id: o.id, nome: o.nome, comarca: o.comarca });
-            }}
-            mode="orgao"
-          />
-          {orgQuery.data && (
-            <div className="rounded-md border border-border bg-muted/40 p-3">
-              <p className="text-sm font-medium">{orgQuery.data.nome}</p>
-              <p className="text-xs text-muted-foreground">
-                {orgQuery.data.comarca}
-              </p>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="orgao-novo">Órgão de destino</Label>
+            <Select value={selectedId} onValueChange={setSelectedId}>
+              <SelectTrigger id="orgao-novo">
+                <SelectValue
+                  placeholder={
+                    orgaosQ.isLoading
+                      ? "Carregando órgãos..."
+                      : "Selecione um órgão"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {(orgaosQ.data ?? [])
+                  .filter((o) => o.id !== orgaoAtual?.id)
+                  .map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      <span className="font-medium">{o.nome}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {o.comarca}
+                      </span>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
       {selected && orgaoAtual && selected.id !== orgaoAtual.id && (
         <div className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-4 text-sm">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-warning-foreground" aria-hidden />
+            <AlertTriangle
+              className="mt-0.5 h-4 w-4 text-warning-foreground"
+              aria-hidden
+            />
             <div>
               <p className="font-medium text-warning-foreground">
                 Impacto da alteração
               </p>
               <p className="mt-1 text-xs text-warning-foreground/90">
                 Ao alterar seu órgão de execução, você deixará de administrar a
-                equipe e os registros do órgão atual. Nenhum membro ou dado será
-                transferido automaticamente. Os {membrosCount} membro(s) do
-                órgão anterior permanecerão vinculados ao órgão de origem.
+                equipe e os registros do órgão atual. Nenhum membro ou dado
+                será transferido automaticamente. Os {membrosCount} membro(s)
+                do órgão anterior permanecerão vinculados ao órgão de origem.
               </p>
             </div>
           </div>
@@ -196,15 +215,12 @@ function AlterarOrgaoPage() {
           <Link to="/conta">Cancelar</Link>
         </Button>
         <Button
-          disabled={
-            !selected ||
-            !orgaoAtual ||
-            selected.id === orgaoAtual.id ||
-            change.isPending
-          }
+          disabled={!selectedId || change.isPending}
           onClick={() => setConfirmOpen(true)}
         >
-          {change.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {change.isPending && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
           Confirmar alteração
         </Button>
       </div>
