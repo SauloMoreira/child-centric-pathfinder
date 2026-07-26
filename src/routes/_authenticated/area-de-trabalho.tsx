@@ -56,6 +56,10 @@ import { WorkspaceColumnForm } from "@/components/workspace/workspace-column-for
 import { getColorClasses } from "@/lib/workspace/colors";
 import { describeActive } from "@/lib/workspace/filters";
 import type { AssistidoCard } from "@/hooks/use-workspace";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CadastrarCriancaSheet } from "@/components/assistidos/cadastrar-crianca-sheet";
+import { CadastrarAdultoSheet } from "@/components/assistidos/cadastrar-adulto-sheet";
+import { CadastrarProcessoSheet } from "@/components/processos/cadastrar-processo-sheet";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
