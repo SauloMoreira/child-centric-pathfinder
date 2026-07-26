@@ -17,7 +17,10 @@ import {
   Scale,
   Star,
   LayoutGrid,
+  Rows3,
+  Columns3,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,11 +62,7 @@ import {
   type WorkspaceColumn,
   type WorkspaceSummary,
 } from "@/hooks/use-workspace";
-import {
-  useEstadoInstitucional,
-  isAdminTecnico,
-  isAtivo,
-} from "@/hooks/use-estado-institucional";
+import { useEstadoInstitucional, isAdminTecnico, isAtivo } from "@/hooks/use-estado-institucional";
 import { WorkspaceCard, WorkspaceCardSkeleton } from "@/components/workspace/workspace-card";
 import { WorkspaceCardDrawer } from "@/components/workspace/workspace-card-drawer";
 import { WorkspaceColumnForm } from "@/components/workspace/workspace-column-form";
@@ -147,6 +146,17 @@ function AreaDeTrabalhoPage() {
   >(null);
   const [boardNameInput, setBoardNameInput] = useState("");
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<WorkspaceSummary | null>(null);
+  const [layoutMode, setLayoutMode] = useState<"columns" | "rows">(() => {
+    if (typeof window === "undefined") return "columns";
+    const v = window.localStorage.getItem("reintegra.ws.layout");
+    return v === "rows" ? "rows" : "columns";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("reintegra.ws.layout", layoutMode);
+    }
+  }, [layoutMode]);
 
   const busca = useBuscaAssistidos(
     searchText.trim(),
@@ -166,8 +176,8 @@ function AreaDeTrabalhoPage() {
         <div className="mt-6 rounded-md border border-border bg-surface p-4 text-sm">
           <p className="font-medium">Complete seu cadastro institucional.</p>
           <p className="mt-1 text-muted-foreground">
-            Sua área de trabalho será liberada após a aprovação do vínculo pelo
-            Administrador Institucional.
+            Sua área de trabalho será liberada após a aprovação do vínculo pelo Administrador
+            Institucional.
           </p>
           <Button asChild size="sm" className="mt-4">
             <Link to="/solicitar-acesso">Preencher dados</Link>
@@ -192,37 +202,38 @@ function AreaDeTrabalhoPage() {
     setFormOpen(true);
   }
 
-  const handleSubmitForm: React.ComponentProps<typeof WorkspaceColumnForm>["onSubmit"] =
-    async (payload) => {
-      try {
-        if (formMode === "create") {
-          if (!workspaceId) throw new Error("Workspace não encontrado");
-          await mutations.create.mutateAsync({
-            workspace_id: workspaceId,
-            title: payload.title,
-            description: payload.description,
-            color_token: payload.color_token,
-            custom_color: payload.custom_color,
-            filter: payload.filter,
-          });
-          toast.success("Coluna criada.");
-        } else if (editingColumn) {
-          await mutations.update.mutateAsync({
-            column_id: editingColumn.id,
-            version: editingColumn.version,
-            title: payload.title,
-            description: payload.description,
-            color_token: payload.color_token,
-            custom_color: payload.custom_color,
-            filter: payload.filter,
-          });
-          toast.success("Coluna atualizada.");
-        }
-      } catch (e) {
-        toast.error((e as Error).message || "Não foi possível salvar a coluna.");
-        throw e;
+  const handleSubmitForm: React.ComponentProps<typeof WorkspaceColumnForm>["onSubmit"] = async (
+    payload,
+  ) => {
+    try {
+      if (formMode === "create") {
+        if (!workspaceId) throw new Error("Workspace não encontrado");
+        await mutations.create.mutateAsync({
+          workspace_id: workspaceId,
+          title: payload.title,
+          description: payload.description,
+          color_token: payload.color_token,
+          custom_color: payload.custom_color,
+          filter: payload.filter,
+        });
+        toast.success("Coluna criada.");
+      } else if (editingColumn) {
+        await mutations.update.mutateAsync({
+          column_id: editingColumn.id,
+          version: editingColumn.version,
+          title: payload.title,
+          description: payload.description,
+          color_token: payload.color_token,
+          custom_color: payload.custom_color,
+          filter: payload.filter,
+        });
+        toast.success("Coluna atualizada.");
       }
-    };
+    } catch (e) {
+      toast.error((e as Error).message || "Não foi possível salvar a coluna.");
+      throw e;
+    }
+  };
 
   async function moveColumn(col: WorkspaceColumn, direction: -1 | 1) {
     if (!workspaceId) return;
@@ -279,9 +290,7 @@ function AreaDeTrabalhoPage() {
       {/* Header */}
       <div className="border-b border-border bg-surface px-4 py-5 lg:px-8">
         <h1 className="text-2xl font-semibold tracking-tight">Área de trabalho</h1>
-        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          {" "}
-        </p>
+        <p className="mt-1 max-w-3xl text-sm text-muted-foreground"> </p>
 
         {/* Busca superior */}
         <form
@@ -375,8 +384,11 @@ function AreaDeTrabalhoPage() {
 
       <CadastrarCriancaSheet open={criancaOpen} onOpenChange={setCriancaOpen} orgaoId={orgaoId} />
       <CadastrarAdultoSheet open={adultoOpen} onOpenChange={setAdultoOpen} orgaoId={orgaoId} />
-      <CadastrarProcessoSheet open={processoOpen} onOpenChange={setProcessoOpen} orgaoId={orgaoId} />
-
+      <CadastrarProcessoSheet
+        open={processoOpen}
+        onOpenChange={setProcessoOpen}
+        orgaoId={orgaoId}
+      />
 
       {/* Resultados da busca */}
       {searchActive && (
@@ -433,16 +445,11 @@ function AreaDeTrabalhoPage() {
             {wsLoading ? "Carregando..." : `${columns.length} coluna(s)`} ·{" "}
             {tecnico
               ? "Administrador Técnico (acesso global disponível)"
-              : estado?.orgao_ativo?.nome ?? "Sem vínculo ativo"}
+              : (estado?.orgao_ativo?.nome ?? "Sem vínculo ativo")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
             ) : (
@@ -450,6 +457,42 @@ function AreaDeTrabalhoPage() {
             )}
             <span className="ml-1.5">Atualizar</span>
           </Button>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex items-center gap-0.5 rounded-md border border-border bg-canvas p-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant={layoutMode === "columns" ? "default" : "ghost"}
+                    className="h-7 w-7"
+                    aria-label="Exibir em colunas"
+                    aria-pressed={layoutMode === "columns"}
+                    onClick={() => setLayoutMode("columns")}
+                  >
+                    <Columns3 className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Colunas lado a lado</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant={layoutMode === "rows" ? "default" : "ghost"}
+                    className="h-7 w-7"
+                    aria-label="Exibir em linhas"
+                    aria-pressed={layoutMode === "rows"}
+                    onClick={() => setLayoutMode("rows")}
+                  >
+                    <Rows3 className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Linhas empilhadas</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
           <Button
             size="sm"
             variant="outline"
@@ -467,14 +510,26 @@ function AreaDeTrabalhoPage() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto bg-canvas p-4 lg:p-6">
-        <div className="grid grid-flow-col auto-cols-[320px] gap-4">
+      <div
+        className={cn(
+          "flex-1 bg-canvas p-4 lg:p-6",
+          layoutMode === "columns" ? "overflow-x-auto" : "overflow-y-auto",
+        )}
+      >
+        <div
+          className={cn(
+            layoutMode === "columns"
+              ? "grid grid-flow-col auto-cols-[320px] gap-4"
+              : "flex flex-col gap-4",
+          )}
+        >
           {columns.map((col, idx) => (
             <BoardColumn
               key={col.id}
               column={col}
               index={idx}
               total={columns.length}
+              layout={layoutMode}
               onOpenCard={(c) => setDrawerCard(c)}
               onEdit={() => openEdit(col)}
               onDelete={() => setConfirmDelete(col)}
@@ -504,8 +559,7 @@ function AreaDeTrabalhoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir coluna?</AlertDialogTitle>
             <AlertDialogDescription>
-              Excluir esta coluna removerá apenas esta visualização. Nenhum
-              cadastro será excluído.
+              Excluir esta coluna removerá apenas esta visualização. Nenhum cadastro será excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -520,8 +574,8 @@ function AreaDeTrabalhoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Restaurar quadro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Todas as colunas personalizadas serão removidas e a coluna base
-              voltará ao padrão. Nenhum cadastro será excluído.
+              Todas as colunas personalizadas serão removidas e a coluna base voltará ao padrão.
+              Nenhum cadastro será excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -621,8 +675,8 @@ function AreaDeTrabalhoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir quadro?</AlertDialogTitle>
             <AlertDialogDescription>
-              O quadro <strong>{confirmDeleteBoard?.nome}</strong> e todas as suas
-              colunas serão removidos. Nenhum cadastro de assistido será excluído.
+              O quadro <strong>{confirmDeleteBoard?.nome}</strong> e todas as suas colunas serão
+              removidos. Nenhum cadastro de assistido será excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -702,10 +756,7 @@ function WorkspaceTabs({
               <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
               <span className="max-w-[180px] truncate">{b.nome}</span>
               {b.is_default && (
-                <Star
-                  className="h-3 w-3 fill-current text-warning"
-                  aria-label="Quadro padrão"
-                />
+                <Star className="h-3 w-3 fill-current text-warning" aria-label="Quadro padrão" />
               )}
             </button>
             {canEdit && (
@@ -822,6 +873,7 @@ function BoardColumn({
   column,
   index,
   total,
+  layout = "columns",
   onOpenCard,
   onEdit,
   onDelete,
@@ -831,6 +883,7 @@ function BoardColumn({
   column: WorkspaceColumn;
   index: number;
   total: number;
+  layout?: "columns" | "rows";
   onOpenCard: (c: AssistidoCard) => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -852,10 +905,7 @@ function BoardColumn({
       )}
     >
       <div
-        className={cn(
-          "flex items-start justify-between gap-2 rounded-t-md p-3",
-          color.headerBg,
-        )}
+        className={cn("flex items-start justify-between gap-2 rounded-t-md p-3", color.headerBg)}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
@@ -923,7 +973,14 @@ function BoardColumn({
         </DropdownMenu>
       </div>
 
-      <div className="max-h-[calc(100vh-360px)] flex-1 space-y-2 overflow-y-auto p-3">
+      <div
+        className={cn(
+          "flex-1 p-3",
+          layout === "columns"
+            ? "max-h-[calc(100vh-360px)] space-y-2 overflow-y-auto"
+            : "flex gap-2 overflow-x-auto",
+        )}
+      >
         {isLoading ? (
           <>
             <WorkspaceCardSkeleton />
@@ -947,7 +1004,9 @@ function BoardColumn({
           </div>
         ) : (
           (data?.items ?? []).map((c) => (
-            <WorkspaceCard key={c.id} data={c} onClick={() => onOpenCard(c)} />
+            <div key={c.id} className={cn(layout === "rows" && "w-72 shrink-0")}>
+              <WorkspaceCard data={c} onClick={() => onOpenCard(c)} />
+            </div>
           ))
         )}
       </div>
