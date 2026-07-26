@@ -1,0 +1,55 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export type EstadoInstitucional = {
+  user_id: string;
+  profile: {
+    nome_completo: string | null;
+    matricula: string | null;
+    cargo: string | null;
+    telefone: string | null;
+    status:
+      | "aguardando_dados"
+      | "aguardando_aprovacao"
+      | "ativo"
+      | "suspenso"
+      | "inativo";
+    ativo: boolean;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  roles: Array<"admin_institucional" | "defensor_publico" | "membro_equipe">;
+  aal2: boolean;
+  orgao_ativo: { id: string; nome: string; sigla: string } | null;
+  solicitacao_aberta: {
+    id: string;
+    status: "pendente" | "em_analise";
+    version: number;
+    created_at: string;
+  } | null;
+};
+
+export function useEstadoInstitucional() {
+  return useQuery<EstadoInstitucional>({
+    queryKey: ["estado-institucional"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("meu_estado_institucional");
+      if (error) throw error;
+      return data as EstadoInstitucional;
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function isAdmin(estado?: EstadoInstitucional) {
+  return !!estado?.roles.includes("admin_institucional");
+}
+export function isDefensor(estado?: EstadoInstitucional) {
+  return !!estado?.roles.includes("defensor_publico");
+}
+export function isMembroEquipe(estado?: EstadoInstitucional) {
+  return !!estado?.roles.includes("membro_equipe");
+}
+export function isAtivo(estado?: EstadoInstitucional) {
+  return estado?.profile?.status === "ativo" && estado.profile.ativo;
+}
