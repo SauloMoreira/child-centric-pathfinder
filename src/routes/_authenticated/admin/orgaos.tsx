@@ -24,7 +24,7 @@ function OrgaosAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orgaos_execucao")
-        .select("id,nome,sigla,comarca,cidade,uf,ativo,created_at")
+        .select("id,nome,comarca,created_at")
         .order("nome");
       if (error) throw error;
       return data;
@@ -63,8 +63,8 @@ function OrgaosAdmin() {
           </p>
           <h1 className="mt-2 text-2xl font-semibold">Órgãos de execução</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Unidades cadastradas da DPE-RS. Novos órgãos são criados durante a
-            aprovação de solicitações de acesso que os propõem.
+            Unidades cadastradas da DPE-RS. Novos órgãos são criados pela
+            Administração Técnica ou durante a aprovação de solicitações.
           </p>
         </div>
       </header>
@@ -76,41 +76,23 @@ function OrgaosAdmin() {
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
             <Building2 className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium">Nenhum órgão cadastrado</p>
-            <p className="max-w-sm text-xs text-muted-foreground">
-              Órgãos serão criados quando o Administrador aprovar solicitações
-              com proposta de novo órgão.
-            </p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-canvas/40 text-left font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Sigla</th>
-                <th className="px-4 py-3">Nome</th>
-                <th className="px-4 py-3">Comarca / cidade</th>
-                <th className="px-4 py-3">UF</th>
-                <th className="px-4 py-3">Situação</th>
+                <th className="px-4 py-3">Órgão de execução</th>
+                <th className="px-4 py-3">Comarca</th>
+                <th className="px-4 py-3">Criado em</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {orgaosQ.data?.map((o) => (
                 <tr key={o.id}>
-                  <td className="px-4 py-3 font-mono">{o.sigla}</td>
                   <td className="px-4 py-3">{o.nome}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {[o.comarca, o.cidade].filter(Boolean).join(" · ") || "—"}
-                  </td>
-                  <td className="px-4 py-3 font-mono">{o.uf}</td>
-                  <td className="px-4 py-3">
-                    {o.ativo ? (
-                      <span className="rounded-md border border-success/40 bg-success/10 px-2 py-0.5 text-[11px]">
-                        Ativo
-                      </span>
-                    ) : (
-                      <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                        Inativo
-                      </span>
-                    )}
+                  <td className="px-4 py-3 text-muted-foreground">{o.comarca}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    {new Date(o.created_at).toLocaleDateString("pt-BR")}
                   </td>
                 </tr>
               ))}

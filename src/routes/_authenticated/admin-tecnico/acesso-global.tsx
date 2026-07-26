@@ -35,12 +35,13 @@ function AcessoGlobal() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orgaos_execucao")
-        .select("id,nome,sigla,ativo")
+        .select("id,nome,comarca")
         .order("nome");
       if (error) throw error;
       return data;
     },
   });
+
 
   const mut = useMutation({
     mutationFn: async () => {
