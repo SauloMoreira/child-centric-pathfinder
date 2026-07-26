@@ -266,14 +266,15 @@ function AreaDeTrabalhoPage() {
   }
 
   async function handleReset() {
-    if (!workspaceId) return;
+    const target = confirmReset;
+    if (!target) return;
     try {
-      await mutations.reset.mutateAsync(workspaceId);
+      await mutations.reset.mutateAsync(target.id);
       toast.success("Quadro restaurado para o padrão.");
     } catch (e) {
       toast.error((e as Error).message || "Não foi possível restaurar.");
     } finally {
-      setConfirmReset(false);
+      setConfirmReset(null);
     }
   }
 
