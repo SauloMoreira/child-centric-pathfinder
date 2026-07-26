@@ -449,14 +449,6 @@ function AreaDeTrabalhoPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-            ) : (
-              <RefreshCcw className="h-3.5 w-3.5" aria-hidden />
-            )}
-            <span className="ml-1.5">Atualizar</span>
-          </Button>
           <TooltipProvider delayDuration={200}>
             <div className="flex items-center gap-0.5 rounded-md border border-border bg-canvas p-0.5">
               <Tooltip>
