@@ -64,15 +64,17 @@ function AuthPage() {
   const navigate = useNavigate();
   const retorno = caminhoSeguro(next);
 
-  // Se já estiver autenticado, retornar ao destino solicitado ou ao painel.
+  // Se já estiver autenticado, retornar ao destino solicitado ou ao painel —
+  // exceto quando a sessão precisa concluir o step-up MFA (AAL2).
   useEffect(() => {
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (alive && data.session) {
-        if (retorno) window.location.replace(retorno);
-        else navigate({ to: "/painel", replace: true });
-      }
-    });
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!alive || !data.session) return;
+      if (await precisaStepUpMfa()) return; // deixa o SignInForm oferecer o desafio
+      if (retorno) window.location.replace(retorno);
+      else navigate({ to: "/painel", replace: true });
+    })();
     return () => {
       alive = false;
     };
