@@ -284,6 +284,36 @@ export function OrgaoNovoSheet({
             </section>
           )}
 
+          {(mfaMissing || mfaBlocked) && requiresMfa && (
+            <section
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 p-3"
+            >
+              <div className="flex items-start gap-2">
+                <ShieldAlert
+                  className="mt-0.5 h-4 w-4 text-destructive"
+                  aria-hidden
+                />
+                <div className="flex-1 space-y-2 text-xs">
+                  <p className="font-medium">
+                    MFA obrigatório para esta operação
+                  </p>
+                  <p className="text-muted-foreground">
+                    {MFA_GUIDANCE_MESSAGE}
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Link to="/conta">Configurar MFA em Minha conta</Link>
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
           <SheetFooter className="gap-2">
             <Button
               type="button"
@@ -297,8 +327,14 @@ export function OrgaoNovoSheet({
               type="submit"
               disabled={
                 mutation.isPending ||
+                mfaMissing ||
                 !form.watch("nome")?.trim() ||
                 !form.watch("comarca")?.trim()
+              }
+              title={
+                mfaMissing
+                  ? "Conclua o MFA (AAL2) para criar órgãos."
+                  : undefined
               }
             >
               {mutation.isPending && (
