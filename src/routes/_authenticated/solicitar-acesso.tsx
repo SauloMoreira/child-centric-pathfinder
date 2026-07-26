@@ -39,8 +39,9 @@ const formSchema = z.object({
   novo_nome: z.string().trim().max(200).optional(),
   novo_comarca: z.string().trim().max(120).optional(),
   aceite_termos: z.literal(true, {
-    errorMap: () => ({ message: "É necessário aceitar os termos institucionais." }),
+    message: "É necessário aceitar os termos institucionais.",
   }),
+
 });
 
 function SolicitarAcesso() {
