@@ -166,13 +166,18 @@ function SolicitarAcesso() {
     } as never);
     setSubmitting(false);
     if (error) {
-      toast.error(error.message || "Falha ao enviar solicitação.");
+      const code = (error as { code?: string; message?: string }).code;
+      const msg = error.message || "";
+      if (code === "PROFILE_ALREADY_ACTIVE" || /já processado/i.test(msg) || /already.?active/i.test(msg)) {
+        toast.info("Seu acesso já está ativo. Redirecionamos você para a Área de Trabalho.");
+        await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
+        navigate({ to: "/area-de-trabalho", replace: true });
+        return;
+      }
+      toast.error(msg || "Falha ao enviar solicitação.");
       return;
     }
-    toast.success("Solicitação enviada. Aguarde aprovação institucional.");
-    await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
-    navigate({ to: "/painel" });
-  }
+
 
   if (solicitacaoAberta) {
     return (
