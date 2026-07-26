@@ -768,6 +768,18 @@ export type Database = {
         }
         Returns: Json
       }
+      buscar_assistidos_picker: {
+        Args: {
+          p_categoria?: Database["public"]["Enums"]["assistido_categoria_enum"]
+          p_exclude?: string[]
+          p_limit?: number
+          p_text?: string
+        }
+        Returns: Json
+      }
+      cadastrar_assistido_adulto: { Args: { p_payload: Json }; Returns: Json }
+      cadastrar_assistido_crianca: { Args: { p_payload: Json }; Returns: Json }
+      cadastrar_processo: { Args: { p_payload: Json }; Returns: Json }
       cancelar_convite_equipe: {
         Args: { p_invitation_id: string; p_motivo: string }
         Returns: Json
@@ -971,6 +983,10 @@ export type Database = {
           p_title: string
           p_version: number
         }
+        Returns: Json
+      }
+      vincular_foto_assistido: {
+        Args: { p_assistido_id: string; p_foto_path: string }
         Returns: Json
       }
     }
