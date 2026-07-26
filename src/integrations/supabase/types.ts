@@ -896,7 +896,7 @@ export type Database = {
       defensor_alterar_orgao_ativo: {
         Args: {
           p_expected_current_membership_id: string
-          p_idempotency_key: string
+          p_idempotency_key?: string
           p_new_orgao_id: string
         }
         Returns: Json
@@ -910,10 +910,7 @@ export type Database = {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
       }
-      ensure_default_workspace: {
-        Args: { p_context?: string; p_orgao_id?: string }
-        Returns: Json
-      }
+      ensure_default_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
       get_workspace_column_assistidos: {
         Args: { p_column_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
@@ -979,10 +976,7 @@ export type Database = {
           version: number
         }[]
       }
-      listar_workspace: {
-        Args: { p_context?: string; p_orgao_id?: string }
-        Returns: Json
-      }
+      listar_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
       meu_estado_institucional: { Args: never; Returns: Json }
       promover_admin_tecnico: {
