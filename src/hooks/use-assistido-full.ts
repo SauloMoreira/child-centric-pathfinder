@@ -41,7 +41,7 @@ export function useAssistidoFull(assistidoId: string | null, enabled = true) {
         supabase
           .from("assistidos")
           .select(
-            "id, prenome, sobrenome, nome_completo, nome_social, data_nascimento, sexo_registral, genero, cpf, nome_mae, nome_pai, orgao_execucao_id, categoria, observacoes, foto_url",
+            "id, prenome, sobrenome, nome_completo, nome_social, data_nascimento, sexo_registral, genero, cpf, nome_mae, nome_pai, orgao_execucao_id, categoria, observacoes, foto_url, foto_path",
           )
           .eq("id", assistidoId)
           .is("deleted_at", null)
