@@ -63,6 +63,7 @@ export function CadastrarAdultoSheet({
   const cadastrar = useCadastrarAdulto();
   const atualizar = useAtualizarAdulto();
   const upload = useUploadFotoAssistido();
+  const removerFoto = useRemoverFotoAssistido();
   const full = useAssistidoFull(assistidoId, open && isEdit);
 
   useEffect(() => {
