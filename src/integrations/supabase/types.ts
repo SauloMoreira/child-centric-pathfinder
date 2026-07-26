@@ -223,59 +223,86 @@ export type Database = {
       }
       assistidos: {
         Row: {
+          categoria:
+            | Database["public"]["Enums"]["assistido_categoria_enum"]
+            | null
+          cpf: string | null
           created_at: string
           created_by: string | null
           data_nascimento: string
           deleted_at: string | null
+          foto_path: string | null
           foto_url: string | null
           genero: string | null
           id: string
           nome_completo: string
+          nome_mae: string | null
+          nome_pai: string | null
           nome_social: string | null
           observacoes: string | null
           orgao_execucao_id: string
+          prenome: string | null
           responsavel_user_id: string | null
           search_text: string | null
           sexo_registral: Database["public"]["Enums"]["sexo_registral_enum"]
           situacao_atual: Database["public"]["Enums"]["situacao_atual_enum"]
+          sobrenome: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          categoria?:
+            | Database["public"]["Enums"]["assistido_categoria_enum"]
+            | null
+          cpf?: string | null
           created_at?: string
           created_by?: string | null
           data_nascimento: string
           deleted_at?: string | null
+          foto_path?: string | null
           foto_url?: string | null
           genero?: string | null
           id?: string
           nome_completo: string
+          nome_mae?: string | null
+          nome_pai?: string | null
           nome_social?: string | null
           observacoes?: string | null
           orgao_execucao_id: string
+          prenome?: string | null
           responsavel_user_id?: string | null
           search_text?: string | null
           sexo_registral?: Database["public"]["Enums"]["sexo_registral_enum"]
           situacao_atual?: Database["public"]["Enums"]["situacao_atual_enum"]
+          sobrenome?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          categoria?:
+            | Database["public"]["Enums"]["assistido_categoria_enum"]
+            | null
+          cpf?: string | null
           created_at?: string
           created_by?: string | null
           data_nascimento?: string
           deleted_at?: string | null
+          foto_path?: string | null
           foto_url?: string | null
           genero?: string | null
           id?: string
           nome_completo?: string
+          nome_mae?: string | null
+          nome_pai?: string | null
           nome_social?: string | null
           observacoes?: string | null
           orgao_execucao_id?: string
+          prenome?: string | null
           responsavel_user_id?: string | null
           search_text?: string | null
           sexo_registral?: Database["public"]["Enums"]["sexo_registral_enum"]
           situacao_atual?: Database["public"]["Enums"]["situacao_atual_enum"]
+          sobrenome?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -785,6 +812,7 @@ export type Database = {
         | "admin_institucional"
         | "defensor_publico"
         | "membro_equipe"
+      assistido_categoria_enum: "crianca_adolescente" | "adulto"
       audit_result: "sucesso" | "falha" | "negado"
       parentesco_enum:
         | "mae"
@@ -977,6 +1005,7 @@ export const Constants = {
         "defensor_publico",
         "membro_equipe",
       ],
+      assistido_categoria_enum: ["crianca_adolescente", "adulto"],
       audit_result: ["sucesso", "falha", "negado"],
       parentesco_enum: [
         "mae",
