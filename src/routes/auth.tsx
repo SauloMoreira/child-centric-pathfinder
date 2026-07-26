@@ -258,9 +258,6 @@ function SignUpForm() {
       },
     });
 
-        data: { nome_completo: nR.data },
-      },
-    });
     setLoading(false);
     if (error) {
       toast.error(
