@@ -55,10 +55,12 @@ export type Database = {
           ativo: boolean
           cargo: string | null
           created_at: string
+          funcao_interna: string | null
           inativado_em: string | null
           matricula: string | null
           motivo_bloqueio: string | null
           nome_completo: string | null
+          outra_funcao: string | null
           status: Database["public"]["Enums"]["profile_status"]
           suspenso_em: string | null
           telefone: string | null
@@ -69,10 +71,12 @@ export type Database = {
           ativo?: boolean
           cargo?: string | null
           created_at?: string
+          funcao_interna?: string | null
           inativado_em?: string | null
           matricula?: string | null
           motivo_bloqueio?: string | null
           nome_completo?: string | null
+          outra_funcao?: string | null
           status?: Database["public"]["Enums"]["profile_status"]
           suspenso_em?: string | null
           telefone?: string | null
@@ -83,10 +87,12 @@ export type Database = {
           ativo?: boolean
           cargo?: string | null
           created_at?: string
+          funcao_interna?: string | null
           inativado_em?: string | null
           matricula?: string | null
           motivo_bloqueio?: string | null
           nome_completo?: string | null
+          outra_funcao?: string | null
           status?: Database["public"]["Enums"]["profile_status"]
           suspenso_em?: string | null
           telefone?: string | null
@@ -118,9 +124,95 @@ export type Database = {
         }
         Returns: Json
       }
+      atualizar_membro_equipe: {
+        Args: {
+          p_funcao_interna: string
+          p_matricula: string
+          p_nome_completo: string
+          p_outra_funcao: string
+          p_telefone: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      bloquear_membro_equipe: {
+        Args: { p_motivo: string; p_user_id: string }
+        Returns: Json
+      }
+      cancelar_convite_equipe: {
+        Args: { p_invitation_id: string; p_motivo: string }
+        Returns: Json
+      }
       cancelar_solicitacao_acesso: {
         Args: { p_request_id: string }
         Returns: Json
+      }
+      completar_onboarding_equipe: {
+        Args: { p_aceite_termos: boolean }
+        Returns: Json
+      }
+      criar_convite_equipe: {
+        Args: {
+          p_email: string
+          p_funcao_interna: string
+          p_idempotency_key: string
+          p_justificativa: string
+          p_matricula: string
+          p_nome_completo: string
+          p_orgao_id: string
+          p_outra_funcao: string
+          p_telefone: string
+        }
+        Returns: Json
+      }
+      defensor_alterar_orgao_ativo: {
+        Args: {
+          p_expected_current_membership_id: string
+          p_idempotency_key: string
+          p_new_orgao_id: string
+        }
+        Returns: Json
+      }
+      encerrar_vinculo_membro: {
+        Args: { p_motivo: string; p_user_id: string }
+        Returns: Json
+      }
+      listar_convites_equipe: {
+        Args: { p_orgao_id?: string }
+        Returns: {
+          created_at: string
+          email: string
+          expires_at: string
+          funcao_interna: string
+          id: string
+          invited_by: string
+          matricula: string
+          nome_completo: string
+          orgao_execucao_id: string
+          outra_funcao: string
+          resend_count: number
+          sent_at: string
+          status: Database["public"]["Enums"]["team_invitation_status"]
+          telefone: string
+        }[]
+      }
+      listar_equipe: {
+        Args: { p_orgao_id?: string }
+        Returns: {
+          ativo: boolean
+          email: string
+          funcao_interna: string
+          matricula: string
+          membership_id: string
+          nome_completo: string
+          orgao_id: string
+          outra_funcao: string
+          status: Database["public"]["Enums"]["profile_status"]
+          telefone: string
+          ultimo_acesso: string
+          user_id: string
+          vinculado_em: string
+        }[]
       }
       listar_solicitacoes_acesso: {
         Args: {
@@ -146,9 +238,18 @@ export type Database = {
           version: number
         }[]
       }
+      meu_convite_pendente: { Args: never; Returns: Json }
       meu_estado_institucional: { Args: never; Returns: Json }
       promover_admin_tecnico: {
         Args: { p_justificativa: string; p_target_user_id: string }
+        Returns: Json
+      }
+      reativar_membro_equipe: {
+        Args: { p_motivo: string; p_user_id: string }
+        Returns: Json
+      }
+      reenviar_convite_equipe: {
+        Args: { p_invitation_id: string }
         Returns: Json
       }
       registrar_acesso_orgao_externo: {
@@ -163,6 +264,15 @@ export type Database = {
           p_prazo_minutos?: number
         }
         Returns: Json
+      }
+      registrar_envio_convite: {
+        Args: {
+          p_auth_user_id: string
+          p_failure_code: string
+          p_invitation_id: string
+          p_status: Database["public"]["Enums"]["team_invitation_status"]
+        }
+        Returns: undefined
       }
       rejeitar_solicitacao_acesso: {
         Args: { p_motivo: string; p_request_id: string; p_version: number }
@@ -204,6 +314,13 @@ export type Database = {
         | "ativo"
         | "suspenso"
         | "inativo"
+      team_invitation_status:
+        | "preparando"
+        | "enviado"
+        | "aceito"
+        | "expirado"
+        | "cancelado"
+        | "falhou"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -351,6 +468,14 @@ export const Constants = {
         "ativo",
         "suspenso",
         "inativo",
+      ],
+      team_invitation_status: [
+        "preparando",
+        "enviado",
+        "aceito",
+        "expirado",
+        "cancelado",
+        "falhou",
       ],
     },
   },

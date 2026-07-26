@@ -27,6 +27,7 @@ import {
   isAdmin,
   isAdminTecnico,
   isAdminInstitucionalStrict,
+  isDefensor,
   isAtivo,
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const tecnico = isAdminTecnico(estado);
   const institucional = isAdminInstitucionalStrict(estado);
+  const defensor = isDefensor(estado);
+  const ativo = isAtivo(estado);
 
   const groups = useMemo<NavGroup[]>(
     () => [
@@ -62,6 +65,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         label: null,
         items: [
           { to: "/painel", label: "Painel", icon: LayoutDashboard, visible: true },
+          {
+            to: "/minha-equipe",
+            label: "Minha equipe",
+            icon: UsersRound,
+            visible: (defensor || tecnico) && ativo,
+          },
+          {
+            to: "/alterar-orgao",
+            label: "Alterar órgão",
+            icon: Building2,
+            visible: defensor && ativo,
+          },
           {
             to: "/solicitar-acesso",
             label: "Solicitar acesso",

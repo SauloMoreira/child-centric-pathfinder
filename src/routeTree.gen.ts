@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AtivarConviteRouteImport } from './routes/ativar-convite'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSolicitarAcessoRouteImport } from './routes/_authenticated/solicitar-acesso'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedMinhaEquipeRouteImport } from './routes/_authenticated/minha-equipe'
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
+import { Route as AuthenticatedAlterarOrgaoRouteImport } from './routes/_authenticated/alterar-orgao'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAdminSolicitacoesRouteImport } from './routes/_authenticated/admin/solicitacoes'
@@ -50,6 +53,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AtivarConviteRoute = AtivarConviteRouteImport.update({
+  id: '/ativar-convite',
+  path: '/ativar-convite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -70,11 +78,23 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMinhaEquipeRoute =
+  AuthenticatedMinhaEquipeRouteImport.update({
+    id: '/minha-equipe',
+    path: '/minha-equipe',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
   id: '/conta',
   path: '/conta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAlterarOrgaoRoute =
+  AuthenticatedAlterarOrgaoRouteImport.update({
+    id: '/alterar-orgao',
+    path: '/alterar-orgao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -179,12 +199,15 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ativar-convite': typeof AtivarConviteRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
   '/conta': typeof AuthenticatedContaRoute
+  '/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/solicitar-acesso': typeof AuthenticatedSolicitarAcessoRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -205,12 +228,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ativar-convite': typeof AtivarConviteRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
   '/conta': typeof AuthenticatedContaRoute
+  '/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/solicitar-acesso': typeof AuthenticatedSolicitarAcessoRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -233,12 +259,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/ativar-convite': typeof AtivarConviteRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
   '/_authenticated/conta': typeof AuthenticatedContaRoute
+  '/_authenticated/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/solicitar-acesso': typeof AuthenticatedSolicitarAcessoRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -261,12 +290,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ativar-convite'
     | '/auth'
     | '/mcp'
     | '/redefinir-senha'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/alterar-orgao'
     | '/conta'
+    | '/minha-equipe'
     | '/painel'
     | '/solicitar-acesso'
     | '/.lovable/oauth/consent'
@@ -287,12 +319,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ativar-convite'
     | '/auth'
     | '/mcp'
     | '/redefinir-senha'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/alterar-orgao'
     | '/conta'
+    | '/minha-equipe'
     | '/painel'
     | '/solicitar-acesso'
     | '/.lovable/oauth/consent'
@@ -314,12 +349,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/ativar-convite'
     | '/auth'
     | '/mcp'
     | '/redefinir-senha'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/alterar-orgao'
     | '/_authenticated/conta'
+    | '/_authenticated/minha-equipe'
     | '/_authenticated/painel'
     | '/_authenticated/solicitar-acesso'
     | '/.lovable/oauth/consent'
@@ -342,6 +380,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AtivarConviteRoute: typeof AtivarConviteRoute
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
@@ -374,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ativar-convite': {
+      id: '/ativar-convite'
+      path: '/ativar-convite'
+      fullPath: '/ativar-convite'
+      preLoaderRoute: typeof AtivarConviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -402,11 +448,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/minha-equipe': {
+      id: '/_authenticated/minha-equipe'
+      path: '/minha-equipe'
+      fullPath: '/minha-equipe'
+      preLoaderRoute: typeof AuthenticatedMinhaEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/conta': {
       id: '/_authenticated/conta'
       path: '/conta'
       fullPath: '/conta'
       preLoaderRoute: typeof AuthenticatedContaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/alterar-orgao': {
+      id: '/_authenticated/alterar-orgao'
+      path: '/alterar-orgao'
+      fullPath: '/alterar-orgao'
+      preLoaderRoute: typeof AuthenticatedAlterarOrgaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/.well-known/oauth-protected-resource': {
@@ -532,7 +592,9 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAlterarOrgaoRoute: typeof AuthenticatedAlterarOrgaoRoute
   AuthenticatedContaRoute: typeof AuthenticatedContaRoute
+  AuthenticatedMinhaEquipeRoute: typeof AuthenticatedMinhaEquipeRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedSolicitarAcessoRoute: typeof AuthenticatedSolicitarAcessoRoute
   AuthenticatedAdminTecnicoAcessoEmergencialRoute: typeof AuthenticatedAdminTecnicoAcessoEmergencialRoute
@@ -551,7 +613,9 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAlterarOrgaoRoute: AuthenticatedAlterarOrgaoRoute,
   AuthenticatedContaRoute: AuthenticatedContaRoute,
+  AuthenticatedMinhaEquipeRoute: AuthenticatedMinhaEquipeRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedSolicitarAcessoRoute: AuthenticatedSolicitarAcessoRoute,
   AuthenticatedAdminTecnicoAcessoEmergencialRoute:
@@ -584,6 +648,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AtivarConviteRoute: AtivarConviteRoute,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
