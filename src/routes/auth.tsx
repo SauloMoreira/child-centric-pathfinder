@@ -11,7 +11,18 @@ import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 
 const authSearchSchema = z.object({
   modo: z.enum(["entrar", "cadastro", "recuperar"]).optional().default("entrar"),
+  // Caminho relativo de mesma origem para retorno após autenticação
+  // (usado pelo consentimento OAuth do servidor MCP).
+  next: z.string().optional(),
 });
+
+/** Aceita apenas caminhos relativos de mesma origem. */
+function caminhoSeguro(next: string | undefined): string | null {
+  if (!next) return null;
+  if (!next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -45,21 +56,24 @@ const nomeSchema = z
   .max(120);
 
 function AuthPage() {
-  const { modo } = useSearch({ from: "/auth" });
+  const { modo, next } = useSearch({ from: "/auth" });
   const navigate = useNavigate();
+  const retorno = caminhoSeguro(next);
 
-  // Se já estiver autenticado, mandar para /painel.
+  // Se já estiver autenticado, retornar ao destino solicitado ou ao painel.
   useEffect(() => {
     let alive = true;
     supabase.auth.getSession().then(({ data }) => {
       if (alive && data.session) {
-        navigate({ to: "/painel", replace: true });
+        if (retorno) window.location.replace(retorno);
+        else navigate({ to: "/painel", replace: true });
       }
     });
     return () => {
       alive = false;
     };
-  }, [navigate]);
+  }, [navigate, retorno]);
+
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -103,10 +117,14 @@ function AuthPage() {
               onValueChange={(v) =>
                 navigate({
                   to: "/auth",
-                  search: { modo: v as "entrar" | "cadastro" | "recuperar" },
+                  search: {
+                    modo: v as "entrar" | "cadastro" | "recuperar",
+                    next,
+                  },
                   replace: true,
                 })
               }
+
             >
               <TabsList className="w-full">
                 <TabsTrigger value="entrar" className="flex-1">Entrar</TabsTrigger>
@@ -135,6 +153,8 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { next } = useSearch({ from: "/auth" });
+  const retorno = caminhoSeguro(next);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -154,8 +174,13 @@ function SignInForm() {
       toast.error("Não foi possível entrar. Verifique suas credenciais.");
       return;
     }
+    if (retorno) {
+      window.location.replace(retorno);
+      return;
+    }
     navigate({ to: "/painel", replace: true });
   }
+
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -208,6 +233,8 @@ function SignUpForm() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const { next } = useSearch({ from: "/auth" });
+  const retorno = caminhoSeguro(next);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -224,10 +251,13 @@ function SignUpForm() {
       email: eR.data,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth`,
+        emailRedirectTo: retorno
+          ? `${window.location.origin}${retorno}`
+          : `${window.location.origin}/auth`,
         data: { nome_completo: nR.data },
       },
     });
+
     setLoading(false);
     if (error) {
       toast.error(

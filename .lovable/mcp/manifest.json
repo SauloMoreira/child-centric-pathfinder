@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://tihaprzjrjqiampwhcad.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "reintegra-infancia-mcp",
+      "version": "0.1.0",
+      "title": "Reintegra Infância — DPE-RS"
+    },
+    "tools": [
+      {
+        "name": "meu_estado_institucional",
+        "title": "Meu estado institucional",
+        "description": "Retorna o perfil, papéis e vínculos institucionais do usuário conectado no Reintegra.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_orgaos_execucao",
+        "title": "Listar órgãos de execução",
+        "description": "Lista os órgãos de execução visíveis para o usuário conectado, com busca opcional por nome ou comarca.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "busca": {
+              "description": "Texto para filtrar por nome ou comarca.",
+              "type": "string",
+              "maxLength": 120
+            },
+            "limite": {
+              "description": "Quantidade máxima de registros (padrão 50).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "criar_orgao_execucao",
+        "title": "Criar órgão de execução",
+        "description": "Cria um órgão de execução (nome + comarca). Exige papel administrativo e sessão com MFA; a criação é auditada.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "nome": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 180,
+              "description": "Nome do órgão de execução."
+            },
+            "comarca": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 120,
+              "description": "Comarca do órgão."
+            },
+            "idempotency_key": {
+              "description": "Chave de idempotência opcional (UUID).",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "nome",
+            "comarca"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_solicitacoes_acesso",
+        "title": "Listar solicitações de acesso",
+        "description": "Lista solicitações de acesso institucional pendentes ou já decididas. Restrito a perfis administrativos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtro por situação da solicitação.",
+              "type": "string",
+              "enum": [
+                "pendente",
+                "aprovada",
+                "rejeitada",
+                "cancelada"
+              ]
+            },
+            "limite": {
+              "description": "Máximo de registros.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
