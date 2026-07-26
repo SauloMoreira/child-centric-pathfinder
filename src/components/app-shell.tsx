@@ -44,6 +44,8 @@ import {
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarState } from "@/components/app-shell/sidebar-context";
+import { OperationalOrgSwitcher } from "@/components/app-shell/operational-org-switcher";
+
 
 type NavItem = {
   to: string;
