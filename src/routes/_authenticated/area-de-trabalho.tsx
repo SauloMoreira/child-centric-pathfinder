@@ -611,16 +611,19 @@ function AreaDeTrabalhoPage() {
                 "As colunas e filtros do quadro original serão copiadas."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="board-name">Nome do quadro</Label>
-            <Input
-              id="board-name"
-              value={boardNameInput}
-              maxLength={80}
-              onChange={(e) => setBoardNameInput(e.target.value)}
-              placeholder="Ex.: Prioridades da semana"
-              autoFocus
-            />
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="board-name">Nome do quadro</Label>
+              <Input
+                id="board-name"
+                value={boardNameInput}
+                maxLength={80}
+                onChange={(e) => setBoardNameInput(e.target.value)}
+                placeholder="Ex.: Prioridades da semana"
+                autoFocus
+              />
+            </div>
+            <WorkspaceIconPicker value={boardIconInput} onChange={setBoardIconInput} />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setBoardDialog(null)}>
@@ -633,22 +636,31 @@ function AreaDeTrabalhoPage() {
                   toast.error("Informe um nome com pelo menos 2 caracteres.");
                   return;
                 }
+                const icone = boardIconInput ?? null;
                 try {
                   if (boardDialog?.mode === "create") {
-                    const created = await boardMutations.criar.mutateAsync({ nome });
+                    const created = await boardMutations.criar.mutateAsync({ nome, icone });
                     setSelectedWorkspaceId(created.id);
                     toast.success("Quadro criado");
                   } else if (boardDialog?.mode === "rename") {
-                    await boardMutations.renomear.mutateAsync({
+                    await boardMutations.atualizarMeta.mutateAsync({
                       workspace_id: boardDialog.board.id,
                       nome,
+                      icone,
                     });
-                    toast.success("Quadro renomeado");
+                    toast.success("Quadro atualizado");
                   } else if (boardDialog?.mode === "duplicate") {
                     const created = await boardMutations.duplicar.mutateAsync({
                       workspace_id: boardDialog.board.id,
                       nome,
                     });
+                    if (icone) {
+                      await boardMutations.atualizarMeta.mutateAsync({
+                        workspace_id: created.id,
+                        nome,
+                        icone,
+                      });
+                    }
                     setSelectedWorkspaceId(created.id);
                     toast.success("Quadro duplicado");
                   }
@@ -661,13 +673,14 @@ function AreaDeTrabalhoPage() {
               }}
               disabled={
                 boardMutations.criar.isPending ||
-                boardMutations.renomear.isPending ||
+                boardMutations.atualizarMeta.isPending ||
                 boardMutations.duplicar.isPending
               }
             >
               Confirmar
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
