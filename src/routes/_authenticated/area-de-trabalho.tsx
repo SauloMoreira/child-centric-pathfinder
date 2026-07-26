@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
-  RefreshCcw,
   RotateCcw,
   Search as SearchIcon,
   MoreVertical,
@@ -11,7 +10,6 @@ import {
   Copy,
   Trash2,
   Pencil,
-  Loader2,
   Baby,
   UserRound,
   Scale,
