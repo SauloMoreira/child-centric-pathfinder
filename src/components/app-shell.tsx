@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         id: "operacional",
         label: null,
         items: [
-          { to: "/painel", label: "Painel", icon: LayoutDashboard, visible: true },
+          { to: "/area-de-trabalho", label: "Área de trabalho", icon: LayoutDashboard, visible: true },
           {
             to: "/minha-equipe",
             label: "Minha equipe",
@@ -153,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Navegação principal"
       >
         <div className="flex h-16 items-center border-b border-sidebar-border px-5">
-          <Link to="/painel" className="flex items-center gap-3">
+          <Link to="/area-de-trabalho" className="flex items-center gap-3">
             <div
               aria-hidden
               className="h-7 w-7 rounded-md bg-sidebar-accent"
