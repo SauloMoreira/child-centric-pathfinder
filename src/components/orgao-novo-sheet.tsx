@@ -182,7 +182,12 @@ export function OrgaoNovoSheet({
       toast.error(MFA_GUIDANCE_MESSAGE);
       return;
     }
-    mutation.mutate(values);
+    // Snap comarca to existing canonical when normalized value matches.
+    const norm = normalizeComarca(values.comarca);
+    const canonical =
+      comarcasSugeridas.find((c) => normalizeComarca(c) === norm) ??
+      values.comarca;
+    mutation.mutate({ ...values, comarca: canonical });
   });
 
   const defaultTrigger = isEdit ? (
