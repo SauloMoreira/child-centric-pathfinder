@@ -31,6 +31,7 @@ export function TecnicoPage({
   eyebrow = "Administração Técnica",
   description,
   requireAal2 = false,
+  action,
   children,
 }: Props) {
   const { data: estado, isLoading } = useEstadoInstitucional();
