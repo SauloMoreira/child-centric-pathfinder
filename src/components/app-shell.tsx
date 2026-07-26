@@ -9,12 +9,24 @@ import {
   ClipboardList,
   LogOut,
   ChevronRight,
+  Terminal,
+  Users,
+  UsersRound,
+  Link2,
+  Lock,
+  ScrollText,
+  Sliders,
+  Activity,
+  Globe2,
+  Siren,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   useEstadoInstitucional,
   isAdmin,
+  isAdminTecnico,
+  isAdminInstitucionalStrict,
   isAtivo,
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
@@ -26,6 +38,13 @@ type NavItem = {
   visible: boolean;
 };
 
+type NavGroup = {
+  id: string;
+  label: string | null;
+  variant?: "default" | "tecnica";
+  items: NavItem[];
+};
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: estado } = useEstadoInstitucional();
   const navigate = useNavigate();
@@ -33,40 +52,63 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouterState();
   const pathname = router.location.pathname;
 
-  const nav = useMemo<NavItem[]>(
+  const tecnico = isAdminTecnico(estado);
+  const institucional = isAdminInstitucionalStrict(estado);
+
+  const groups = useMemo<NavGroup[]>(
     () => [
       {
-        to: "/painel",
-        label: "Painel",
-        icon: LayoutDashboard,
-        visible: true,
+        id: "operacional",
+        label: null,
+        items: [
+          { to: "/painel", label: "Painel", icon: LayoutDashboard, visible: true },
+          {
+            to: "/solicitar-acesso",
+            label: "Solicitar acesso",
+            icon: ClipboardList,
+            visible: !isAtivo(estado),
+          },
+          { to: "/conta", label: "Minha conta", icon: UserCircle2, visible: true },
+        ],
       },
       {
-        to: "/solicitar-acesso",
-        label: "Solicitar acesso",
-        icon: ClipboardList,
-        visible: !isAtivo(estado),
+        id: "institucional",
+        label: "Administração Institucional",
+        items: [
+          {
+            to: "/admin/solicitacoes",
+            label: "Solicitações",
+            icon: ShieldCheck,
+            visible: institucional || tecnico,
+          },
+          {
+            to: "/admin/orgaos",
+            label: "Órgãos de execução",
+            icon: Building2,
+            visible: institucional || tecnico,
+          },
+        ],
       },
       {
-        to: "/conta",
-        label: "Minha conta",
-        icon: UserCircle2,
-        visible: true,
-      },
-      {
-        to: "/admin/solicitacoes",
-        label: "Solicitações",
-        icon: ShieldCheck,
-        visible: isAdmin(estado),
-      },
-      {
-        to: "/admin/orgaos",
-        label: "Órgãos de execução",
-        icon: Building2,
-        visible: isAdmin(estado),
+        id: "tecnica",
+        label: "Administração Técnica",
+        variant: "tecnica",
+        items: [
+          { to: "/admin-tecnico/painel", label: "Central técnica", icon: Terminal, visible: tecnico },
+          { to: "/admin-tecnico/usuarios", label: "Usuários", icon: Users, visible: tecnico },
+          { to: "/admin-tecnico/administradores", label: "Administradores", icon: UsersRound, visible: tecnico },
+          { to: "/admin-tecnico/orgaos", label: "Órgãos", icon: Building2, visible: tecnico },
+          { to: "/admin-tecnico/vinculos", label: "Vínculos", icon: Link2, visible: tecnico },
+          { to: "/admin-tecnico/seguranca", label: "Segurança", icon: Lock, visible: tecnico },
+          { to: "/admin-tecnico/auditoria", label: "Auditoria", icon: ScrollText, visible: tecnico },
+          { to: "/admin-tecnico/configuracoes", label: "Configurações", icon: Sliders, visible: tecnico },
+          { to: "/admin-tecnico/diagnosticos", label: "Diagnósticos", icon: Activity, visible: tecnico },
+          { to: "/admin-tecnico/acesso-global", label: "Acesso global", icon: Globe2, visible: tecnico },
+          { to: "/admin-tecnico/acesso-emergencial", label: "Acesso emergencial", icon: Siren, visible: tecnico },
+        ],
       },
     ],
-    [estado],
+    [estado, institucional, tecnico],
   );
 
   async function handleSignOut() {
@@ -85,6 +127,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase())
     .join("");
+
+  const modoTecnicoGlobal =
+    tecnico && pathname.startsWith("/admin-tecnico/");
 
   return (
     <div className="flex min-h-screen bg-canvas">
@@ -108,30 +153,50 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-0.5 p-3">
-          {nav
-            .filter((n) => n.visible)
-            .map((item) => {
-              const active =
-                pathname === item.to || pathname.startsWith(item.to + "/");
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                    active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden />
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {active && <ChevronRight className="h-4 w-4" aria-hidden />}
-                </Link>
-              );
-            })}
+        <nav className="flex-1 space-y-4 overflow-y-auto p-3">
+          {groups.map((group) => {
+            const visibleItems = group.items.filter((n) => n.visible);
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={group.id}>
+                {group.label && (
+                  <p
+                    className={cn(
+                      "px-3 pb-2 pt-1 font-mono text-[9px] uppercase tracking-[0.24em]",
+                      group.variant === "tecnica"
+                        ? "text-institutional"
+                        : "text-sidebar-muted",
+                    )}
+                  >
+                    {group.label}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {visibleItems.map((item) => {
+                    const active =
+                      pathname === item.to || pathname.startsWith(item.to + "/");
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={cn(
+                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                          active
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                        )}
+                      >
+                        <Icon className="h-4 w-4" aria-hidden />
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {active && <ChevronRight className="h-4 w-4" aria-hidden />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         <div className="border-t border-sidebar-border p-3">
@@ -145,7 +210,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm">{nome || "—"}</p>
               <p className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-sidebar-muted">
-                {estado?.orgao_ativo?.sigla ?? "sem vínculo ativo"}
+                {estado?.orgao_ativo?.sigla ??
+                  (tecnico ? "acesso técnico global" : "sem vínculo ativo")}
               </p>
             </div>
           </div>
@@ -169,13 +235,31 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm font-medium text-foreground">
               {estado?.orgao_ativo
                 ? `${estado.orgao_ativo.nome} · ${estado.orgao_ativo.sigla}`
-                : "Vínculo institucional pendente"}
+                : tecnico
+                  ? "Administrador Técnico — acesso global"
+                  : "Vínculo institucional pendente"}
             </p>
           </div>
           <div className="hidden items-center gap-3 sm:flex">
+            {tecnico && (
+              <span className="rounded-full border border-institutional/40 bg-institutional/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-institutional">
+                Admin técnico
+              </span>
+            )}
             <StatusChip estado={estado} />
           </div>
         </header>
+        {modoTecnicoGlobal && (
+          <div
+            role="status"
+            className="flex items-center gap-2 border-b border-institutional/40 bg-institutional/10 px-4 py-2 text-xs text-institutional lg:px-8"
+          >
+            <Siren className="h-3.5 w-3.5" aria-hidden />
+            <span className="font-mono uppercase tracking-[0.18em]">
+              Acesso técnico global ativo — todas as ações estão sendo auditadas.
+            </span>
+          </div>
+        )}
         <main className="flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
@@ -213,3 +297,5 @@ function StatusChip({
     </span>
   );
 }
+// isAdmin is imported for potential future gates in the shell; keeping helper alive.
+void isAdmin;
