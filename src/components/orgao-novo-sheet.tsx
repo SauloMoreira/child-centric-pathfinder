@@ -108,6 +108,7 @@ export function OrgaoNovoSheet({
   useEffect(() => {
     if (open) {
       setDuplicateId(null);
+      setMfaBlocked(false);
       if (!isEdit) setIdempotencyKey(crypto.randomUUID());
       form.reset({
         nome: orgao?.nome ?? "",
