@@ -1077,6 +1077,10 @@ export type Database = {
         Args: { p_motivo: string; p_request_id: string; p_version: number }
         Returns: Json
       }
+      remover_foto_assistido: {
+        Args: { p_assistido_id: string }
+        Returns: Json
+      }
       renomear_workspace: {
         Args: { p_nome: string; p_workspace_id: string }
         Returns: Json
