@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import {
   LayoutDashboard,
   UserCircle2,
@@ -19,9 +19,21 @@ import {
   Activity,
   Globe2,
   Siren,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Menu,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   useEstadoInstitucional,
   isAdmin,
@@ -31,6 +43,7 @@ import {
   isAtivo,
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
+import { SidebarProvider, useSidebarState } from "@/components/app-shell/sidebar-context";
 
 type NavItem = {
   to: string;
@@ -47,11 +60,22 @@ type NavGroup = {
 };
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <SidebarProvider>
+      <TooltipProvider delayDuration={200}>
+        <AppShellInner>{children}</AppShellInner>
+      </TooltipProvider>
+    </SidebarProvider>
+  );
+}
+
+function AppShellInner({ children }: { children: ReactNode }) {
   const { data: estado } = useEstadoInstitucional();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const router = useRouterState();
   const pathname = router.location.pathname;
+  const { collapsed, mobileOpen, setMobileOpen, isMobile } = useSidebarState();
 
   const tecnico = isAdminTecnico(estado);
   const institucional = isAdminInstitucionalStrict(estado);
@@ -62,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => [
       {
         id: "operacional",
-        label: null,
+        label: "Trabalho",
         items: [
           { to: "/area-de-trabalho", label: "Área de trabalho", icon: LayoutDashboard, visible: true },
           {
@@ -123,8 +147,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         ],
       },
     ],
-    [estado, institucional, tecnico],
+    [estado, institucional, tecnico, defensor, ativo],
   );
+
+  // Fecha o drawer mobile a cada navegação.
+  useEffect(() => {
+    if (mobileOpen) setMobileOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -143,117 +173,85 @@ export function AppShell({ children }: { children: ReactNode }) {
     .map((s) => s[0]?.toUpperCase())
     .join("");
 
-  const modoTecnicoGlobal =
-    tecnico && pathname.startsWith("/admin-tecnico/");
+  const modoTecnicoGlobal = tecnico && pathname.startsWith("/admin-tecnico/");
+  const papel = tecnico
+    ? "Admin técnico"
+    : institucional
+      ? "Admin institucional"
+      : defensor
+        ? "Defensor(a) público(a)"
+        : "Membro";
+
+  const sidebarNav = (
+    <SidebarNav
+      groups={groups}
+      pathname={pathname}
+      collapsed={collapsed && !isMobile}
+      onNavigate={() => setMobileOpen(false)}
+    />
+  );
+
+  const sidebarUserBlock = (
+    <SidebarUserBlock
+      collapsed={collapsed && !isMobile}
+      nome={nome}
+      initials={initials}
+      papel={papel}
+      comarca={estado?.orgao_ativo?.comarca ?? (tecnico ? "acesso técnico global" : "sem vínculo ativo")}
+      onSignOut={handleSignOut}
+    />
+  );
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      <aside
-        className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex"
-        aria-label="Navegação principal"
-      >
-        <div className="flex h-16 items-center border-b border-sidebar-border px-5">
-          <Link to="/area-de-trabalho" className="flex items-center gap-3">
-            <div
-              aria-hidden
-              className="h-7 w-7 rounded-md bg-sidebar-accent"
-              style={{ boxShadow: "inset 0 0 0 2px var(--color-institutional)" }}
-            />
-            <div className="leading-tight">
-              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-sidebar-muted">
-                DPE-RS
-              </p>
-              <p className="text-sm font-semibold">Reintegra Infância</p>
-            </div>
-          </Link>
-        </div>
+    <div className="flex min-h-dvh bg-canvas">
+      {/* Sidebar desktop */}
+      <DesktopSidebar>
+        <SidebarHeader collapsed={collapsed} />
+        {sidebarNav}
+        {sidebarUserBlock}
+      </DesktopSidebar>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto p-3">
-          {groups.map((group) => {
-            const visibleItems = group.items.filter((n) => n.visible);
-            if (visibleItems.length === 0) return null;
-            return (
-              <div key={group.id}>
-                {group.label && (
-                  <p
-                    className={cn(
-                      "px-3 pb-2 pt-1 font-mono text-[9px] uppercase tracking-[0.24em]",
-                      group.variant === "tecnica"
-                        ? "text-institutional"
-                        : "text-sidebar-muted",
-                    )}
-                  >
-                    {group.label}
-                  </p>
-                )}
-                <div className="space-y-0.5">
-                  {visibleItems.map((item) => {
-                    const active =
-                      pathname === item.to || pathname.startsWith(item.to + "/");
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        className={cn(
-                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                          active
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                        )}
-                      >
-                        <Icon className="h-4 w-4" aria-hidden />
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {active && <ChevronRight className="h-4 w-4" aria-hidden />}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-sidebar-border p-3">
-          <div className="flex items-center gap-3 rounded-md px-3 py-2 text-sm">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold"
-              aria-hidden
-            >
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm">{nome || "—"}</p>
-              <p className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-sidebar-muted">
-                {estado?.orgao_ativo?.comarca ??
-                  (tecnico ? "acesso técnico global" : "sem vínculo ativo")}
-              </p>
-            </div>
+      {/* Drawer mobile */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent
+          side="left"
+          className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+        >
+          <VisuallyHidden asChild>
+            <DialogPrimitive.Title>Navegação principal</DialogPrimitive.Title>
+          </VisuallyHidden>
+          <div className="flex h-full flex-col">
+            <SidebarHeader collapsed={false} mobile />
+            {sidebarNav}
+            {sidebarUserBlock}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSignOut}
-            className="mt-1 w-full justify-start gap-2 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          >
-            <LogOut className="h-4 w-4" aria-hidden /> Encerrar sessão
-          </Button>
-        </div>
-      </aside>
+        </SheetContent>
+      </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-8">
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-              Defensoria Pública do RS
-            </p>
-            <p className="truncate text-sm font-medium text-foreground">
-              {estado?.orgao_ativo
-                ? `${estado.orgao_ativo.nome}${estado.orgao_ativo.comarca ? ` · ${estado.orgao_ativo.comarca}` : ""}`
-                : tecnico
-                  ? "Administrador Técnico — acesso global"
-                  : "Vínculo institucional pendente"}
-            </p>
+        <header className="flex h-16 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              aria-label="Abrir menu lateral"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="h-5 w-5" aria-hidden />
+            </Button>
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+                Defensoria Pública do RS
+              </p>
+              <p className="truncate text-sm font-medium text-foreground">
+                {estado?.orgao_ativo
+                  ? `${estado.orgao_ativo.nome}${estado.orgao_ativo.comarca ? ` · ${estado.orgao_ativo.comarca}` : ""}`
+                  : tecnico
+                    ? "Administrador Técnico — acesso global"
+                    : "Vínculo institucional pendente"}
+              </p>
+            </div>
           </div>
           <div className="hidden items-center gap-3 sm:flex">
             {tecnico && (
@@ -277,6 +275,271 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         <main className="flex-1 overflow-x-hidden">{children}</main>
       </div>
+    </div>
+  );
+}
+
+function DesktopSidebar({ children }: { children: ReactNode }) {
+  const { collapsed } = useSidebarState();
+  return (
+    <aside
+      aria-label="Navegação principal"
+      data-collapsed={collapsed ? "true" : "false"}
+      className={cn(
+        "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex",
+        "transition-[width] duration-[160ms] ease-out motion-reduce:transition-none",
+        collapsed ? "w-[68px]" : "w-[232px]",
+      )}
+    >
+      {children}
+    </aside>
+  );
+}
+
+function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobile?: boolean }) {
+  const { toggleCollapsed } = useSidebarState();
+  const isMac =
+    typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const shortcut = isMac ? "⌘B" : "Ctrl+B";
+  const tooltip = collapsed ? "Expandir menu lateral" : "Recolher menu lateral";
+  return (
+    <div
+      className={cn(
+        "flex h-16 items-center border-b border-sidebar-border",
+        collapsed ? "justify-center px-2" : "justify-between gap-2 px-4",
+      )}
+    >
+      <Link
+        to="/area-de-trabalho"
+        className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}
+        aria-label="Reintegra Infância"
+      >
+        <span
+          aria-hidden
+          className="h-7 w-7 shrink-0 rounded-md bg-sidebar-accent"
+          style={{ boxShadow: "inset 0 0 0 2px var(--color-institutional)" }}
+        />
+        {!collapsed && (
+          <span className="min-w-0 leading-tight">
+            <span className="block font-mono text-[9px] uppercase tracking-[0.24em] text-sidebar-muted">
+              DPE-RS
+            </span>
+            <span className="block truncate text-sm font-semibold">Reintegra Infância</span>
+          </span>
+        )}
+      </Link>
+      {!mobile && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label={tooltip}
+              aria-expanded={!collapsed}
+              aria-controls="sidebar-nav"
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                collapsed && "mt-2",
+              )}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4" aria-hidden />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" aria-hidden />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {tooltip} — {shortcut}
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
+function SidebarNav({
+  groups,
+  pathname,
+  collapsed,
+  onNavigate,
+}: {
+  groups: NavGroup[];
+  pathname: string;
+  collapsed: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <nav
+      id="sidebar-nav"
+      className={cn(
+        "flex-1 overflow-y-auto",
+        collapsed ? "space-y-2 p-2" : "space-y-4 p-3",
+      )}
+    >
+      {groups.map((group, groupIdx) => {
+        const visibleItems = group.items.filter((n) => n.visible);
+        if (visibleItems.length === 0) return null;
+        return (
+          <div key={group.id} role="group" aria-label={group.label ?? undefined}>
+            {group.label && !collapsed && (
+              <p
+                className={cn(
+                  "px-3 pb-2 pt-1 font-mono text-[9px] uppercase tracking-[0.24em]",
+                  group.variant === "tecnica" ? "text-institutional" : "text-sidebar-muted",
+                )}
+              >
+                {group.label}
+              </p>
+            )}
+            {group.label && collapsed && groupIdx > 0 && (
+              <div className="mx-2 my-2 h-px bg-sidebar-border" aria-hidden />
+            )}
+            <div className={cn(collapsed ? "space-y-1" : "space-y-0.5")}>
+              {visibleItems.map((item) => (
+                <SidebarNavItem
+                  key={item.to}
+                  item={item}
+                  active={pathname === item.to || pathname.startsWith(item.to + "/")}
+                  collapsed={collapsed}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  active,
+  collapsed,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  collapsed: boolean;
+  onNavigate: () => void;
+}) {
+  const Icon = item.icon;
+  const link = (
+    <Link
+      to={item.to}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      aria-label={collapsed ? item.label : undefined}
+      className={cn(
+        "group relative flex items-center rounded-md text-sm transition-colors",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
+        collapsed ? "h-10 w-full justify-center px-0" : "gap-3 px-3 py-2",
+      )}
+    >
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-institutional"
+        />
+      )}
+      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+      {!collapsed && (
+        <>
+          <span className="flex-1 truncate">{item.label}</span>
+          {active && <ChevronRight className="h-4 w-4" aria-hidden />}
+        </>
+      )}
+    </Link>
+  );
+
+  if (!collapsed) return link;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{item.label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function SidebarUserBlock({
+  collapsed,
+  nome,
+  initials,
+  papel,
+  comarca,
+  onSignOut,
+}: {
+  collapsed: boolean;
+  nome: string;
+  initials: string;
+  papel: string;
+  comarca: string;
+  onSignOut: () => void;
+}) {
+  if (collapsed) {
+    return (
+      <div className="border-t border-sidebar-border p-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold"
+              aria-label={`${nome || "Usuário"} — ${papel}`}
+              role="img"
+            >
+              {initials}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <div className="text-xs">
+              <p className="font-medium">{nome || "—"}</p>
+              <p className="text-muted-foreground">{papel}</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onSignOut}
+              aria-label="Encerrar sessão"
+              className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <LogOut className="h-4 w-4" aria-hidden />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Encerrar sessão</TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
+  return (
+    <div className="border-t border-sidebar-border p-3">
+      <div className="flex items-center gap-3 rounded-md px-3 py-2 text-sm">
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold"
+          aria-hidden
+        >
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm">{nome || "—"}</p>
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-sidebar-muted">
+            {comarca}
+          </p>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onSignOut}
+        className="mt-1 w-full justify-start gap-2 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
+      >
+        <LogOut className="h-4 w-4" aria-hidden /> Encerrar sessão
+      </Button>
     </div>
   );
 }
