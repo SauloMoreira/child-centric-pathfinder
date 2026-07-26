@@ -199,10 +199,10 @@ export function useUpdateMember() {
       const { data, error } = await supabase.rpc("atualizar_membro_equipe", {
         p_user_id: input.userId,
         p_nome_completo: input.nomeCompleto,
-        p_matricula: input.matricula ?? null,
-        p_telefone: input.telefone ?? null,
+        p_matricula: (input.matricula ?? "") as string,
+        p_telefone: (input.telefone ?? "") as string,
         p_funcao_interna: input.funcaoInterna,
-        p_outra_funcao: input.outraFuncao ?? null,
+        p_outra_funcao: (input.outraFuncao ?? "") as string,
       });
       if (error) throw error;
       return data;
