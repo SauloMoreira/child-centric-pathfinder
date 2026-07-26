@@ -164,13 +164,25 @@ export function OrgaoNovoSheet({
         );
         return;
       }
+      if (isMfaError(msg)) {
+        setMfaBlocked(true);
+        toast.error(MFA_GUIDANCE_MESSAGE);
+        return;
+      }
       toast.error(
         msg || (isEdit ? "Falha ao atualizar órgão." : "Falha ao criar órgão."),
       );
     },
   });
 
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const onSubmit = form.handleSubmit((values) => {
+    if (mfaMissing) {
+      setMfaBlocked(true);
+      toast.error(MFA_GUIDANCE_MESSAGE);
+      return;
+    }
+    mutation.mutate(values);
+  });
 
   const defaultTrigger = isEdit ? (
     <Button variant="ghost" size="sm" className="gap-1.5">
