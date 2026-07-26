@@ -41,7 +41,9 @@ export type WorkspaceSummary = {
   id: string;
   orgao_execucao_id: string;
   nome: string;
+  icone: string | null;
   is_default: boolean;
+  order_position: number | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -52,6 +54,7 @@ export type WorkspacesList = {
   can_edit: boolean;
   workspaces: WorkspaceSummary[];
 };
+
 
 export type AssistidoCard = {
   id: string;
