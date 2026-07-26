@@ -152,9 +152,18 @@ function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mfaOpen, setMfaOpen] = useState(false);
   const navigate = useNavigate();
   const { next } = useSearch({ from: "/auth" });
   const retorno = caminhoSeguro(next);
+
+  function concluirRedirect() {
+    if (retorno) {
+      window.location.replace(retorno);
+      return;
+    }
+    navigate({ to: "/painel", replace: true });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -168,18 +177,24 @@ function SignInForm() {
       email: emailR.data,
       password,
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       // Mensagem genérica para não indicar existência de conta.
       toast.error("Não foi possível entrar. Verifique suas credenciais.");
       return;
     }
-    if (retorno) {
-      window.location.replace(retorno);
+    // Se o usuário possui fator MFA verificado, a sessão ainda está em AAL1.
+    // Solicitar step-up antes de concluir o login.
+    const precisa = await precisaStepUpMfa();
+    setLoading(false);
+    if (precisa) {
+      toast.message("Confirme seu código MFA para continuar.");
+      setMfaOpen(true);
       return;
     }
-    navigate({ to: "/painel", replace: true });
+    concluirRedirect();
   }
+
 
 
   return (
