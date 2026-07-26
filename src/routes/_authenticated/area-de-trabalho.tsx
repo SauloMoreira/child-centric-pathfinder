@@ -83,13 +83,40 @@ function AreaDeTrabalhoPage() {
   const [context] = useState<"orgao" | "todos_orgaos">("orgao");
   const orgaoId = estado?.orgao_ativo?.id ?? null;
 
+  // Lista de quadros do órgão + persistência da aba ativa
+  const { data: boards, isLoading: boardsLoading } = useWorkspacesList(orgaoId);
+  const storageKey = orgaoId ? `reintegra.ws.active.${orgaoId}` : null;
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!orgaoId || !boards) return;
+    const list = boards.workspaces ?? [];
+    if (list.length === 0) {
+      setSelectedWorkspaceId(null);
+      return;
+    }
+    const persisted = storageKey ? localStorage.getItem(storageKey) : null;
+    const existing = list.find((w) => w.id === selectedWorkspaceId);
+    const fromStorage = persisted ? list.find((w) => w.id === persisted) : null;
+    const fallback = list.find((w) => w.is_default) ?? list[0];
+    const next = existing ?? fromStorage ?? fallback;
+    if (next && next.id !== selectedWorkspaceId) setSelectedWorkspaceId(next.id);
+  }, [orgaoId, boards, storageKey, selectedWorkspaceId]);
+
+  useEffect(() => {
+    if (storageKey && selectedWorkspaceId) {
+      localStorage.setItem(storageKey, selectedWorkspaceId);
+    }
+  }, [storageKey, selectedWorkspaceId]);
+
   const {
     data: workspace,
     isLoading: wsLoading,
     refetch,
     isFetching,
-  } = useWorkspace(context, orgaoId);
+  } = useWorkspace(context, orgaoId, selectedWorkspaceId);
   const mutations = useWorkspaceMutations(context, orgaoId);
+  const boardMutations = useWorkspaceBoardMutations(orgaoId);
 
   // Estado local
   const [searchText, setSearchText] = useState("");
@@ -103,6 +130,14 @@ function AreaDeTrabalhoPage() {
   const [criancaOpen, setCriancaOpen] = useState(false);
   const [adultoOpen, setAdultoOpen] = useState(false);
   const [processoOpen, setProcessoOpen] = useState(false);
+  const [boardDialog, setBoardDialog] = useState<
+    | { mode: "create" }
+    | { mode: "rename"; board: WorkspaceSummary }
+    | { mode: "duplicate"; board: WorkspaceSummary }
+    | null
+  >(null);
+  const [boardNameInput, setBoardNameInput] = useState("");
+  const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<WorkspaceSummary | null>(null);
 
   const busca = useBuscaAssistidos(
     searchText.trim(),
