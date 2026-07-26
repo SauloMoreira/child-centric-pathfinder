@@ -133,7 +133,7 @@ function AreaDeTrabalhoPage() {
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingColumn, setEditingColumn] = useState<WorkspaceColumn | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<WorkspaceColumn | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmReset, setConfirmReset] = useState<WorkspaceSummary | null>(null);
   const [criancaOpen, setCriancaOpen] = useState(false);
   const [adultoOpen, setAdultoOpen] = useState(false);
   const [processoOpen, setProcessoOpen] = useState(false);
