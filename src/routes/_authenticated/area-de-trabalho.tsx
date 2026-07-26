@@ -278,10 +278,7 @@ function AreaDeTrabalhoPage() {
     <div className="flex min-h-full flex-col">
       {/* Header */}
       <div className="border-b border-border bg-surface px-4 py-5 lg:px-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-          Centro de trabalho institucional
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Área de trabalho</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Área de trabalho</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
           {" "}
         </p>
