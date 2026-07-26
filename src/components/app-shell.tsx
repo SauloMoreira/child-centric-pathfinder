@@ -96,10 +96,11 @@ function AppShellInner({ children }: { children: ReactNode }) {
             visible: (defensor || tecnico) && ativo,
           },
           {
-            to: "/alterar-orgao",
+            to: "/conta",
             label: "Alterar órgão",
             icon: Building2,
             visible: defensor && ativo,
+            hidden: true,
           },
           {
             to: "/solicitar-acesso",
