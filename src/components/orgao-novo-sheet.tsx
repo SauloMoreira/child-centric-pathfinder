@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Plus, AlertTriangle, Pencil, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ComarcaCombobox,
+  normalizeComarca,
+} from "@/components/comarca-combobox";
 
 import {
   Sheet,
