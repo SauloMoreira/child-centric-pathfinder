@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import {
+  MfaChallengeDialog,
+  precisaStepUpMfa,
+} from "@/components/mfa-challenge-dialog";
 
 const authSearchSchema = z.object({
   modo: z.enum(["entrar", "cadastro", "recuperar"]).optional().default("entrar"),
