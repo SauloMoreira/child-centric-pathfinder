@@ -4,17 +4,17 @@ import { ArrowRight, ShieldCheck, Users, LayoutDashboard } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Reintegra Infância — Defensoria Pública do RS" },
+      { title: "Reintegra" },
       {
         name: "description",
         content:
-          "Plataforma institucional da DPE-RS para acompanhamento child-centric de casos de reintegração familiar. Acesso restrito a servidores autorizados.",
+          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
       },
-      { property: "og:title", content: "Reintegra Infância — DPE-RS" },
+      { property: "og:title", content: "Reintegra" },
       {
         property: "og:description",
         content:
-          "Sistema institucional da Defensoria Pública do RS para casos de reintegração familiar.",
+          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
       },
     ],
   }),

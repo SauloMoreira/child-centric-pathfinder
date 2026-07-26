@@ -87,21 +87,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Reintegra Infância — DPE-RS" },
+      { title: "Reintegra" },
       {
         name: "description",
         content:
-          "Sistema institucional da Defensoria Pública do Estado do Rio Grande do Sul para acompanhamento centrado na criança de casos de reintegração familiar.",
+          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
       },
       { name: "author", content: "Defensoria Pública do Estado do Rio Grande do Sul" },
-      { property: "og:title", content: "Reintegra Infância — DPE-RS" },
+      { property: "og:title", content: "Reintegra" },
       {
         property: "og:description",
         content:
-          "Plataforma institucional child-centric para acompanhamento de casos de reintegração familiar.",
+          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Reintegra" },
+      { name: "twitter:description", content: "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
