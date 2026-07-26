@@ -232,7 +232,7 @@ function DialogAprovar({
   onDone,
 }: {
   solicitacao: Solicitacao;
-  orgaos: Array<{ id: string; nome: string; sigla: string }>;
+  orgaos: Array<{ id: string; nome: string; sigla: string | null }>;
   onClose: () => void;
   onDone: () => void;
 }) {
