@@ -39,7 +39,7 @@ export function useTeamMembers(orgaoId?: string | null) {
     queryKey: ["team-members", orgaoId ?? "own"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("listar_equipe", {
-        p_orgao_id: orgaoId ?? null,
+        p_orgao_id: (orgaoId ?? undefined) as string,
       });
       if (error) throw error;
       return (data ?? []) as TeamMember[];
