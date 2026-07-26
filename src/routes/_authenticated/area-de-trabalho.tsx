@@ -73,6 +73,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CadastrarCriancaSheet } from "@/components/assistidos/cadastrar-crianca-sheet";
 import { CadastrarAdultoSheet } from "@/components/assistidos/cadastrar-adulto-sheet";
 import { CadastrarProcessoSheet } from "@/components/processos/cadastrar-processo-sheet";
+import { WorkspaceIconPicker } from "@/components/workspace/workspace-icon-picker";
+import { getBoardIcon, isValidBoardIcon, type BoardIconId } from "@/lib/workspace/board-icons";
+
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
