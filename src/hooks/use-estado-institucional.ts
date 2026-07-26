@@ -1,8 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type OrgaoDisponivel = {
+  orgaoId: string;
+  membershipId: string | null;
+  nome: string;
+  comarca: string | null;
+  dataInicio: string | null;
+  selecionado: boolean;
+};
+
+export type ContextoOrgao = {
+  orgaoId: string;
+  nome: string;
+  comarca: string | null;
+  comarcas: Array<{ id: string; nome: string; principal: boolean }>;
+};
+
 export type EstadoInstitucional = {
   user_id: string;
+  papel:
+    | "admin_tecnico"
+    | "admin_institucional"
+    | "defensor_publico"
+    | "membro_equipe"
+    | null;
   profile: {
     nome_completo: string | null;
     matricula: string | null;
@@ -25,7 +47,13 @@ export type EstadoInstitucional = {
     | "membro_equipe"
   >;
   aal2: boolean;
+  acessoGlobal: boolean;
+  contextoAtual: ContextoOrgao | null;
+  contextVersion: number | null;
+  orgaosDisponiveis: OrgaoDisponivel[] | null;
+  /** @deprecated Use contextoAtual */
   orgao_ativo: { id: string; nome: string; comarca: string | null } | null;
+  /** @deprecated */
   membership: { id: string; dataInicio: string; status: "ativo" | "encerrado" } | null;
   comarcas: Array<{ id: string; nome: string; principal: boolean }>;
   solicitacao_aberta: {
@@ -50,27 +78,23 @@ export function useEstadoInstitucional() {
 }
 
 export function isAdminTecnico(estado?: EstadoInstitucional) {
-  return !!estado?.roles.includes("admin_tecnico");
+  return !!estado?.roles?.includes("admin_tecnico");
 }
 export function isAdmin(estado?: EstadoInstitucional) {
-  // Reconhece Administrador Institucional OU Administrador Técnico como
-  // administrador em áreas institucionais compartilhadas (solicitações, órgãos).
   return (
-    !!estado?.roles.includes("admin_institucional") ||
-    !!estado?.roles.includes("admin_tecnico")
+    !!estado?.roles?.includes("admin_institucional") ||
+    !!estado?.roles?.includes("admin_tecnico")
   );
 }
 export function isAdminInstitucionalStrict(estado?: EstadoInstitucional) {
-  return !!estado?.roles.includes("admin_institucional");
+  return !!estado?.roles?.includes("admin_institucional");
 }
 export function isDefensor(estado?: EstadoInstitucional) {
-  return !!estado?.roles.includes("defensor_publico");
+  return !!estado?.roles?.includes("defensor_publico");
 }
 export function isMembroEquipe(estado?: EstadoInstitucional) {
-  return !!estado?.roles.includes("membro_equipe");
+  return !!estado?.roles?.includes("membro_equipe");
 }
 export function isAtivo(estado?: EstadoInstitucional) {
-  // Administrador Técnico não é obrigado a manter vínculo com órgão; profile ativo basta.
   return estado?.profile?.status === "ativo" && estado.profile.ativo;
 }
-
