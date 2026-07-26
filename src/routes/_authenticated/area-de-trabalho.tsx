@@ -133,25 +133,37 @@ function AreaDeTrabalhoPage() {
     setFormOpen(true);
   }
 
-  async function handleSubmitForm(payload: Parameters<typeof mutations.create.mutateAsync>[0]) {
-    try {
-      if (formMode === "create") {
-        if (!workspaceId) throw new Error("Workspace não encontrado");
-        await mutations.create.mutateAsync({ ...payload, workspace_id: workspaceId });
-        toast.success("Coluna criada.");
-      } else if (editingColumn) {
-        await mutations.update.mutateAsync({
-          ...payload,
-          column_id: editingColumn.id,
-          version: editingColumn.version,
-        });
-        toast.success("Coluna atualizada.");
+  const handleSubmitForm: React.ComponentProps<typeof WorkspaceColumnForm>["onSubmit"] =
+    async (payload) => {
+      try {
+        if (formMode === "create") {
+          if (!workspaceId) throw new Error("Workspace não encontrado");
+          await mutations.create.mutateAsync({
+            workspace_id: workspaceId,
+            title: payload.title,
+            description: payload.description,
+            color_token: payload.color_token,
+            custom_color: payload.custom_color,
+            filter: payload.filter,
+          });
+          toast.success("Coluna criada.");
+        } else if (editingColumn) {
+          await mutations.update.mutateAsync({
+            column_id: editingColumn.id,
+            version: editingColumn.version,
+            title: payload.title,
+            description: payload.description,
+            color_token: payload.color_token,
+            custom_color: payload.custom_color,
+            filter: payload.filter,
+          });
+          toast.success("Coluna atualizada.");
+        }
+      } catch (e) {
+        toast.error((e as Error).message || "Não foi possível salvar a coluna.");
+        throw e;
       }
-    } catch (e) {
-      toast.error((e as Error).message || "Não foi possível salvar a coluna.");
-      throw e;
-    }
-  }
+    };
 
   async function moveColumn(col: WorkspaceColumn, direction: -1 | 1) {
     if (!workspaceId) return;
