@@ -211,8 +211,8 @@ function AppShellInner({ children }: { children: ReactNode }) {
       {/* Sidebar desktop */}
       <DesktopSidebar>
         <SidebarHeader collapsed={collapsed} />
-        {sidebarNav}
         {sidebarOrgBlock}
+        {sidebarNav}
         {sidebarUserBlock}
       </DesktopSidebar>
 
@@ -228,12 +228,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
-            {sidebarNav}
             {sidebarOrgBlock}
+            {sidebarNav}
             {sidebarUserBlock}
           </div>
         </SheetContent>
       </Sheet>
+
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-12 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden lg:px-8">
@@ -279,13 +280,13 @@ function SidebarOrgBlock({
 
   if (collapsed) {
     return (
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-b border-sidebar-border p-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
               onClick={toggleCollapsed}
-              aria-label={`Órgão em uso: ${nomeOrgao}. Expandir menu para trocar.`}
+              aria-label={`Defensoria Pública: ${nomeOrgao}. Expandir menu para trocar.`}
               className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               <Building2 className="h-4 w-4 text-institutional" aria-hidden />
@@ -294,7 +295,7 @@ function SidebarOrgBlock({
           <TooltipContent side="right">
             <div className="text-xs">
               <p className="font-mono uppercase tracking-[0.14em] text-muted-foreground">
-                Órgão em uso
+                Defensoria Pública
               </p>
               <p className="font-medium">{nomeOrgao}</p>
             </div>
@@ -305,17 +306,15 @@ function SidebarOrgBlock({
   }
 
   return (
-    <div className="border-t border-sidebar-border p-3">
+    <div className="border-b border-sidebar-border px-3 py-3">
       <p className="px-1 pb-1.5 font-mono text-[9px] uppercase tracking-[0.24em] text-sidebar-muted">
-        Órgão em uso
-      </p>
-      <p className="mb-2 px-1 truncate text-xs font-medium text-sidebar-foreground" title={nomeOrgao}>
-        {nomeOrgao}
+        Defensoria Pública
       </p>
       <OperationalOrgSwitcher />
     </div>
   );
 }
+
 
 function DesktopSidebar({ children }: { children: ReactNode }) {
   const { collapsed } = useSidebarState();

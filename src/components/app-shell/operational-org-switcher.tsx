@@ -80,7 +80,7 @@ export function OperationalOrgSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full flex-col gap-2">
       {tecnico && (
         <Badge
           variant="outline"
@@ -96,11 +96,11 @@ export function OperationalOrgSwitcher() {
           <Button
             variant="outline"
             size="sm"
-            className="h-9 gap-2 max-w-[280px]"
+            className="h-9 w-full justify-start gap-2 border-sidebar-border bg-sidebar-accent/30 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
             aria-label="Selecionar órgão de trabalho"
           >
-            <Building2 className="h-4 w-4 text-institutional" aria-hidden />
-            <span className="truncate">
+            <Building2 className="h-4 w-4 shrink-0 text-institutional" aria-hidden />
+            <span className="flex-1 truncate text-left">
               {contexto?.nome ??
                 (tecnico
                   ? "Selecionar órgão"
@@ -108,9 +108,10 @@ export function OperationalOrgSwitcher() {
                     ? "Sem vínculo"
                     : "Selecionar órgão")}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
           </Button>
         </PopoverTrigger>
+
         <PopoverContent align="end" className="w-[360px] p-0">
           <div className="border-b border-border p-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">

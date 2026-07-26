@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
@@ -15,11 +15,11 @@ import {
   Baby,
   UserRound,
   Scale,
-  Star,
-  LayoutGrid,
   Rows3,
   Columns3,
+  GripVertical,
 } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CadastrarCriancaSheet } from "@/components/assistidos/cadastrar-crianca-sheet";
 import { CadastrarAdultoSheet } from "@/components/assistidos/cadastrar-adulto-sheet";
 import { CadastrarProcessoSheet } from "@/components/processos/cadastrar-processo-sheet";
+import { WorkspaceIconPicker } from "@/components/workspace/workspace-icon-picker";
+import { getBoardIcon, isValidBoardIcon, type BoardIconId } from "@/lib/workspace/board-icons";
+
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
@@ -106,7 +109,7 @@ function AreaDeTrabalhoPage() {
     const persisted = storageKey ? localStorage.getItem(storageKey) : null;
     const existing = list.find((w) => w.id === selectedWorkspaceId);
     const fromStorage = persisted ? list.find((w) => w.id === persisted) : null;
-    const fallback = list.find((w) => w.is_default) ?? list[0];
+    const fallback = list[0];
     const next = existing ?? fromStorage ?? fallback;
     if (next && next.id !== selectedWorkspaceId) setSelectedWorkspaceId(next.id);
   }, [orgaoId, boards, storageKey, selectedWorkspaceId]);
@@ -145,7 +148,9 @@ function AreaDeTrabalhoPage() {
     | null
   >(null);
   const [boardNameInput, setBoardNameInput] = useState("");
+  const [boardIconInput, setBoardIconInput] = useState<BoardIconId | null>(null);
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<WorkspaceSummary | null>(null);
+
   const [layoutMode, setLayoutMode] = useState<"columns" | "rows">(() => {
     if (typeof window === "undefined") return "columns";
     const v = window.localStorage.getItem("reintegra.ws.layout");
@@ -408,39 +413,38 @@ function AreaDeTrabalhoPage() {
         onSelect={(id) => setSelectedWorkspaceId(id)}
         onCreate={() => {
           setBoardNameInput("");
+          setBoardIconInput(null);
           setBoardDialog({ mode: "create" });
         }}
         onRename={(b) => {
           setBoardNameInput(b.nome);
+          setBoardIconInput(isValidBoardIcon(b.icone) ? b.icone : null);
           setBoardDialog({ mode: "rename", board: b });
         }}
         onDuplicate={(b) => {
           setBoardNameInput(`${b.nome} (cópia)`);
+          setBoardIconInput(isValidBoardIcon(b.icone) ? b.icone : null);
           setBoardDialog({ mode: "duplicate", board: b });
         }}
-        onSetDefault={(b) => {
-          boardMutations.definirPadrao.mutate(b.id, {
-            onSuccess: () => toast.success("Quadro padrão atualizado"),
-            onError: (err) =>
-              toast.error("Não foi possível atualizar", {
-                description: err instanceof Error ? err.message : String(err),
-              }),
-          });
-        }}
         onDelete={(b) => setConfirmDeleteBoard(b)}
+        onReorder={(orderedIds) => {
+          boardMutations.reordenar.mutate(
+            { ordered_ids: orderedIds },
+            {
+              onError: (err: unknown) =>
+                toast.error("Não foi possível reordenar", {
+                  description: err instanceof Error ? err.message : String(err),
+                }),
+            },
+          );
+        }}
       />
 
       {/* Toolbar do quadro */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 lg:px-8">
         <div>
-          <h2 className="text-sm font-semibold">
-            {workspace?.nome ?? "Meu quadro"}
-            {workspace?.is_default && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                <Star className="h-3 w-3" aria-hidden /> Padrão
-              </span>
-            )}
-          </h2>
+          <h2 className="text-sm font-semibold">{workspace?.nome ?? "Meu quadro"}</h2>
+
           <p className="text-xs text-muted-foreground">
             {wsLoading ? "Carregando..." : `${columns.length} coluna(s)`} ·{" "}
             {tecnico
@@ -607,16 +611,19 @@ function AreaDeTrabalhoPage() {
                 "As colunas e filtros do quadro original serão copiadas."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="board-name">Nome do quadro</Label>
-            <Input
-              id="board-name"
-              value={boardNameInput}
-              maxLength={80}
-              onChange={(e) => setBoardNameInput(e.target.value)}
-              placeholder="Ex.: Prioridades da semana"
-              autoFocus
-            />
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="board-name">Nome do quadro</Label>
+              <Input
+                id="board-name"
+                value={boardNameInput}
+                maxLength={80}
+                onChange={(e) => setBoardNameInput(e.target.value)}
+                placeholder="Ex.: Prioridades da semana"
+                autoFocus
+              />
+            </div>
+            <WorkspaceIconPicker value={boardIconInput} onChange={setBoardIconInput} />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setBoardDialog(null)}>
@@ -629,22 +636,31 @@ function AreaDeTrabalhoPage() {
                   toast.error("Informe um nome com pelo menos 2 caracteres.");
                   return;
                 }
+                const icone = boardIconInput ?? null;
                 try {
                   if (boardDialog?.mode === "create") {
-                    const created = await boardMutations.criar.mutateAsync({ nome });
+                    const created = await boardMutations.criar.mutateAsync({ nome, icone });
                     setSelectedWorkspaceId(created.id);
                     toast.success("Quadro criado");
                   } else if (boardDialog?.mode === "rename") {
-                    await boardMutations.renomear.mutateAsync({
+                    await boardMutations.atualizarMeta.mutateAsync({
                       workspace_id: boardDialog.board.id,
                       nome,
+                      icone,
                     });
-                    toast.success("Quadro renomeado");
+                    toast.success("Quadro atualizado");
                   } else if (boardDialog?.mode === "duplicate") {
                     const created = await boardMutations.duplicar.mutateAsync({
                       workspace_id: boardDialog.board.id,
                       nome,
                     });
+                    if (icone) {
+                      await boardMutations.atualizarMeta.mutateAsync({
+                        workspace_id: created.id,
+                        nome,
+                        icone,
+                      });
+                    }
                     setSelectedWorkspaceId(created.id);
                     toast.success("Quadro duplicado");
                   }
@@ -657,13 +673,14 @@ function AreaDeTrabalhoPage() {
               }}
               disabled={
                 boardMutations.criar.isPending ||
-                boardMutations.renomear.isPending ||
+                boardMutations.atualizarMeta.isPending ||
                 boardMutations.duplicar.isPending
               }
             >
               Confirmar
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
@@ -715,8 +732,8 @@ function WorkspaceTabs({
   onCreate,
   onRename,
   onDuplicate,
-  onSetDefault,
   onDelete,
+  onReorder,
 }: {
   boards: WorkspaceSummary[];
   activeId: string | null;
@@ -725,9 +742,42 @@ function WorkspaceTabs({
   onCreate: () => void;
   onRename: (b: WorkspaceSummary) => void;
   onDuplicate: (b: WorkspaceSummary) => void;
-  onSetDefault: (b: WorkspaceSummary) => void;
   onDelete: (b: WorkspaceSummary) => void;
+  onReorder: (orderedIds: string[]) => void;
 }) {
+  const dragId = useRef<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    if (!canEdit) return;
+    dragId.current = id;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+  function handleDragOver(e: React.DragEvent, id: string) {
+    if (!canEdit || !dragId.current || dragId.current === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (overId !== id) setOverId(id);
+  }
+  function handleDrop(e: React.DragEvent, targetId: string) {
+    e.preventDefault();
+    const src = dragId.current;
+    dragId.current = null;
+    setOverId(null);
+    if (!canEdit || !src || src === targetId) return;
+    const ids = boards.map((b) => b.id);
+    const from = ids.indexOf(src);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    onReorder(ids);
+  }
+  function handleDragEnd() {
+    dragId.current = null;
+    setOverId(null);
+  }
+
   return (
     <div
       role="tablist"
@@ -736,16 +786,31 @@ function WorkspaceTabs({
     >
       {boards.map((b) => {
         const active = b.id === activeId;
+        const Icon = getBoardIcon(b.icone);
+        const isOver = overId === b.id;
         return (
           <div
             key={b.id}
+            draggable={canEdit}
+            onDragStart={(e) => handleDragStart(e, b.id)}
+            onDragOver={(e) => handleDragOver(e, b.id)}
+            onDrop={(e) => handleDrop(e, b.id)}
+            onDragEnd={handleDragEnd}
             className={cn(
               "group flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors",
               active
                 ? "border-primary/40 bg-primary/10 text-primary"
                 : "border-transparent hover:bg-muted",
+              isOver && "ring-2 ring-primary/60",
+              canEdit && "cursor-grab active:cursor-grabbing",
             )}
           >
+            {canEdit && (
+              <GripVertical
+                className="h-3 w-3 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-80"
+                aria-hidden
+              />
+            )}
             <button
               type="button"
               role="tab"
@@ -753,11 +818,8 @@ function WorkspaceTabs({
               onClick={() => onSelect(b.id)}
               className="flex items-center gap-1.5 font-medium"
             >
-              <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+              <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="max-w-[180px] truncate">{b.nome}</span>
-              {b.is_default && (
-                <Star className="h-3 w-3 fill-current text-warning" aria-label="Quadro padrão" />
-              )}
             </button>
             {canEdit && (
               <DropdownMenu>
@@ -772,20 +834,14 @@ function WorkspaceTabs({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => onRename(b)}>
-                    <Pencil className="mr-2 h-3.5 w-3.5" /> Renomear
+                    <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => onDuplicate(b)}>
                     <Copy className="mr-2 h-3.5 w-3.5" /> Duplicar
                   </DropdownMenuItem>
-                  {!b.is_default && (
-                    <DropdownMenuItem onSelect={() => onSetDefault(b)}>
-                      <Star className="mr-2 h-3.5 w-3.5" /> Definir como padrão
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive"
-                    disabled={b.is_default}
                     onSelect={() => onDelete(b)}
                   >
                     <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
@@ -809,6 +865,7 @@ function WorkspaceTabs({
     </div>
   );
 }
+
 
 function WorkspaceSkeleton() {
   return (

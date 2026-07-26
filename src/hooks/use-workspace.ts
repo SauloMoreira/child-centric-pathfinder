@@ -41,7 +41,9 @@ export type WorkspaceSummary = {
   id: string;
   orgao_execucao_id: string;
   nome: string;
+  icone: string | null;
   is_default: boolean;
+  order_position: number | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -52,6 +54,7 @@ export type WorkspacesList = {
   can_edit: boolean;
   workspaces: WorkspaceSummary[];
 };
+
 
 export type AssistidoCard = {
   id: string;
@@ -290,24 +293,26 @@ export function useWorkspaceBoardMutations(orgaoId: string | null) {
   };
 
   const criar = useMutation({
-    mutationFn: async (p: { nome: string }) => {
+    mutationFn: async (p: { nome: string; icone?: string | null }) => {
       if (!orgaoId) throw new Error("Órgão não selecionado.");
       const { data, error } = await supabase.rpc("criar_workspace", {
         p_orgao_id: orgaoId,
         p_nome: p.nome,
-      });
+        p_icone: p.icone ?? (undefined as unknown as string),
+      } as never);
       if (error) throw error;
       return data as unknown as { id: string; nome: string; orgao_execucao_id: string };
     },
     onSuccess: invalidate,
   });
 
-  const renomear = useMutation({
-    mutationFn: async (p: { workspace_id: string; nome: string }) => {
-      const { error } = await supabase.rpc("renomear_workspace", {
+  const atualizarMeta = useMutation({
+    mutationFn: async (p: { workspace_id: string; nome: string; icone?: string | null }) => {
+      const { error } = await supabase.rpc("atualizar_workspace_meta", {
         p_workspace_id: p.workspace_id,
         p_nome: p.nome,
-      });
+        p_icone: p.icone ?? (undefined as unknown as string),
+      } as never);
       if (error) throw error;
     },
     onSuccess: invalidate,
@@ -335,15 +340,18 @@ export function useWorkspaceBoardMutations(orgaoId: string | null) {
     onSuccess: invalidate,
   });
 
-  const definirPadrao = useMutation({
-    mutationFn: async (workspaceId: string) => {
-      const { error } = await supabase.rpc("definir_workspace_padrao", {
-        p_workspace_id: workspaceId,
-      });
+  const reordenar = useMutation({
+    mutationFn: async (p: { ordered_ids: string[] }) => {
+      if (!orgaoId) throw new Error("Órgão não selecionado.");
+      const { error } = await supabase.rpc("reordenar_workspaces", {
+        p_orgao_id: orgaoId,
+        p_ordered_ids: p.ordered_ids,
+      } as never);
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 
-  return { criar, renomear, excluir, duplicar, definirPadrao };
+  return { criar, atualizarMeta, excluir, duplicar, reordenar };
 }
+
