@@ -56,7 +56,8 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
   const matriculaAtual = (matricula || target?.matricula || "").trim();
   const matriculaValida = matriculaAtual.length >= 1 && matriculaAtual !== "N/D";
   const justificativaValida = !requerJustificativa || justificativa.trim().length >= 10;
-  const aal2Requerido = isAdminTecnico && estado?.aal2 === false;
+  // MFA não é exigido nesta fase — mantido apenas como sinalização informativa se necessário no futuro.
+  const aal2Requerido = false;
 
   const orgaosQ = useQuery({
     queryKey: ["orgaos-execucao-lista"],
@@ -92,8 +93,19 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success("Papel de Defensor Público atribuído com sucesso.");
+    onSuccess: (data: any) => {
+      const code = data?.code as string | undefined;
+      if (code === "ROLE_ASSIGNED_EMAIL_CONFIRMATION_PENDING") {
+        toast.success("Papel atribuído", {
+          description: "O acesso será liberado após a confirmação do e-mail.",
+        });
+      } else if (code === "DEFENDER_ROLE_ALREADY_ASSIGNED") {
+        toast.info("Atribuição já registrada", {
+          description: "Este usuário já é Defensor Público neste órgão.",
+        });
+      } else {
+        toast.success("Papel de Defensor Público atribuído com sucesso.");
+      }
       qc.invalidateQueries({ queryKey: ["admin-tecnico", "usuarios"] });
       qc.invalidateQueries({ queryKey: ["admin", "usuarios"] });
       reset();

@@ -25,8 +25,8 @@ export function traduzirErroAtribuicao(raw: string, correlationId?: string): {
     return { title: "Usuário não localizado", description: "O usuário informado não foi localizado." };
   if (msg.includes("EMAIL_NOT_CONFIRMED"))
     return { title: "E-mail pendente", description: "O usuário precisa confirmar o e-mail antes de receber acesso." };
-  if (msg.includes("INCOMPLETE_PROFILE"))
-    return { title: "Dados incompletos", description: "Complete os dados obrigatórios antes de atribuir o papel." };
+  if (msg.includes("TARGET_USER_INCOMPLETE") || msg.includes("INCOMPLETE_PROFILE"))
+    return { title: "Dados incompletos", description: "Complete os dados obrigatórios (nome e matrícula) antes de atribuir o papel." };
   if (msg.includes("ORGANIZATION_NOT_FOUND"))
     return { title: "Órgão inválido", description: "O órgão de execução não foi localizado." };
   if (msg.includes("USER_ALREADY_DEFENDER"))
