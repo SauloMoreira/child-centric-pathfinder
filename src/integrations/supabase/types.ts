@@ -581,10 +581,10 @@ export type Database = {
       }
       create_workspace_column: {
         Args: {
-          p_color_token: string
-          p_custom_color: string
-          p_description: string
-          p_filter: Json
+          p_color_token?: string
+          p_custom_color?: string
+          p_description?: string
+          p_filter?: Json
           p_title: string
           p_workspace_id: string
         }
@@ -762,11 +762,11 @@ export type Database = {
       }
       update_workspace_column: {
         Args: {
-          p_color_token: string
+          p_color_token?: string
           p_column_id: string
-          p_custom_color: string
-          p_description: string
-          p_filter: Json
+          p_custom_color?: string
+          p_description?: string
+          p_filter?: Json
           p_title: string
           p_version: number
         }
