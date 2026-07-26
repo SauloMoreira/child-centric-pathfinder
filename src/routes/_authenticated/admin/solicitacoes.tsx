@@ -232,7 +232,7 @@ function DialogAprovar({
   onDone,
 }: {
   solicitacao: Solicitacao;
-  orgaos: Array<{ id: string; nome: string; sigla: string }>;
+  orgaos: Array<{ id: string; nome: string; sigla: string | null }>;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -327,7 +327,7 @@ function DialogAprovar({
                 <SelectContent>
                   {orgaos.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
-                      {o.sigla} — {o.nome}
+                      {o.sigla ?? "—"} — {o.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>

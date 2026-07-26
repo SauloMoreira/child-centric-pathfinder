@@ -14,6 +14,7 @@ type Props = {
   description?: string;
   /** Se true, exige AAL2 além do papel admin_tecnico. */
   requireAal2?: boolean;
+  action?: ReactNode;
   children: ReactNode;
 };
 
@@ -30,6 +31,7 @@ export function TecnicoPage({
   eyebrow = "Administração Técnica",
   description,
   requireAal2 = false,
+  action,
   children,
 }: Props) {
   const { data: estado, isLoading } = useEstadoInstitucional();
@@ -87,21 +89,24 @@ export function TecnicoPage({
 
   return (
     <div className="p-6 lg:p-8">
-      <header className="mb-6 flex items-start gap-3">
-        <div className="mt-1 rounded-md bg-institutional/10 p-2 text-institutional">
-          <Terminal className="h-4 w-4" aria-hidden />
-        </div>
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-institutional">
-            {eyebrow}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h1>
-          {description && (
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {description}
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 rounded-md bg-institutional/10 p-2 text-institutional">
+            <Terminal className="h-4 w-4" aria-hidden />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-institutional">
+              {eyebrow}
             </p>
-          )}
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h1>
+            {description && (
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                {description}
+              </p>
+            )}
+          </div>
         </div>
+        {action && <div className="shrink-0">{action}</div>}
       </header>
       {children}
     </div>
