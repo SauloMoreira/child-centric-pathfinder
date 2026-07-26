@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
@@ -15,11 +15,11 @@ import {
   Baby,
   UserRound,
   Scale,
-  Star,
-  LayoutGrid,
   Rows3,
   Columns3,
+  GripVertical,
 } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
