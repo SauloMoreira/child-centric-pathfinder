@@ -278,9 +278,60 @@ function AreaDeTrabalhoPage() {
             <Button type="submit" disabled={searchText.trim().length < 2}>
               Buscar
             </Button>
+            <TooltipProvider delayDuration={200}>
+              <div className="ml-1 flex items-center gap-1 border-l border-border pl-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setCriancaOpen(true)}
+                      aria-label="Cadastrar criança ou adolescente"
+                    >
+                      <Baby className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cadastrar criança ou adolescente</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setAdultoOpen(true)}
+                      aria-label="Cadastrar adulto assistido"
+                    >
+                      <UserRound className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cadastrar adulto assistido</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setProcessoOpen(true)}
+                      aria-label="Cadastrar processo judicial"
+                    >
+                      <Scale className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cadastrar processo judicial</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
         </form>
       </div>
+
+      <CadastrarCriancaSheet open={criancaOpen} onOpenChange={setCriancaOpen} orgaoId={orgaoId} />
+      <CadastrarAdultoSheet open={adultoOpen} onOpenChange={setAdultoOpen} orgaoId={orgaoId} />
+      <CadastrarProcessoSheet open={processoOpen} onOpenChange={setProcessoOpen} orgaoId={orgaoId} />
+
 
       {/* Resultados da busca */}
       {searchActive && (
