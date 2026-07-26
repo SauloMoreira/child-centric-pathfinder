@@ -234,7 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </p>
             <p className="truncate text-sm font-medium text-foreground">
               {estado?.orgao_ativo
-                ? `${estado.orgao_ativo.nome} · ${estado.orgao_ativo.sigla}`
+                ? `${estado.orgao_ativo.nome}${estado.orgao_ativo.comarca ? ` · ${estado.orgao_ativo.comarca}` : ""}`
                 : tecnico
                   ? "Administrador Técnico — acesso global"
                   : "Vínculo institucional pendente"}
