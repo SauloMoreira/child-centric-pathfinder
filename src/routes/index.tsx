@@ -36,7 +36,7 @@ function PublicLanding() {
               <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
                 DPE-RS
               </p>
-              <p className="text-sm font-semibold">Reintegra Infância</p>
+              <p className="text-sm font-semibold">Reintegra</p>
             </div>
           </div>
           <Link
