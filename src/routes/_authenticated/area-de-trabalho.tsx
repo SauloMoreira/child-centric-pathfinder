@@ -1023,9 +1023,15 @@ function BoardColumn({
           </div>
         ) : (
           (data?.items ?? []).map((c) => (
-            <WorkspaceCard key={c.id} data={c} onClick={() => onOpenCard(c)} />
+            <div
+              key={c.id}
+              className={cn(layout === "rows" && "w-72 shrink-0")}
+            >
+              <WorkspaceCard data={c} onClick={() => onOpenCard(c)} />
+            </div>
           ))
         )}
+
       </div>
     </div>
   );
