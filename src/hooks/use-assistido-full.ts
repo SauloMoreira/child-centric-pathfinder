@@ -17,6 +17,7 @@ export type AssistidoRecord = {
   categoria: string | null;
   observacoes: string | null;
   foto_url: string | null;
+  foto_path: string | null;
 };
 
 export type VinculoRow = {
