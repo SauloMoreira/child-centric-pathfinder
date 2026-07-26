@@ -76,6 +76,7 @@ export function WorkspaceCard({
   );
   const prazoVencido = prazoDias != null && prazoDias < 0;
   const prazoProximo = prazoDias != null && prazoDias >= 0 && prazoDias <= 7;
+  const fotoUrl = useAssistidoFotoUrl(data.foto_url, data.foto_path);
 
   return (
     <TooltipProvider delayDuration={300}>
