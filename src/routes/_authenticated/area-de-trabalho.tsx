@@ -148,7 +148,9 @@ function AreaDeTrabalhoPage() {
     | null
   >(null);
   const [boardNameInput, setBoardNameInput] = useState("");
+  const [boardIconInput, setBoardIconInput] = useState<BoardIconId | null>(null);
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<WorkspaceSummary | null>(null);
+
   const [layoutMode, setLayoutMode] = useState<"columns" | "rows">(() => {
     if (typeof window === "undefined") return "columns";
     const v = window.localStorage.getItem("reintegra.ws.layout");
