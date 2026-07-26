@@ -153,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Navegação principal"
       >
         <div className="flex h-16 items-center border-b border-sidebar-border px-5">
-          <Link to="/painel" className="flex items-center gap-3">
+          <Link to="/area-de-trabalho" className="flex items-center gap-3">
             <div
               aria-hidden
               className="h-7 w-7 rounded-md bg-sidebar-accent"
