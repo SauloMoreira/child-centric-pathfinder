@@ -1,0 +1,183 @@
+import { AlertCircle, Baby, Clock, Home, Scale, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { AssistidoCard } from "@/hooks/use-workspace";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+const SITUACAO_LABEL: Record<string, string> = {
+  familia_natural: "Família natural",
+  familia_extensa: "Família extensa",
+  familia_substituta: "Família substituta",
+  acolhimento_institucional: "Acolh. institucional",
+  acolhimento_familiar: "Acolh. familiar",
+  guarda_provisoria: "Guarda provisória",
+  adocao_acompanhamento: "Adoção acompanhada",
+  situacao_rua: "Situação de rua",
+  nao_informado: "Não informado",
+  outro: "Outro",
+};
+
+function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  const d = new Date(iso + "T00:00:00");
+  const now = new Date();
+  return Math.round((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("");
+}
+
+export function WorkspaceCard({
+  data,
+  onClick,
+}: {
+  data: AssistidoCard;
+  onClick?: () => void;
+}) {
+  const prazoDias = daysUntil(
+    data.prazo_processo_mais_proximo ?? data.prazo_providencia_mais_proximo,
+  );
+  const prazoVencido = prazoDias != null && prazoDias < 0;
+  const prazoProximo = prazoDias != null && prazoDias >= 0 && prazoDias <= 7;
+
+  return (
+    <TooltipProvider delayDuration={300}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "group w-full rounded-md border border-border bg-canvas p-3 text-left text-sm transition",
+          "hover:border-institutional/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-institutional/50",
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs font-semibold text-muted-foreground">
+            {data.foto_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={data.foto_url}
+                alt=""
+                className="h-full w-full rounded-md object-cover"
+              />
+            ) : (
+              initials(data.nome_completo)
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-foreground">
+              {data.nome_social || data.nome_completo}
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Baby className="h-3 w-3" aria-hidden />
+              {data.idade} anos · {data.faixa_etaria === "crianca" ? "Criança" : "Adolescente"}
+            </p>
+          </div>
+          {(prazoVencido || prazoProximo) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    "inline-flex h-6 w-6 items-center justify-center rounded-full",
+                    prazoVencido
+                      ? "bg-destructive/15 text-destructive"
+                      : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+                  )}
+                  aria-label={prazoVencido ? "Prazo vencido" : "Prazo próximo"}
+                >
+                  <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {prazoVencido
+                  ? `Prazo vencido há ${Math.abs(prazoDias!)} dias`
+                  : `Prazo em ${prazoDias} dias`}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center rounded border border-border bg-surface px-1.5 py-0.5">
+            {SITUACAO_LABEL[data.situacao_atual] ?? data.situacao_atual}
+          </span>
+          {data.entidade_acolhimento && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                  <Home className="h-3 w-3" aria-hidden />
+                  {data.tempo_acolhimento_dias ?? 0}d
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{data.entidade_acolhimento}</TooltipContent>
+            </Tooltip>
+          )}
+          {data.processos_ativos > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                  <Scale className="h-3 w-3" aria-hidden />
+                  {data.processos_ativos}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {data.processos_ativos} processo(s) ativo(s)
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {data.providencias_pendentes > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                  <Clock className="h-3 w-3" aria-hidden />
+                  {data.providencias_pendentes}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {data.providencias_pendentes} providência(s) pendente(s)
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {data.total_irmaos > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                  <Users className="h-3 w-3" aria-hidden />
+                  {data.total_irmaos}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{data.total_irmaos} irmão(s) cadastrado(s)</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </button>
+    </TooltipProvider>
+  );
+}
+
+export function WorkspaceCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-md border border-border bg-canvas p-3">
+      <div className="flex items-start gap-3">
+        <div className="h-9 w-9 rounded-md bg-muted" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-3/4 rounded bg-muted" />
+          <div className="h-2 w-1/2 rounded bg-muted" />
+        </div>
+      </div>
+      <div className="mt-3 flex gap-1.5">
+        <div className="h-4 w-16 rounded bg-muted" />
+        <div className="h-4 w-10 rounded bg-muted" />
+      </div>
+    </div>
+  );
+}
