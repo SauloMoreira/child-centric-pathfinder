@@ -146,7 +146,7 @@ function AreaDeTrabalhoPage() {
     searchActive && searchText.trim().length >= 2,
   );
 
-  if (estadoLoading || wsLoading) {
+  if (estadoLoading || (boardsLoading && !boards)) {
     return <WorkspaceSkeleton />;
   }
 
