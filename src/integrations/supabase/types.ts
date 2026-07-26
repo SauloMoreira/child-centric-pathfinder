@@ -933,6 +933,10 @@ export type Database = {
             }
             Returns: Json
           }
+      defensor_autovincular_orgao: {
+        Args: { p_idempotency_key?: string; p_orgao_id: string }
+        Returns: Json
+      }
       definir_workspace_padrao: {
         Args: { p_workspace_id: string }
         Returns: Json
