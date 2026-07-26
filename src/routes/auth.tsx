@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import {
+  MfaChallengeDialog,
+  precisaStepUpMfa,
+} from "@/components/mfa-challenge-dialog";
 
 const authSearchSchema = z.object({
   modo: z.enum(["entrar", "cadastro", "recuperar"]).optional().default("entrar"),
@@ -60,15 +64,17 @@ function AuthPage() {
   const navigate = useNavigate();
   const retorno = caminhoSeguro(next);
 
-  // Se já estiver autenticado, retornar ao destino solicitado ou ao painel.
+  // Se já estiver autenticado, retornar ao destino solicitado ou ao painel —
+  // exceto quando a sessão precisa concluir o step-up MFA (AAL2).
   useEffect(() => {
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (alive && data.session) {
-        if (retorno) window.location.replace(retorno);
-        else navigate({ to: "/painel", replace: true });
-      }
-    });
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!alive || !data.session) return;
+      if (await precisaStepUpMfa()) return; // deixa o SignInForm oferecer o desafio
+      if (retorno) window.location.replace(retorno);
+      else navigate({ to: "/painel", replace: true });
+    })();
     return () => {
       alive = false;
     };
@@ -152,9 +158,18 @@ function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mfaOpen, setMfaOpen] = useState(false);
   const navigate = useNavigate();
   const { next } = useSearch({ from: "/auth" });
   const retorno = caminhoSeguro(next);
+
+  function concluirRedirect() {
+    if (retorno) {
+      window.location.replace(retorno);
+      return;
+    }
+    navigate({ to: "/painel", replace: true });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -168,61 +183,75 @@ function SignInForm() {
       email: emailR.data,
       password,
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       // Mensagem genérica para não indicar existência de conta.
       toast.error("Não foi possível entrar. Verifique suas credenciais.");
       return;
     }
-    if (retorno) {
-      window.location.replace(retorno);
+    // Se o usuário possui fator MFA verificado, a sessão ainda está em AAL1.
+    // Solicitar step-up antes de concluir o login.
+    const precisa = await precisaStepUpMfa();
+    setLoading(false);
+    if (precisa) {
+      toast.message("Confirme seu código MFA para continuar.");
+      setMfaOpen(true);
       return;
     }
-    navigate({ to: "/painel", replace: true });
+    concluirRedirect();
   }
 
 
+
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="email">E-mail institucional</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          maxLength={255}
-        />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="password">Senha</Label>
-          <Link
-            to="/auth"
-            search={{ modo: "recuperar" }}
-            className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Esqueci minha senha
-          </Link>
+    <>
+      <form onSubmit={onSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail institucional</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            maxLength={255}
+          />
         </div>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={1}
-          maxLength={128}
-        />
-      </div>
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-        Entrar
-      </Button>
-    </form>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Senha</Label>
+            <Link
+              to="/auth"
+              search={{ modo: "recuperar" }}
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={1}
+            maxLength={128}
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+          Entrar
+        </Button>
+      </form>
+      <MfaChallengeDialog
+        open={mfaOpen}
+        onOpenChange={setMfaOpen}
+        signOutOnCancel
+        onSuccess={concluirRedirect}
+      />
+    </>
   );
 }
 

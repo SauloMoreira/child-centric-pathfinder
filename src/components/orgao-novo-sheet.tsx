@@ -7,6 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { Loader2, Plus, AlertTriangle, Pencil, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { ComarcaCombobox, normalizeComarca } from "@/components/comarca-combobox";
+import { MfaChallengeDialog } from "@/components/mfa-challenge-dialog";
 
 import {
   Sheet,
@@ -88,15 +89,20 @@ export function OrgaoNovoSheet({
   const [open, setOpen] = useState(false);
   const [duplicateId, setDuplicateId] = useState<string | null>(null);
   const [mfaBlocked, setMfaBlocked] = useState(false);
+  const [mfaChallengeOpen, setMfaChallengeOpen] = useState(false);
+  const [hasVerifiedFactor, setHasVerifiedFactor] = useState<boolean | null>(
+    null,
+  );
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
     crypto.randomUUID(),
   );
   const qc = useQueryClient();
-  const { data: estado } = useEstadoInstitucional();
+  const { data: estado, refetch: refetchEstado } = useEstadoInstitucional();
   const isEdit = mode === "edit" && !!orgao;
   const requiresMfa = isAdminTecnico(estado) && !isEdit;
   const hasAal2 = !!estado?.aal2;
   const mfaMissing = requiresMfa && !hasAal2;
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(orgaoSchema),
@@ -117,6 +123,30 @@ export function OrgaoNovoSheet({
       });
     }
   }, [open, isEdit, orgao, form]);
+
+  // Ao abrir o sheet com bloqueio de MFA, descobrir se o usuário já tem
+  // fator TOTP verificado para decidir entre "Confirmar MFA" vs "Configurar".
+  useEffect(() => {
+    if (!open || !mfaMissing) {
+      setHasVerifiedFactor(null);
+      return;
+    }
+    let alive = true;
+    supabase.auth.mfa.listFactors().then(({ data, error }) => {
+      if (!alive) return;
+      if (error) {
+        setHasVerifiedFactor(false);
+        return;
+      }
+      setHasVerifiedFactor(
+        (data?.totp ?? []).some((f) => f.status === "verified"),
+      );
+    });
+    return () => {
+      alive = false;
+    };
+  }, [open, mfaMissing]);
+
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -303,20 +333,34 @@ export function OrgaoNovoSheet({
                     MFA obrigatório para esta operação
                   </p>
                   <p className="text-muted-foreground">
-                    {MFA_GUIDANCE_MESSAGE}
+                    {hasVerifiedFactor
+                      ? "Confirme seu código MFA para continuar. Sua sessão ainda não está elevada (AAL2)."
+                      : "Configure a autenticação em dois fatores para executar esta ação."}
                   </p>
-                  <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                  >
-                    <Link to="/conta">Configurar MFA em Minha conta</Link>
-                  </Button>
+                  {hasVerifiedFactor ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setMfaChallengeOpen(true)}
+                    >
+                      Confirmar MFA agora
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Link to="/conta">Configurar MFA em Minha conta</Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             </section>
           )}
+
 
           <SheetFooter className="gap-2">
             <Button
@@ -349,6 +393,14 @@ export function OrgaoNovoSheet({
           </SheetFooter>
         </form>
       </SheetContent>
+      <MfaChallengeDialog
+        open={mfaChallengeOpen}
+        onOpenChange={setMfaChallengeOpen}
+        onSuccess={() => {
+          void refetchEstado();
+          qc.invalidateQueries({ queryKey: ["estado-institucional"] });
+        }}
+      />
     </Sheet>
   );
 }
