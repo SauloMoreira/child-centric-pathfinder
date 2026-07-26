@@ -913,6 +913,10 @@ export type Database = {
         }
         Returns: Json
       }
+      criar_workspace: {
+        Args: { p_nome: string; p_orgao_id: string }
+        Returns: Json
+      }
       defensor_alterar_orgao_ativo:
         | {
             Args: {
@@ -929,7 +933,15 @@ export type Database = {
             }
             Returns: Json
           }
+      definir_workspace_padrao: {
+        Args: { p_workspace_id: string }
+        Returns: Json
+      }
       delete_workspace_column: { Args: { p_column_id: string }; Returns: Json }
+      duplicar_workspace: {
+        Args: { p_nome?: string; p_workspace_id: string }
+        Returns: Json
+      }
       duplicate_workspace_column: {
         Args: { p_column_id: string }
         Returns: Json
@@ -939,6 +951,7 @@ export type Database = {
         Returns: Json
       }
       ensure_default_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
+      excluir_workspace: { Args: { p_workspace_id: string }; Returns: Json }
       get_workspace_column_assistidos: {
         Args: { p_column_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
@@ -1008,7 +1021,11 @@ export type Database = {
           version: number
         }[]
       }
-      listar_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
+      listar_workspace: {
+        Args: { p_orgao_id?: string; p_workspace_id?: string }
+        Returns: Json
+      }
+      listar_workspaces_orgao: { Args: { p_orgao_id?: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
       meu_estado_institucional: { Args: never; Returns: Json }
       promover_admin_tecnico: {
@@ -1047,6 +1064,10 @@ export type Database = {
       }
       rejeitar_solicitacao_acesso: {
         Args: { p_motivo: string; p_request_id: string; p_version: number }
+        Returns: Json
+      }
+      renomear_workspace: {
+        Args: { p_nome: string; p_workspace_id: string }
         Returns: Json
       }
       reorder_workspace_columns: {

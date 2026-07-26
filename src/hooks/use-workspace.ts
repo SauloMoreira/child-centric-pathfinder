@@ -31,8 +31,26 @@ export type WorkspaceCompat = {
   workspace_id: string | null;
   context: "orgao";
   orgao_id: string | null;
+  nome: string | null;
+  is_default: boolean;
   columns: WorkspaceColumn[];
   can_edit: boolean;
+};
+
+export type WorkspaceSummary = {
+  id: string;
+  orgao_execucao_id: string;
+  nome: string;
+  is_default: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WorkspacesList = {
+  orgao_execucao_id: string;
+  can_edit: boolean;
+  workspaces: WorkspaceSummary[];
 };
 
 export type AssistidoCard = {
@@ -68,25 +86,57 @@ async function ensureWorkspace(orgaoId: string | null) {
   if (error) throw error;
 }
 
-export function useWorkspace(_context: "orgao" | "todos_orgaos" = "orgao", orgaoId: string | null = null) {
-  const qc = useQueryClient();
-  return useQuery<WorkspaceCompat>({
-    queryKey: ["workspace", orgaoId],
+export function useWorkspacesList(orgaoId: string | null) {
+  return useQuery<WorkspacesList>({
+    queryKey: ["workspaces-list", orgaoId],
     queryFn: async () => {
       await ensureWorkspace(orgaoId);
-      const { data, error } = await supabase.rpc("listar_workspace", {
+      const { data, error } = await supabase.rpc("listar_workspaces_orgao", {
         p_orgao_id: orgaoId ?? (undefined as unknown as string),
       });
+      if (error) throw error;
+      const d = data as unknown as WorkspacesList;
+      return {
+        orgao_execucao_id: d.orgao_execucao_id,
+        can_edit: d.can_edit ?? false,
+        workspaces: d.workspaces ?? [],
+      };
+    },
+    staleTime: 30_000,
+    enabled: !!orgaoId,
+  });
+}
+
+export function useWorkspace(
+  _context: "orgao" | "todos_orgaos" = "orgao",
+  orgaoId: string | null = null,
+  workspaceId: string | null = null,
+) {
+  const qc = useQueryClient();
+  return useQuery<WorkspaceCompat>({
+    queryKey: ["workspace", orgaoId, workspaceId],
+    queryFn: async () => {
+      await ensureWorkspace(orgaoId);
+      const params: Record<string, unknown> = {
+        p_orgao_id: orgaoId ?? (undefined as unknown as string),
+      };
+      if (workspaceId) params.p_workspace_id = workspaceId;
+      const { data, error } = await supabase.rpc(
+        "listar_workspace",
+        params as never,
+      );
       if (error) throw error;
       const d = data as unknown as WorkspaceData;
       const compat: WorkspaceCompat = {
         workspace_id: d.workspace?.id ?? null,
         context: "orgao",
         orgao_id: d.workspace?.orgao_execucao_id ?? orgaoId,
+        nome: d.workspace?.nome ?? null,
+        is_default: d.workspace?.is_default ?? false,
         columns: d.columns ?? [],
         can_edit: d.can_edit ?? false,
       };
-      qc.setQueryData(["workspace", orgaoId], compat);
+      qc.setQueryData(["workspace", orgaoId, workspaceId], compat);
       return compat;
     },
     staleTime: 30_000,
@@ -141,9 +191,12 @@ type ColumnFormPayload = {
   filter: FilterDefinition;
 };
 
-export function useWorkspaceMutations(context: "orgao" | "todos_orgaos", orgaoId: string | null) {
+export function useWorkspaceMutations(_context: "orgao" | "todos_orgaos", orgaoId: string | null) {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["workspace", context, orgaoId] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["workspace", orgaoId] });
+    qc.invalidateQueries({ queryKey: ["workspaces-list", orgaoId] });
+  };
   const invalidateColumns = () => qc.invalidateQueries({ queryKey: ["workspace-column"] });
 
   const create = useMutation({
@@ -227,4 +280,70 @@ export function useWorkspaceMutations(context: "orgao" | "todos_orgaos", orgaoId
   });
 
   return { create, update, remove, duplicate, reorder, reset };
+}
+
+export function useWorkspaceBoardMutations(orgaoId: string | null) {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["workspaces-list", orgaoId] });
+    qc.invalidateQueries({ queryKey: ["workspace", orgaoId] });
+  };
+
+  const criar = useMutation({
+    mutationFn: async (p: { nome: string }) => {
+      if (!orgaoId) throw new Error("Órgão não selecionado.");
+      const { data, error } = await supabase.rpc("criar_workspace", {
+        p_orgao_id: orgaoId,
+        p_nome: p.nome,
+      });
+      if (error) throw error;
+      return data as unknown as { id: string; nome: string; orgao_execucao_id: string };
+    },
+    onSuccess: invalidate,
+  });
+
+  const renomear = useMutation({
+    mutationFn: async (p: { workspace_id: string; nome: string }) => {
+      const { error } = await supabase.rpc("renomear_workspace", {
+        p_workspace_id: p.workspace_id,
+        p_nome: p.nome,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
+  const excluir = useMutation({
+    mutationFn: async (workspaceId: string) => {
+      const { error } = await supabase.rpc("excluir_workspace", {
+        p_workspace_id: workspaceId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
+  const duplicar = useMutation({
+    mutationFn: async (p: { workspace_id: string; nome?: string | null }) => {
+      const { data, error } = await supabase.rpc("duplicar_workspace", {
+        p_workspace_id: p.workspace_id,
+        p_nome: p.nome ?? (undefined as unknown as string),
+      });
+      if (error) throw error;
+      return data as unknown as { id: string; nome: string };
+    },
+    onSuccess: invalidate,
+  });
+
+  const definirPadrao = useMutation({
+    mutationFn: async (workspaceId: string) => {
+      const { error } = await supabase.rpc("definir_workspace_padrao", {
+        p_workspace_id: workspaceId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
+  return { criar, renomear, excluir, duplicar, definirPadrao };
 }
