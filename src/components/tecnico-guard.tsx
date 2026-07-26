@@ -14,6 +14,7 @@ type Props = {
   description?: string;
   /** Se true, exige AAL2 além do papel admin_tecnico. */
   requireAal2?: boolean;
+  action?: ReactNode;
   children: ReactNode;
 };
 
