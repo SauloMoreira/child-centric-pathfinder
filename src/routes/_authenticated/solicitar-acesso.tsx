@@ -133,7 +133,7 @@ function SolicitarAcesso() {
             }
           : null,
       p_aceite_termos: true,
-    });
+    } as never);
     setSubmitting(false);
     if (error) {
       toast.error(error.message || "Falha ao enviar solicitação.");
