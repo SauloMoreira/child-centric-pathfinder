@@ -519,14 +519,26 @@ function AreaDeTrabalhoPage() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto bg-canvas p-4 lg:p-6">
-        <div className="grid grid-flow-col auto-cols-[320px] gap-4">
+      <div
+        className={cn(
+          "flex-1 bg-canvas p-4 lg:p-6",
+          layoutMode === "columns" ? "overflow-x-auto" : "overflow-y-auto",
+        )}
+      >
+        <div
+          className={cn(
+            layoutMode === "columns"
+              ? "grid grid-flow-col auto-cols-[320px] gap-4"
+              : "flex flex-col gap-4",
+          )}
+        >
           {columns.map((col, idx) => (
             <BoardColumn
               key={col.id}
               column={col}
               index={idx}
               total={columns.length}
+              layout={layoutMode}
               onOpenCard={(c) => setDrawerCard(c)}
               onEdit={() => openEdit(col)}
               onDelete={() => setConfirmDelete(col)}
@@ -536,6 +548,7 @@ function AreaDeTrabalhoPage() {
           ))}
         </div>
       </div>
+
 
       <WorkspaceColumnForm
         open={formOpen}
