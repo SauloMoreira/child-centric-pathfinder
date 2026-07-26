@@ -60,6 +60,7 @@ export type AssistidoCard = {
   id: string;
   nome_completo: string;
   nome_social: string | null;
+  data_nascimento?: string | null;
   idade: number;
   faixa_etaria: "crianca" | "adolescente";
   sexo_registral: string;
