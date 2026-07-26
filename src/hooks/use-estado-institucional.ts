@@ -26,12 +26,15 @@ export type EstadoInstitucional = {
   >;
   aal2: boolean;
   orgao_ativo: { id: string; nome: string; comarca: string | null } | null;
+  membership: { id: string; dataInicio: string; status: "ativo" | "encerrado" } | null;
+  comarcas: Array<{ id: string; nome: string; principal: boolean }>;
   solicitacao_aberta: {
     id: string;
     status: "pendente" | "em_analise";
     version: number;
     created_at: string;
   } | null;
+  is_admin_tecnico?: boolean;
 };
 
 export function useEstadoInstitucional() {
