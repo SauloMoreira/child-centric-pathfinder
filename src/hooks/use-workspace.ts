@@ -51,7 +51,7 @@ export type AssistidoCard = {
 async function ensureWorkspace(context: "orgao" | "todos_orgaos", orgaoId: string | null) {
   const { error } = await supabase.rpc("ensure_default_workspace", {
     p_context: context,
-    p_orgao_id: orgaoId,
+    p_orgao_id: orgaoId ?? undefined,
   });
   if (error) throw error;
 }
@@ -64,7 +64,7 @@ export function useWorkspace(context: "orgao" | "todos_orgaos" = "orgao", orgaoI
       await ensureWorkspace(context, orgaoId);
       const { data, error } = await supabase.rpc("listar_workspace", {
         p_context: context,
-        p_orgao_id: orgaoId,
+        p_orgao_id: orgaoId ?? undefined,
       });
       if (error) throw error;
       const result = data as unknown as WorkspaceData;
@@ -100,9 +100,9 @@ export function useBuscaAssistidos(text: string, filter: FilterDefinition | null
     queryKey: ["workspace-search", text, filter, orgaoId],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("buscar_assistidos", {
-        p_text: text || null,
+        p_text: text || undefined,
         p_filter: (filter ?? { version: 1, text: null, conditions: [] }) as unknown as never,
-        p_orgao_id: orgaoId,
+        p_orgao_id: orgaoId ?? undefined,
         p_limit: 20,
         p_offset: 0,
       });
@@ -133,9 +133,9 @@ export function useWorkspaceMutations(context: "orgao" | "todos_orgaos", orgaoId
       const { error } = await supabase.rpc("create_workspace_column", {
         p_workspace_id: p.workspace_id,
         p_title: p.title,
-        p_description: p.description,
+        p_description: p.description ?? "",
         p_color_token: p.color_token,
-        p_custom_color: p.custom_color,
+        p_custom_color: p.custom_color ?? "",
         p_filter: p.filter as unknown as never,
       });
       if (error) throw error;
@@ -152,9 +152,9 @@ export function useWorkspaceMutations(context: "orgao" | "todos_orgaos", orgaoId
         p_column_id: p.column_id,
         p_version: p.version,
         p_title: p.title,
-        p_description: p.description,
+        p_description: p.description ?? "",
         p_color_token: p.color_token,
-        p_custom_color: p.custom_color,
+        p_custom_color: p.custom_color ?? "",
         p_filter: p.filter as unknown as never,
       });
       if (error) throw error;
