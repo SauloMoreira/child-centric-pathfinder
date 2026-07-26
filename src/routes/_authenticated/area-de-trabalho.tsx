@@ -413,39 +413,38 @@ function AreaDeTrabalhoPage() {
         onSelect={(id) => setSelectedWorkspaceId(id)}
         onCreate={() => {
           setBoardNameInput("");
+          setBoardIconInput(null);
           setBoardDialog({ mode: "create" });
         }}
         onRename={(b) => {
           setBoardNameInput(b.nome);
+          setBoardIconInput(isValidBoardIcon(b.icone) ? b.icone : null);
           setBoardDialog({ mode: "rename", board: b });
         }}
         onDuplicate={(b) => {
           setBoardNameInput(`${b.nome} (cópia)`);
+          setBoardIconInput(isValidBoardIcon(b.icone) ? b.icone : null);
           setBoardDialog({ mode: "duplicate", board: b });
         }}
-        onSetDefault={(b) => {
-          boardMutations.definirPadrao.mutate(b.id, {
-            onSuccess: () => toast.success("Quadro padrão atualizado"),
-            onError: (err) =>
-              toast.error("Não foi possível atualizar", {
-                description: err instanceof Error ? err.message : String(err),
-              }),
-          });
-        }}
         onDelete={(b) => setConfirmDeleteBoard(b)}
+        onReorder={(orderedIds) => {
+          boardMutations.reordenar.mutate(
+            { ordered_ids: orderedIds },
+            {
+              onError: (err: unknown) =>
+                toast.error("Não foi possível reordenar", {
+                  description: err instanceof Error ? err.message : String(err),
+                }),
+            },
+          );
+        }}
       />
 
       {/* Toolbar do quadro */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 lg:px-8">
         <div>
-          <h2 className="text-sm font-semibold">
-            {workspace?.nome ?? "Meu quadro"}
-            {workspace?.is_default && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                <Star className="h-3 w-3" aria-hidden /> Padrão
-              </span>
-            )}
-          </h2>
+          <h2 className="text-sm font-semibold">{workspace?.nome ?? "Meu quadro"}</h2>
+
           <p className="text-xs text-muted-foreground">
             {wsLoading ? "Carregando..." : `${columns.length} coluna(s)`} ·{" "}
             {tecnico
