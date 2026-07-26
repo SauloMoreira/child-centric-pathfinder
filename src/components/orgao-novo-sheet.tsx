@@ -393,6 +393,14 @@ export function OrgaoNovoSheet({
           </SheetFooter>
         </form>
       </SheetContent>
+      <MfaChallengeDialog
+        open={mfaChallengeOpen}
+        onOpenChange={setMfaChallengeOpen}
+        onSuccess={() => {
+          void refetchEstado();
+          qc.invalidateQueries({ queryKey: ["estado-institucional"] });
+        }}
+      />
     </Sheet>
   );
 }
