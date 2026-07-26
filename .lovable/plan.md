@@ -1,84 +1,125 @@
-# Fase 2 — Gestão de Equipe e Vínculos Institucionais
 
-## Diagnóstico da Fase 1 (preservado)
+# Plano — Área de trabalho (Kanban Intelligence Workspace)
 
-Migrations existentes vão até `20260726164601` (14 arquivos). Estruturas relevantes:
+Entrega em ciclo único, mas organizada em 5 blocos sequenciais dentro deste ciclo. Cada bloco depende do anterior.
 
-- `public.profiles` — perfis (status: `aguardando_dados|aguardando_aprovacao|ativo|suspenso|inativo`)
-- `public.orgaos_execucao` — órgãos (nome, comarca, normalizados)
-- `private.user_roles` — papéis (`admin_tecnico|admin_institucional|defensor_publico|membro_equipe`)
-- `private.user_org_memberships` — vínculos, com índice único parcial 1 ativo/usuário ✅
-- `private.audit_events` — auditoria append-only
-- `private.access_requests` — solicitações
-- Funções: `tem_papel`, `private.is_admin_tecnico`, `current_user_is_admin`, `current_user_has_aal2`, RPCs de aprovação e criação de órgão
+## Bloco 1 — Modelo de dados de assistidos (crianças e adolescentes)
 
-Rotas: `_authenticated/{painel,conta,solicitar-acesso,admin/*,admin-tecnico/*}`. **Não existe** `/minha-equipe` nem `/alterar-orgao`.
+Migration `0015_assistidos_schema.sql` criando:
 
-**Reuso:** `user_org_memberships`, `user_roles`, `audit_events`, `profiles`, funções de autorização. **Sem MFA** em operações ordinárias de Defensor.
+**Tabelas em `public`:**
+- `assistidos` — id, nome_completo, nome_social, data_nascimento, sexo_registral, genero, foto_url, situacao_atual (enum), orgao_execucao_id (FK), created_at/by, updated_at/by, deleted_at (soft delete), search_document (tsvector).
+- `assistido_acolhimentos` — id, assistido_id, entidade_nome, tipo (institucional/familiar), data_ingresso, data_saida, data_reavaliacao, motivo_encerramento, ativo (bool).
+- `assistido_processos` — id, assistido_id, numero_processo, tipo, situacao (enum), prioridade, prazo_proximo (date).
+- `assistido_familiares` — id, assistido_id, nome, parentesco (enum), assistido_pela_dpe (bool), responsavel (bool).
+- `assistido_providencias` — id, assistido_id, descricao, responsavel_user_id, prazo, concluida_em.
+- `assistido_updates_log` — timestamps derivados para "sem atualização há X dias".
 
-## Escopo
+**Enums:** `situacao_atual_enum`, `tipo_acolhimento_enum`, `situacao_processo_enum`, `parentesco_enum`, `prioridade_enum`.
 
-### Backend (7 migrations novas, continuando de 0015+)
+**Índices:** GIN em `search_document`, btree em `orgao_execucao_id`, `situacao_atual`, `data_nascimento`; parciais para `acolhimento_ativo` e `prazo_vencido`.
 
-1. **Enum + tabela de convites** — `team_invitation_status`, colunas `funcao_interna`, `outra_funcao` em `profiles`; `private.team_invitations` com idempotência, expiração, sem token/senha
-2. **Funções de segurança** — `private.current_active_org_id()`, `is_defensor_publico()`, `is_membro_equipe()`, `user_can_manage_team_member(uuid)`, `user_can_access_org(uuid)`
-3. **RPCs de equipe:**
-   - `submit_team_invitation` — chamada pela edge function após validar duplicidade
-   - `complete_team_member_onboarding(p_invitation_id)` — ativação em transação
-   - `resend_team_invitation(p_id)` — rate-limited
-   - `cancel_team_invitation(p_id, p_motivo)`
-   - `block_team_member(p_user_id, p_motivo)`, `reactivate_team_member`, `end_team_membership`
-   - `update_team_member(p_user_id, dados)`
-4. **RPC alteração órgão Defensor** — `defensor_change_active_org(p_new_orgao_id, p_expected_membership_id, p_idempotency_key)` sem exigência de AAL2
-5. **RLS** — políticas para Defensor ver equipe do próprio órgão, Admin Técnico global, membro só a si mesmo; GRANTs
-6. **Índices/constraints** — únicos parciais em convites pendentes (orgão+email)
-7. **Auditoria** — expandir catálogo de eventos
+**View materializada leve** `public.v_assistidos_card` — projeção pronta para o Kanban (idade calculada, tempo_acolhimento_dias, acolhimento_ativo, processos_ativos, prazo_mais_proximo, ultima_atualizacao). Refresh via trigger nos filhos.
 
-### Edge Function
+**RLS:** SELECT restrito a `orgao_execucao_id = private.current_active_org_id()` OU `private.is_admin_tecnico()`. Sem INSERT/UPDATE via API nesta fase (dados fictícios criados por seed).
 
-- `supabase/functions/invite-team-member/` — valida JWT, determina órgão pelo backend (nunca do frontend p/ Defensor), verifica duplicidade, chama `supabase.auth.admin.inviteUserByEmail`, grava convite. Secrets: `SUPABASE_SERVICE_ROLE_KEY` (já existe).
+**Seed:** 40 assistidos fictícios distribuídos em 2 órgãos, com acolhimentos, processos, familiares e providências variadas para exercitar todos os filtros.
 
-### Frontend
+## Bloco 2 — Modelo de workspaces personalizáveis
 
-**Rotas novas:**
-- `/_authenticated/minha-equipe` — Kanban Command Center (4 colunas)
-- `/_authenticated/alterar-orgao` — fluxo de mudança de órgão do Defensor
-- `/ativar-convite` (público) — captura sessão pós-magic-link, chama `complete_team_member_onboarding`
+Migration `0016_workspaces.sql`:
 
-**Componentes:**
-- `team-kanban-board.tsx`, `team-member-card.tsx`, `team-member-drawer.tsx`
-- `add-team-member-sheet.tsx` (form Zod, sem campo de órgão)
-- `team-list-view.tsx` (alternativa Kanban↔lista)
-- `change-org-flow.tsx` com card de impacto
-- Hooks: `use-team-members`, `use-team-invitations`, `use-invite-team-member`, `use-change-org`
+- `private.user_workspaces` — id, user_id, orgao_execucao_id (null=global), context_type ('orgao'|'todos_orgaos'), nome, timestamps. UNIQUE(user_id, orgao_execucao_id, context_type).
+- `private.user_workspace_columns` — id, workspace_id, title, description, color_token (enum), custom_color (nullable, validado #rrggbb), filter_definition jsonb, position int, is_base_column bool, version, timestamps. UNIQUE(workspace_id, position) DEFERRABLE.
+- Constraint: apenas 1 `is_base_column=true` por workspace (unique index parcial).
 
-**Navegação:** adicionar "Minha equipe" na sidebar para Defensor/Admin Técnico; "Alterar órgão" no menu da conta para Defensor.
+**RLS:** tudo restrito a `user_id = auth.uid()`. Admin técnico não edita workspaces alheios.
 
-### Segurança
+**Grants + audit hooks.**
 
-- Zod compartilhado cliente+servidor
-- Rate limit em `resend_team_invitation` (min. 60s entre reenvios, max 5/dia)
-- Mapeamento de códigos de erro em `src/lib/team-errors.ts`
-- Sem `service_role` no bundle; toda mutação privilegiada via edge function ou RPC SECURITY DEFINER
-- Alteração de órgão do Defensor: **sem MFA** (operação ordinária)
-- Admin Técnico criando membro em qualquer órgão: exige justificativa + auditoria (sem MFA para não bloquear operação)
+## Bloco 3 — Motor de filtros seguro (allowlist)
 
-## Fora do escopo
+Migration `0017_workspace_rpcs.sql`:
 
-- Convite em massa (Fase 3)
-- Transferência automática entre órgãos
-- Notificações in-app (só e-mail via Supabase Auth invite)
-- Testes E2E automatizados completos (deixarei script manual documentado; testes de banco via queries de verificação)
+**Função `private.validate_filter_definition(jsonb)`** — valida schema, allowlist de campos, allowlist de operadores por campo, tipos de valor.
+
+**Allowlist de campos (documentada no código):**
+`nome_texto, faixa_etaria, idade_min, idade_max, sexo, genero, tem_foto, situacao_atual, acolhimento_ativo, tipo_acolhimento, entidade_acolhimento, tempo_acolhimento_dias, reavaliacao_status, tem_processo_ativo, tipo_processo, situacao_processo, tem_demanda_extrajudicial, prioridade_demanda, familiar_dpe, tem_providencia_pendente, prazo_status, responsavel_user_id, tem_vinculos_familiares, tem_irmaos, ultima_atualizacao_bucket, orgao_execucao_id, comarca`.
+
+**Operadores permitidos por campo** (validação por tipo).
+
+**RPCs (todas SECURITY DEFINER, search_path=''):**
+- `ensure_default_workspace(p_context text, p_orgao_id uuid)` → retorna workspace_id, cria coluna base se ausente. Idempotente.
+- `listar_workspace(p_context, p_orgao_id)` → workspace + colunas ordenadas.
+- `create_workspace_column(p_workspace_id, p_title, p_description, p_color_token, p_custom_color, p_filter jsonb)`.
+- `update_workspace_column(p_column_id, p_version, ...campos...)`.
+- `delete_workspace_column(p_column_id)` — bloqueia base.
+- `duplicate_workspace_column(p_column_id)`.
+- `reorder_workspace_columns(p_workspace_id, p_ordered_ids uuid[])`.
+- `reset_workspace_to_default(p_workspace_id)`.
+- `buscar_assistidos(p_text, p_filter jsonb, p_orgao_id, p_limit, p_cursor)` — busca global superior.
+- `get_workspace_column_assistidos(p_column_id, p_cursor, p_limit, p_search)` — dados do Kanban. Limite máx 100.
+
+Todas registram em `private.audit_events` (workspace.*).
+
+## Bloco 4 — Frontend
+
+**Rotas:**
+- `src/routes/_authenticated/area-de-trabalho.tsx` (novo).
+- `src/routes/_authenticated/painel.tsx` → redirect 301 client-side para `/area-de-trabalho`.
+- Sidebar renomeada: "Painel" → "Área de trabalho".
+
+**Componentes novos em `src/components/workspace/`:**
+`WorkspacePage`, `WorkspaceSearch`, `WorkspaceSearchInput`, `WorkspaceFilterBuilder`, `WorkspaceActiveFilters`, `WorkspaceSearchResults`, `WorkspaceToolbar`, `WorkspaceBoard`, `WorkspaceColumn`, `WorkspaceColumnHeader`, `WorkspaceColumnMenu`, `WorkspaceColumnForm` (Sheet), `WorkspaceColumnColorPicker`, `WorkspaceColumnFilterSummary`, `WorkspaceColumnEmptyState`, `WorkspaceCard`, `WorkspaceCardSkeleton`, `WorkspaceCardDrawer`, `WorkspaceMobileColumnSelector`, `WorkspaceReorderDialog`, `WorkspaceResetDialog`.
+
+**Reordenação de colunas:** botões "Mover ←/→" + drag opcional com `@dnd-kit/core` (só entre colunas, não entre cards). Sem drag em mobile.
+
+**Hooks:**
+- `useWorkspace(context, orgaoId)` — ensure + listar.
+- `useColumnAssistidos(columnId)` — infinite query, cursor.
+- `useBuscaAssistidos()` — debounced (350ms), cancelamento.
+- `useWorkspaceMutations()` — create/update/delete/reorder/duplicate/reset.
+
+**Design tokens de cor de coluna** em `src/styles.css` (`--workspace-col-neutral/green/blue/amber/burgundy/purple/slate/rose`) com variantes claro/escuro.
+
+**Estados:** loading (skeleton), erro, vazio (3 variantes), quadro em criação.
+
+**Responsividade:** desktop scroll horizontal; mobile seletor de coluna + navegação horizontal; filtros em Sheet.
+
+## Bloco 5 — Testes e verificação
+
+**Setup Vitest** (`vitest`, `@testing-library/react`, `jsdom`) + `bun test` script.
+
+**Testes de unidade:**
+- `validate_filter_definition` — cobre allowlist de campos, operador incompatível, payload malformado, tentativa de SQL, limite.
+- Redução de filtro para SQL parametrizado — snapshots com valores canônicos.
+- Utilitário `normalize-search-text` (client mirror).
+
+**Testes de componente:** `WorkspaceColumnForm` (validação), `WorkspaceFilterBuilder` (chips AND/OR), `WorkspaceCard` (ícones e tooltips).
+
+**Checks finais:** `bun run build`, `tsgo`, `vitest run`, `supabase--linter`, regeneração dos tipos.
 
 ## Detalhes técnicos
 
-- Numeração de migrations: continua timestamp real, mas rotuladas 0015→0021 no comentário
-- Regeneração de tipos Supabase automática após migrations
-- Edge function usa `verify_jwt = true` (default) — extrai user do JWT do solicitante
-- E-mail do convite usa template padrão Supabase Auth (`inviteUserByEmail`), com `redirectTo` apontando para `/ativar-convite`
-- `funcao_interna` adicionado em `profiles` (não em memberships) pois é atributo funcional do usuário
-- Índice único parcial em convites: `(orgao_id, email_normalizado) WHERE status IN ('preparando','enviado')`
+**Estrutura do JSON de filtros** — versionado (`version: 1`), objeto raiz com `text` (string|null) e `conditions` (array de `{field, operator, value}`). Backend rejeita qualquer campo/operador fora da allowlist. Consultas construídas com CTEs parametrizadas por campo, nunca por concatenação de identificadores.
 
-## Entrega
+**Cor personalizada** — apenas hex `^#[0-9a-fA-F]{6}$`, contraste WCAG AA calculado no backend contra branco/preto para escolher cor de texto.
 
-Após aplicar as migrations e a edge function, farei uma passada de verificação (tsgo, listar policies) e apresentarei um relatório curto com: arquivos criados, RPCs, matriz de permissões, e o passo manual necessário (configurar template de e-mail de convite no painel Auth, se desejado personalizar).
+**Auditoria** — usa `private.log_audit_event` existente com actions `workspace.*`. Não registra payload de filtros com valores literais; grava apenas o hash de campos usados e resultado.
+
+**Escopo por perfil** — RLS em assistidos + `get_workspace_column_assistidos` valida:
+- Defensor/Membro: só `orgao_execucao_id = current_active_org_id()`.
+- Admin institucional: escopo definido pela política existente.
+- Admin técnico: pode passar `p_orgao_id=null` (todos) ou órgão específico; requer AAL2 se `context_type='todos_orgaos'`; registra auditoria com actor_role.
+
+**Pendências assumidas (não implementadas nesta entrega):**
+- CRUD de assistidos (só seed).
+- Foto real (usa placeholder).
+- Import de dados reais.
+- MFA step-up para admin técnico em modo global apenas em ações destrutivas.
+
+## Riscos
+
+- Escopo muito amplo em um ciclo — alto volume de código; possíveis ajustes finos após testes visuais.
+- Refresh da view materializada — pode gerar latência em datasets maiores; nesta fase (seed pequeno) é aceitável, mas fica registrado como pendência.
+- Filtros textuais dependem de `unaccent` (habilitar extensão na migration).
