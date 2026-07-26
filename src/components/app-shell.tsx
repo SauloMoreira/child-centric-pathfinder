@@ -217,9 +217,10 @@ function AppShellInner({ children }: { children: ReactNode }) {
           side="left"
           className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
         >
-          <VisuallyHidden asChild>
-            <DialogPrimitive.Title>Navegação principal</DialogPrimitive.Title>
-          </VisuallyHidden>
+          <DialogPrimitive.Title className="sr-only">
+            Navegação principal
+          </DialogPrimitive.Title>
+
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
             {sidebarNav}
