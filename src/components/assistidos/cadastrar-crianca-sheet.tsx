@@ -76,6 +76,7 @@ export function CadastrarCriancaSheet({
   const cadastrar = useCadastrarCrianca();
   const atualizar = useAtualizarCrianca();
   const upload = useUploadFotoAssistido();
+  const removerFoto = useRemoverFotoAssistido();
   const full = useAssistidoFull(assistidoId, open && isEdit);
 
   useEffect(() => {
