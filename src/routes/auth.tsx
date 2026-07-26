@@ -153,6 +153,8 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { next } = useSearch({ from: "/auth" });
+  const retorno = caminhoSeguro(next);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -172,8 +174,13 @@ function SignInForm() {
       toast.error("Não foi possível entrar. Verifique suas credenciais.");
       return;
     }
+    if (retorno) {
+      window.location.replace(retorno);
+      return;
+    }
     navigate({ to: "/painel", replace: true });
   }
+
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
