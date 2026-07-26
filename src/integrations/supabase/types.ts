@@ -16,68 +16,35 @@ export type Database = {
     Tables: {
       orgaos_execucao: {
         Row: {
-          area_atuacao: string | null
-          ativo: boolean
-          cidade: string | null
-          comarca: string | null
+          comarca: string
+          comarca_normalizada: string
           created_at: string
           created_by: string | null
-          criado_por: string | null
-          descricao: string | null
-          estado: string
           id: string
-          inactivated_at: string | null
-          inactivated_by: string | null
-          municipio: string
           nome: string
           nome_normalizado: string
-          sigla: string | null
-          status: Database["public"]["Enums"]["orgao_status"]
-          uf: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
-          area_atuacao?: string | null
-          ativo?: boolean
-          cidade?: string | null
-          comarca?: string | null
+          comarca: string
+          comarca_normalizada: string
           created_at?: string
           created_by?: string | null
-          criado_por?: string | null
-          descricao?: string | null
-          estado?: string
           id?: string
-          inactivated_at?: string | null
-          inactivated_by?: string | null
-          municipio: string
           nome: string
           nome_normalizado: string
-          sigla?: string | null
-          status?: Database["public"]["Enums"]["orgao_status"]
-          uf?: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
-          area_atuacao?: string | null
-          ativo?: boolean
-          cidade?: string | null
-          comarca?: string | null
+          comarca?: string
+          comarca_normalizada?: string
           created_at?: string
           created_by?: string | null
-          criado_por?: string | null
-          descricao?: string | null
-          estado?: string
           id?: string
-          inactivated_at?: string | null
-          inactivated_by?: string | null
-          municipio?: string
           nome?: string
           nome_normalizado?: string
-          sigla?: string | null
-          status?: Database["public"]["Enums"]["orgao_status"]
-          uf?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -134,18 +101,11 @@ export type Database = {
     }
     Functions: {
       admin_create_orgao_execucao: {
-        Args: {
-          p_area_atuacao: string
-          p_comarca: string
-          p_descricao: string
-          p_duplicate_override_reason?: string
-          p_estado: string
-          p_idempotency_key?: string
-          p_municipio: string
-          p_nome: string
-          p_sigla: string
-          p_status?: Database["public"]["Enums"]["orgao_status"]
-        }
+        Args: { p_comarca: string; p_idempotency_key?: string; p_nome: string }
+        Returns: Json
+      }
+      admin_update_orgao_execucao: {
+        Args: { p_comarca: string; p_id: string; p_nome: string }
         Returns: Json
       }
       aprovar_solicitacao_acesso: {
@@ -238,7 +198,6 @@ export type Database = {
         | "defensor_publico"
         | "membro_equipe"
       audit_result: "sucesso" | "falha" | "negado"
-      orgao_status: "ativo" | "inativo"
       profile_status:
         | "aguardando_dados"
         | "aguardando_aprovacao"
@@ -386,7 +345,6 @@ export const Constants = {
         "membro_equipe",
       ],
       audit_result: ["sucesso", "falha", "negado"],
-      orgao_status: ["ativo", "inativo"],
       profile_status: [
         "aguardando_dados",
         "aguardando_aprovacao",

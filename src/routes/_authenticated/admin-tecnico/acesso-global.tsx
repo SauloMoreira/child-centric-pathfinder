@@ -35,12 +35,13 @@ function AcessoGlobal() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orgaos_execucao")
-        .select("id,nome,sigla,ativo")
+        .select("id,nome,comarca")
         .order("nome");
       if (error) throw error;
       return data;
     },
   });
+
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -74,11 +75,11 @@ function AcessoGlobal() {
               <SelectContent>
                 {(orgaosQ.data ?? []).map((o) => (
                   <SelectItem key={o.id} value={o.id}>
-                    {o.sigla} — {o.nome}
-                    {!o.ativo && " (inativo)"}
+                    {o.nome} — {o.comarca}
                   </SelectItem>
                 ))}
               </SelectContent>
+
             </Select>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

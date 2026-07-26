@@ -109,12 +109,13 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orgaos_execucao")
-        .select("id,nome,sigla")
+        .select("id,nome,comarca")
         .order("nome");
       if (error) throw error;
       return data;
     },
   });
+
 
   const [aprovando, setAprovando] = useState<Solicitacao | null>(null);
   const [rejeitando, setRejeitando] = useState<Solicitacao | null>(null);
@@ -169,11 +170,13 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
                     <span className="font-medium">{s.orgao_nome}</span>
                   ) : (
                     <span className="rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[11px]">
-                      Proposta de novo órgão: {s.proposta_novo_orgao_sigla} —{" "}
-                      {s.proposta_novo_orgao_nome}
+                      Proposta de novo órgão: {s.proposta_novo_orgao_nome}
+                      {s.proposta_novo_orgao_comarca &&
+                        ` — ${s.proposta_novo_orgao_comarca}`}
                     </span>
                   )}
                 </p>
+
                 <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Enviada em {new Date(s.created_at).toLocaleString("pt-BR")}
                 </p>
@@ -232,7 +235,7 @@ function DialogAprovar({
   onDone,
 }: {
   solicitacao: Solicitacao;
-  orgaos: Array<{ id: string; nome: string; sigla: string | null }>;
+  orgaos: Array<{ id: string; nome: string; comarca: string }>;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -250,16 +253,14 @@ function DialogAprovar({
         p_novo_orgao: criarNovo
           ? {
               nome: solicitacao.proposta_novo_orgao_nome,
-              sigla: solicitacao.proposta_novo_orgao_sigla,
               comarca: solicitacao.proposta_novo_orgao_comarca,
-              cidade: solicitacao.proposta_novo_orgao_cidade,
-              uf: "RS",
             }
           : null,
       } as never);
       if (error) throw error;
       return data;
     },
+
     onSuccess: () => {
       toast.success("Solicitação aprovada.");
       onDone();
@@ -327,10 +328,11 @@ function DialogAprovar({
                 <SelectContent>
                   {orgaos.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
-                      {o.sigla ?? "—"} — {o.nome}
+                      {o.nome} — {o.comarca}
                     </SelectItem>
                   ))}
                 </SelectContent>
+
               </Select>
             </div>
           )}

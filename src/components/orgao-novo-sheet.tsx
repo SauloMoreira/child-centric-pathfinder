@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, AlertTriangle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -18,352 +18,229 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 
-const AREAS = [
-  "Infância e Juventude",
-  "Infância e Família",
-  "Atuação Regional",
-  "Núcleo Especializado",
-  "Outra",
-] as const;
-
-const schema = z.object({
-  sigla: z
-    .string()
-    .trim()
-    .max(30, "Máximo de 30 caracteres.")
-    .optional()
-    .or(z.literal("")),
+const orgaoSchema = z.object({
   nome: z
     .string()
     .trim()
-    .min(5, "Mínimo de 5 caracteres.")
-    .max(200, "Máximo de 200 caracteres."),
-  area_atuacao: z.enum(AREAS),
-  area_outra: z.string().trim().max(120).optional().or(z.literal("")),
-  comarca: z.string().trim().min(2, "Comarca obrigatória.").max(120),
-  municipio: z.string().trim().min(2, "Município obrigatório.").max(120),
-  descricao: z
+    .min(5, "Informe o nome completo do órgão de execução.")
+    .max(200, "O nome deve possuir no máximo 200 caracteres.")
+    .transform((value) => value.replace(/\s+/g, " ")),
+  comarca: z
     .string()
     .trim()
-    .max(1000, "Máximo de 1.000 caracteres.")
-    .optional()
-    .or(z.literal("")),
-  status: z.enum(["ativo", "inativo"]),
+    .min(2, "Informe a comarca.")
+    .max(120, "A comarca deve possuir no máximo 120 caracteres.")
+    .transform((value) => value.replace(/\s+/g, " ")),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<typeof orgaoSchema>;
 
-type Duplicate = {
-  id: string;
-  nome: string;
-  sigla: string | null;
-  comarca: string | null;
-  municipio: string | null;
-  status: string;
+type RpcResult = {
+  ok: true;
+  idempotent?: boolean;
+  orgao: { id: string; nome: string; comarca: string };
 };
 
-type RpcResult =
-  | { ok: true; orgao_id: string; idempotent?: boolean }
-  | { ok: false; code: "possible_duplicates"; message: string; duplicates: Duplicate[] };
+export type OrgaoBasico = {
+  id: string;
+  nome: string;
+  comarca: string;
+};
 
-export function OrgaoNovoSheet({ disabled }: { disabled?: boolean }) {
+type Props = {
+  disabled?: boolean;
+  mode?: "create" | "edit";
+  orgao?: OrgaoBasico;
+  trigger?: React.ReactNode;
+  comarcasSugeridas?: string[];
+};
+
+export function OrgaoNovoSheet({
+  disabled,
+  mode = "create",
+  orgao,
+  trigger,
+  comarcasSugeridas = [],
+}: Props) {
   const [open, setOpen] = useState(false);
-  const [duplicates, setDuplicates] = useState<Duplicate[] | null>(null);
-  const [override, setOverride] = useState("");
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [duplicateId, setDuplicateId] = useState<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState(() =>
+    crypto.randomUUID(),
+  );
   const qc = useQueryClient();
+  const isEdit = mode === "edit" && !!orgao;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(orgaoSchema),
     defaultValues: {
-      sigla: "",
-      nome: "",
-      area_atuacao: "Infância e Juventude",
-      area_outra: "",
-      comarca: "",
-      municipio: "",
-      descricao: "",
-      status: "ativo",
+      nome: orgao?.nome ?? "",
+      comarca: orgao?.comarca ?? "",
     },
   });
 
-  const area = form.watch("area_atuacao");
-  const descricao = form.watch("descricao") ?? "";
-  const sigla = form.watch("sigla") ?? "";
-
-  const areaResolved = useMemo(() => {
-    if (area === "Outra") return form.getValues("area_outra")?.trim() || "Outra";
-    return area;
-  }, [area, form]);
+  useEffect(() => {
+    if (open) {
+      setDuplicateId(null);
+      if (!isEdit) setIdempotencyKey(crypto.randomUUID());
+      form.reset({
+        nome: orgao?.nome ?? "",
+        comarca: orgao?.comarca ?? "",
+      });
+    }
+  }, [open, isEdit, orgao, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const areaFinal =
-        values.area_atuacao === "Outra"
-          ? (values.area_outra || "").trim() || "Outra"
-          : values.area_atuacao;
-
+      if (isEdit) {
+        const { data, error } = await supabase.rpc(
+          "admin_update_orgao_execucao" as never,
+          {
+            p_id: orgao!.id,
+            p_nome: values.nome,
+            p_comarca: values.comarca,
+          } as never,
+        );
+        if (error) throw error;
+        return data as unknown as RpcResult;
+      }
       const { data, error } = await supabase.rpc(
         "admin_create_orgao_execucao" as never,
         {
           p_nome: values.nome,
-          p_sigla: values.sigla?.trim() ? values.sigla.trim().toUpperCase() : null,
           p_comarca: values.comarca,
-          p_municipio: values.municipio,
-          p_estado: "RS",
-          p_area_atuacao: areaFinal,
-          p_descricao: values.descricao?.trim() || null,
-          p_status: values.status,
-          p_duplicate_override_reason: override.trim() || null,
           p_idempotency_key: idempotencyKey,
         } as never,
       );
       if (error) throw error;
       return data as unknown as RpcResult;
     },
-    onSuccess: (result) => {
-      if (result.ok) {
-        toast.success("Órgão criado com sucesso.");
-        setDuplicates(null);
-        setOverride("");
-        form.reset();
-        setOpen(false);
-        qc.invalidateQueries({ queryKey: ["admin-tecnico", "orgaos"] });
-        qc.invalidateQueries({ queryKey: ["orgaos-execucao-admin"] });
-      } else if (result.code === "possible_duplicates") {
-        setDuplicates(result.duplicates);
-      }
+    onSuccess: () => {
+      toast.success(
+        isEdit ? "Órgão atualizado com sucesso." : "Órgão criado com sucesso.",
+      );
+      setDuplicateId(null);
+      form.reset();
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-tecnico", "orgaos"] });
+      qc.invalidateQueries({ queryKey: ["orgaos-execucao-admin"] });
+      qc.invalidateQueries({ queryKey: ["orgaos-execucao"] });
+      qc.invalidateQueries({ queryKey: ["orgaos-admin"] });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof Error ? e.message : "Falha ao criar órgão.");
+      const err = e as { message?: string; hint?: string; code?: string };
+      const msg = err?.message ?? "";
+      if (msg.includes("ORGANIZATION_ALREADY_EXISTS")) {
+        setDuplicateId(err.hint ?? null);
+        toast.error(
+          "Já existe um órgão de execução com este nome na comarca informada.",
+        );
+        return;
+      }
+      toast.error(
+        msg || (isEdit ? "Falha ao atualizar órgão." : "Falha ao criar órgão."),
+      );
     },
   });
 
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
 
+  const defaultTrigger = isEdit ? (
+    <Button variant="ghost" size="sm" className="gap-1.5">
+      <Pencil className="h-3.5 w-3.5" aria-hidden />
+      Editar
+    </Button>
+  ) : (
+    <Button disabled={disabled} className="gap-2">
+      <Plus className="h-4 w-4" aria-hidden />
+      Novo órgão
+    </Button>
+  );
+
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) {
-          setDuplicates(null);
-          setOverride("");
-        }
-      }}
-    >
-      <SheetTrigger asChild>
-        <Button disabled={disabled} className="gap-2">
-          <Plus className="h-4 w-4" aria-hidden />
-          Novo órgão
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>{trigger ?? defaultTrigger}</SheetTrigger>
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Novo órgão de execução</SheetTitle>
+          <SheetTitle>
+            {isEdit ? "Editar órgão de execução" : "Novo órgão de execução"}
+          </SheetTitle>
           <SheetDescription>
-            Cadastre uma unidade institucional que poderá receber Defensores
-            Públicos, membros de equipe e registros operacionais.
+            Informe o nome oficial do órgão e a comarca à qual ele pertence.
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-6">
-          <section className="space-y-4">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Identificação
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
-              <div className="space-y-1.5">
-                <Label htmlFor="sigla">Sigla ou código</Label>
-                <Input
-                  id="sigla"
-                  autoComplete="off"
-                  className="uppercase"
-                  placeholder="Opcional"
-                  {...form.register("sigla")}
-                  onChange={(e) => {
-                    e.target.value = e.target.value.toUpperCase();
-                    form.setValue("sigla", e.target.value, {
-                      shouldValidate: true,
-                    });
-                  }}
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Até 30 caracteres. {sigla.length}/30
-                </p>
-                {form.formState.errors.sigla && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.sigla.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nome">Nome oficial</Label>
-                <Input
-                  id="nome"
-                  placeholder="Ex.: 1ª Defensoria Pública da Infância e Juventude de Porto Alegre"
-                  {...form.register("nome")}
-                />
-                {form.formState.errors.nome && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.nome.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Área de atuação</Label>
-                <Select
-                  value={area}
-                  onValueChange={(v) =>
-                    form.setValue("area_atuacao", v as FormValues["area_atuacao"], {
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AREAS.map((a) => (
-                      <SelectItem key={a} value={a}>
-                        {a}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {area === "Outra" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="area_outra">Descreva a área</Label>
-                  <Input id="area_outra" {...form.register("area_outra")} />
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Localização
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="comarca">Comarca</Label>
-                <Input id="comarca" {...form.register("comarca")} />
-                {form.formState.errors.comarca && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.comarca.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="municipio">Município</Label>
-                <Input id="municipio" {...form.register("municipio")} />
-                {form.formState.errors.municipio && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.municipio.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Estado</Label>
-              <Input value="Rio Grande do Sul — RS" disabled readOnly />
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Informações complementares
-            </h3>
-            <div className="space-y-1.5">
-              <Label htmlFor="descricao">Descrição</Label>
-              <Textarea
-                id="descricao"
-                rows={4}
-                {...form.register("descricao")}
-              />
-              <p className="text-[11px] text-muted-foreground">
-                {descricao.length}/1000
+        <form onSubmit={onSubmit} className="mt-6 space-y-5">
+          <div className="space-y-1.5">
+            <Label htmlFor="nome">
+              Nome do órgão de execução{" "}
+              <span className="text-destructive" aria-hidden>
+                *
+              </span>
+            </Label>
+            <Input
+              id="nome"
+              autoComplete="off"
+              placeholder="1ª Defensoria Pública da Infância e Juventude"
+              maxLength={200}
+              {...form.register("nome")}
+            />
+            {form.formState.errors.nome && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.nome.message}
               </p>
-              {form.formState.errors.descricao && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.descricao.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label>Situação inicial</Label>
-              <Select
-                value={form.watch("status")}
-                onValueChange={(v) =>
-                  form.setValue("status", v as "ativo" | "inativo", {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </section>
+            )}
+          </div>
 
-          {duplicates && duplicates.length > 0 && (
-            <section className="rounded-md border border-warning/40 bg-warning/10 p-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="comarca">
+              Comarca{" "}
+              <span className="text-destructive" aria-hidden>
+                *
+              </span>
+            </Label>
+            <Input
+              id="comarca"
+              autoComplete="off"
+              list="comarcas-sugeridas"
+              placeholder="Porto Alegre"
+              maxLength={120}
+              {...form.register("comarca")}
+            />
+            {comarcasSugeridas.length > 0 && (
+              <datalist id="comarcas-sugeridas">
+                {comarcasSugeridas.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            )}
+            {form.formState.errors.comarca && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.comarca.message}
+              </p>
+            )}
+          </div>
+
+          {duplicateId && (
+            <section className="rounded-md border border-warning/40 bg-warning/10 p-3">
               <div className="flex items-start gap-2">
                 <AlertTriangle
                   className="mt-0.5 h-4 w-4 text-warning"
                   aria-hidden
                 />
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm font-medium">
-                    Encontramos órgãos possivelmente semelhantes.
+                <div className="flex-1 space-y-2 text-xs">
+                  <p className="font-medium">
+                    Já existe um órgão de execução com este nome na comarca
+                    informada.
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Revise os registros antes de confirmar uma nova criação.
+                  <p className="text-muted-foreground">
+                    Não é possível duplicar um órgão na mesma comarca. Você
+                    pode consultar o registro existente.
                   </p>
-                  <ul className="space-y-1 text-xs">
-                    {duplicates.map((d) => (
-                      <li key={d.id} className="rounded border border-border bg-background p-2">
-                        <p className="font-medium">
-                          {d.sigla ? `${d.sigla} — ` : ""}
-                          {d.nome}
-                        </p>
-                        <p className="text-muted-foreground">
-                          {[d.comarca, d.municipio].filter(Boolean).join(" · ")}{" "}
-                          · <span className="font-mono">{d.status}</span>
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="space-y-1.5 pt-2">
-                    <Label htmlFor="override">
-                      Justificativa para prosseguir mesmo assim (mín. 10 caracteres)
-                    </Label>
-                    <Textarea
-                      id="override"
-                      rows={2}
-                      value={override}
-                      onChange={(e) => setOverride(e.target.value)}
-                    />
-                  </div>
+                  <p className="font-mono text-[11px] text-muted-foreground">
+                    ID: {duplicateId}
+                  </p>
                 </div>
               </div>
             </section>
@@ -382,13 +259,14 @@ export function OrgaoNovoSheet({ disabled }: { disabled?: boolean }) {
               type="submit"
               disabled={
                 mutation.isPending ||
-                (duplicates !== null && override.trim().length < 10)
+                !form.watch("nome")?.trim() ||
+                !form.watch("comarca")?.trim()
               }
             >
               {mutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
               )}
-              {duplicates ? "Confirmar criação" : "Criar órgão"}
+              {isEdit ? "Salvar alterações" : "Criar órgão"}
             </Button>
           </SheetFooter>
         </form>

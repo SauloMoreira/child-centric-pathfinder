@@ -36,10 +36,8 @@ const formSchema = z.object({
   cargo: z.string().trim().min(2, "Informe seu cargo.").max(80),
   telefone: z.string().trim().max(40).optional().or(z.literal("")),
   orgao_id: z.string().uuid().optional(),
-  novo_nome: z.string().trim().max(160).optional(),
-  novo_sigla: z.string().trim().max(30).optional(),
+  novo_nome: z.string().trim().max(200).optional(),
   novo_comarca: z.string().trim().max(120).optional(),
-  novo_cidade: z.string().trim().max(120).optional(),
   aceite_termos: z.literal(true, {
     errorMap: () => ({ message: "É necessário aceitar os termos institucionais." }),
   }),
@@ -55,8 +53,7 @@ function SolicitarAcesso() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orgaos_execucao")
-        .select("id,nome,sigla,comarca,cidade")
-        .eq("ativo", true)
+        .select("id,nome,comarca")
         .order("nome");
       if (error) throw error;
       return data;
@@ -70,9 +67,7 @@ function SolicitarAcesso() {
     cargo: estado?.profile?.cargo ?? "",
     telefone: estado?.profile?.telefone ?? "",
     novo_nome: "",
-    novo_sigla: "",
     novo_comarca: "",
-    novo_cidade: "",
     aceite: false,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -111,8 +106,11 @@ function SolicitarAcesso() {
       toast.error("Selecione seu órgão de execução ou proponha um novo.");
       return;
     }
-    if (orgaoSel === NOVO && (!form.novo_nome.trim() || !form.novo_sigla.trim())) {
-      toast.error("Para propor novo órgão, informe nome e sigla.");
+    if (
+      orgaoSel === NOVO &&
+      (!form.novo_nome.trim() || !form.novo_comarca.trim())
+    ) {
+      toast.error("Para propor novo órgão, informe nome e comarca.");
       return;
     }
 
@@ -127,9 +125,7 @@ function SolicitarAcesso() {
         orgaoSel === NOVO
           ? {
               nome: form.novo_nome,
-              sigla: form.novo_sigla,
               comarca: form.novo_comarca,
-              cidade: form.novo_cidade,
             }
           : null,
       p_aceite_termos: true,
@@ -186,8 +182,7 @@ function SolicitarAcesso() {
       <h1 className="mt-2 text-2xl font-semibold">Solicitar acesso ao Reintegra Infância</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Informe seus dados funcionais e o órgão de execução. Um Administrador
-        Institucional revisará e aprovará seu acesso operacional. Enquanto isso,
-        você permanece sem papel operacional.
+        Institucional revisará e aprovará seu acesso operacional.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-8">
@@ -259,7 +254,7 @@ function SolicitarAcesso() {
                 <SelectContent>
                   {orgaosQ.data?.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
-                      {o.sigla} — {o.nome}
+                      {o.nome} — {o.comarca}
                     </SelectItem>
                   ))}
                   <SelectItem value={NOVO}>
@@ -277,35 +272,18 @@ function SolicitarAcesso() {
                     id="novo-nome"
                     value={form.novo_nome}
                     onChange={(e) => setForm((f) => ({ ...f, novo_nome: e.target.value }))}
-                    maxLength={160}
+                    maxLength={200}
+                    placeholder="1ª Defensoria Pública da Infância e Juventude"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="novo-sigla">Sigla</Label>
-                  <Input
-                    id="novo-sigla"
-                    className="font-mono uppercase"
-                    value={form.novo_sigla}
-                    onChange={(e) => setForm((f) => ({ ...f, novo_sigla: e.target.value.toUpperCase() }))}
-                    maxLength={30}
-                  />
-                </div>
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="novo-comarca">Comarca</Label>
                   <Input
                     id="novo-comarca"
                     value={form.novo_comarca}
                     onChange={(e) => setForm((f) => ({ ...f, novo_comarca: e.target.value }))}
                     maxLength={120}
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="novo-cidade">Cidade</Label>
-                  <Input
-                    id="novo-cidade"
-                    value={form.novo_cidade}
-                    onChange={(e) => setForm((f) => ({ ...f, novo_cidade: e.target.value }))}
-                    maxLength={120}
+                    placeholder="Porto Alegre"
                   />
                 </div>
               </div>
