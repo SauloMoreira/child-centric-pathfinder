@@ -887,6 +887,7 @@ function BoardColumn({
   column,
   index,
   total,
+  layout = "columns",
   onOpenCard,
   onEdit,
   onDelete,
@@ -896,12 +897,14 @@ function BoardColumn({
   column: WorkspaceColumn;
   index: number;
   total: number;
+  layout?: "columns" | "rows";
   onOpenCard: (c: AssistidoCard) => void;
   onEdit: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onMove: (d: -1 | 1) => void;
 }) {
+
   const color = getColorClasses(column.color_token);
   const { data, isLoading } = useColumnAssistidos(column.id, 30);
   const chips = useMemo(
