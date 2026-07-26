@@ -53,7 +53,7 @@ export function useTeamInvitations(orgaoId?: string | null) {
     queryKey: ["team-invitations", orgaoId ?? "own"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("listar_convites_equipe", {
-        p_orgao_id: orgaoId ?? null,
+        p_orgao_id: (orgaoId ?? undefined) as string,
       });
       if (error) throw error;
       return (data ?? []) as TeamInvitation[];
