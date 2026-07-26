@@ -7,6 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { Loader2, Plus, AlertTriangle, Pencil, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { ComarcaCombobox, normalizeComarca } from "@/components/comarca-combobox";
+import { MfaChallengeDialog } from "@/components/mfa-challenge-dialog";
 
 import {
   Sheet,
