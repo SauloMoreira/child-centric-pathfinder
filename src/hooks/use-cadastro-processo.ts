@@ -17,6 +17,10 @@ export function useCadastrarProcesso() {
       if (r.ok) {
         qc.invalidateQueries({ queryKey: ["processos"] });
         qc.invalidateQueries({ queryKey: ["workspace"] });
+        qc.invalidateQueries({ queryKey: ["workspace-column"] });
+        qc.invalidateQueries({ queryKey: ["workspace-search"] });
+        qc.invalidateQueries({ queryKey: ["assistido-detalhe"] });
+        qc.invalidateQueries({ queryKey: ["assistido-full"] });
       }
     },
   });
