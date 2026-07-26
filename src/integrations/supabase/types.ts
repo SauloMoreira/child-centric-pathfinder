@@ -221,6 +221,81 @@ export type Database = {
           },
         ]
       }
+      assistido_vinculos: {
+        Row: {
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          deleted_by: string | null
+          destino_id: string
+          id: string
+          observacoes: string | null
+          orgao_execucao_id: string
+          origem_id: string
+          tipo: Database["public"]["Enums"]["vinculo_enum"]
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          destino_id: string
+          id?: string
+          observacoes?: string | null
+          orgao_execucao_id: string
+          origem_id: string
+          tipo: Database["public"]["Enums"]["vinculo_enum"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          destino_id?: string
+          id?: string
+          observacoes?: string | null
+          orgao_execucao_id?: string
+          origem_id?: string
+          tipo?: Database["public"]["Enums"]["vinculo_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistido_vinculos_destino_id_fkey"
+            columns: ["destino_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistido_vinculos_destino_id_fkey"
+            columns: ["destino_id"]
+            isOneToOne: false
+            referencedRelation: "v_assistidos_card"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistido_vinculos_orgao_execucao_id_fkey"
+            columns: ["orgao_execucao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistido_vinculos_origem_id_fkey"
+            columns: ["origem_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistido_vinculos_origem_id_fkey"
+            columns: ["origem_id"]
+            isOneToOne: false
+            referencedRelation: "v_assistidos_card"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assistidos: {
         Row: {
           categoria:
@@ -855,6 +930,7 @@ export type Database = {
         | "cancelado"
         | "falhou"
       tipo_acolhimento_enum: "institucional" | "familiar"
+      vinculo_enum: "pai" | "mae" | "familia_extensa" | "irmao"
       workspace_color_enum:
         | "neutral"
         | "green"
@@ -1052,6 +1128,7 @@ export const Constants = {
         "falhou",
       ],
       tipo_acolhimento_enum: ["institucional", "familiar"],
+      vinculo_enum: ["pai", "mae", "familia_extensa", "irmao"],
       workspace_color_enum: [
         "neutral",
         "green",
