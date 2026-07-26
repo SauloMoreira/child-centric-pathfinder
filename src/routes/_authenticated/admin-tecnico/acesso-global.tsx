@@ -75,11 +75,11 @@ function AcessoGlobal() {
               <SelectContent>
                 {(orgaosQ.data ?? []).map((o) => (
                   <SelectItem key={o.id} value={o.id}>
-                    {o.sigla} — {o.nome}
-                    {!o.ativo && " (inativo)"}
+                    {o.nome} — {o.comarca}
                   </SelectItem>
                 ))}
               </SelectContent>
+
             </Select>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
