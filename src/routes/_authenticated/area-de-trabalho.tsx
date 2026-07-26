@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
-  RefreshCcw,
   RotateCcw,
   Search as SearchIcon,
   MoreVertical,
@@ -11,7 +10,6 @@ import {
   Copy,
   Trash2,
   Pencil,
-  Loader2,
   Baby,
   UserRound,
   Scale,
@@ -123,8 +121,6 @@ function AreaDeTrabalhoPage() {
   const {
     data: workspace,
     isLoading: wsLoading,
-    refetch,
-    isFetching,
   } = useWorkspace(context, orgaoId, selectedWorkspaceId);
   const mutations = useWorkspaceMutations(context, orgaoId);
   const boardMutations = useWorkspaceBoardMutations(orgaoId);
@@ -137,7 +133,7 @@ function AreaDeTrabalhoPage() {
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingColumn, setEditingColumn] = useState<WorkspaceColumn | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<WorkspaceColumn | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmReset, setConfirmReset] = useState<WorkspaceSummary | null>(null);
   const [criancaOpen, setCriancaOpen] = useState(false);
   const [adultoOpen, setAdultoOpen] = useState(false);
   const [processoOpen, setProcessoOpen] = useState(false);
@@ -270,14 +266,15 @@ function AreaDeTrabalhoPage() {
   }
 
   async function handleReset() {
-    if (!workspaceId) return;
+    const target = confirmReset;
+    if (!target) return;
     try {
-      await mutations.reset.mutateAsync(workspaceId);
+      await mutations.reset.mutateAsync(target.id);
       toast.success("Quadro restaurado para o padrão.");
     } catch (e) {
       toast.error((e as Error).message || "Não foi possível restaurar.");
     } finally {
-      setConfirmReset(false);
+      setConfirmReset(null);
     }
   }
 
@@ -427,6 +424,7 @@ function AreaDeTrabalhoPage() {
           setBoardDialog({ mode: "duplicate", board: b });
         }}
         onDelete={(b) => setConfirmDeleteBoard(b)}
+        onReset={(b) => setConfirmReset(b)}
         onReorder={(orderedIds) => {
           boardMutations.reordenar.mutate(
             { ordered_ids: orderedIds },
@@ -453,14 +451,6 @@ function AreaDeTrabalhoPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-            ) : (
-              <RefreshCcw className="h-3.5 w-3.5" aria-hidden />
-            )}
-            <span className="ml-1.5">Atualizar</span>
-          </Button>
           <TooltipProvider delayDuration={200}>
             <div className="flex items-center gap-0.5 rounded-md border border-border bg-canvas p-0.5">
               <Tooltip>
@@ -497,15 +487,6 @@ function AreaDeTrabalhoPage() {
               </Tooltip>
             </div>
           </TooltipProvider>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setConfirmReset(true)}
-            disabled={mutations.reset.isPending}
-          >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-            <span className="ml-1.5">Restaurar padrão</span>
-          </Button>
           <Button size="sm" onClick={openCreate}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
             <span className="ml-1.5">Nova coluna</span>
@@ -573,10 +554,12 @@ function AreaDeTrabalhoPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+      <AlertDialog open={!!confirmReset} onOpenChange={(o) => !o && setConfirmReset(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Restaurar quadro?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmReset ? `Restaurar “${confirmReset.nome}”?` : "Restaurar quadro?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Todas as colunas personalizadas serão removidas e a coluna base voltará ao padrão.
               Nenhum cadastro será excluído.
@@ -734,6 +717,7 @@ function WorkspaceTabs({
   onDuplicate,
   onDelete,
   onReorder,
+  onReset,
 }: {
   boards: WorkspaceSummary[];
   activeId: string | null;
@@ -744,6 +728,7 @@ function WorkspaceTabs({
   onDuplicate: (b: WorkspaceSummary) => void;
   onDelete: (b: WorkspaceSummary) => void;
   onReorder: (orderedIds: string[]) => void;
+  onReset: (b: WorkspaceSummary) => void;
 }) {
   const dragId = useRef<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -838,6 +823,9 @@ function WorkspaceTabs({
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => onDuplicate(b)}>
                     <Copy className="mr-2 h-3.5 w-3.5" /> Duplicar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onReset(b)}>
+                    <RotateCcw className="mr-2 h-3.5 w-3.5" /> Restaurar padrão
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

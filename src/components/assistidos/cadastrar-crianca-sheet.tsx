@@ -24,7 +24,7 @@ import { VinculoAssistidoPicker } from "@/components/assistidos/vinculo-assistid
 import { isValidCpf, stripCpf, formatCpf } from "@/lib/validators/cpf";
 import { isMinorAtDate } from "@/lib/validators/age";
 import { useCadastrarCrianca, useAtualizarCrianca } from "@/hooks/use-cadastro-assistido";
-import { useUploadFotoAssistido } from "@/hooks/use-upload-foto-assistido";
+import { useUploadFotoAssistido, useRemoverFotoAssistido } from "@/hooks/use-upload-foto-assistido";
 import { useAssistidoFull } from "@/hooks/use-assistido-full";
 
 const schema = z.object({
@@ -76,6 +76,7 @@ export function CadastrarCriancaSheet({
   const cadastrar = useCadastrarCrianca();
   const atualizar = useAtualizarCrianca();
   const upload = useUploadFotoAssistido();
+  const removerFoto = useRemoverFotoAssistido();
   const full = useAssistidoFull(assistidoId, open && isEdit);
 
   useEffect(() => {
@@ -289,11 +290,26 @@ export function CadastrarCriancaSheet({
                 </div>
               </FormSection>
 
-              {!isEdit && (
-                <FormSection title="Foto (opcional)">
-                  <FotoAssistidoField file={file} onChange={setFile} />
-                </FormSection>
-              )}
+              <FormSection title={isEdit ? "Foto" : "Foto (opcional)"}>
+                <FotoAssistidoField
+                  file={file}
+                  onChange={setFile}
+                  currentFotoPath={isEdit ? full.data?.record?.foto_path ?? null : null}
+                  onRemoveCurrent={
+                    isEdit && assistidoId
+                      ? async () => {
+                          try {
+                            await removerFoto.mutateAsync({ assistidoId });
+                            toast.success("Foto removida.");
+                          } catch {
+                            toast.error("Não foi possível remover a foto.");
+                          }
+                        }
+                      : undefined
+                  }
+                  removeLoading={removerFoto.isPending}
+                />
+              </FormSection>
 
               <FormSection
                 title="Vínculos familiares"

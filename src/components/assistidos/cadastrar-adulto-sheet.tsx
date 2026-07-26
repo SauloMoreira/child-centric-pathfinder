@@ -24,7 +24,7 @@ import { VinculoAssistidoPicker } from "@/components/assistidos/vinculo-assistid
 import { isValidCpf, stripCpf, formatCpf } from "@/lib/validators/cpf";
 import { isAdultAtDate } from "@/lib/validators/age";
 import { useCadastrarAdulto, useAtualizarAdulto } from "@/hooks/use-cadastro-assistido";
-import { useUploadFotoAssistido } from "@/hooks/use-upload-foto-assistido";
+import { useUploadFotoAssistido, useRemoverFotoAssistido } from "@/hooks/use-upload-foto-assistido";
 import { useAssistidoFull } from "@/hooks/use-assistido-full";
 
 const schema = z.object({
@@ -63,6 +63,7 @@ export function CadastrarAdultoSheet({
   const cadastrar = useCadastrarAdulto();
   const atualizar = useAtualizarAdulto();
   const upload = useUploadFotoAssistido();
+  const removerFoto = useRemoverFotoAssistido();
   const full = useAssistidoFull(assistidoId, open && isEdit);
 
   useEffect(() => {
@@ -265,11 +266,26 @@ export function CadastrarAdultoSheet({
                 </div>
               </FormSection>
 
-              {!isEdit && (
-                <FormSection title="Foto (opcional)">
-                  <FotoAssistidoField file={file} onChange={setFile} />
-                </FormSection>
-              )}
+              <FormSection title={isEdit ? "Foto" : "Foto (opcional)"}>
+                <FotoAssistidoField
+                  file={file}
+                  onChange={setFile}
+                  currentFotoPath={isEdit ? full.data?.record?.foto_path ?? null : null}
+                  onRemoveCurrent={
+                    isEdit && assistidoId
+                      ? async () => {
+                          try {
+                            await removerFoto.mutateAsync({ assistidoId });
+                            toast.success("Foto removida.");
+                          } catch {
+                            toast.error("Não foi possível remover a foto.");
+                          }
+                        }
+                      : undefined
+                  }
+                  removeLoading={removerFoto.isPending}
+                />
+              </FormSection>
 
               <FormSection
                 title="Crianças ou adolescentes vinculados"

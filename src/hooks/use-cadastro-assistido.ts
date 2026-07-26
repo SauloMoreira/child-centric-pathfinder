@@ -77,6 +77,8 @@ export function useAtualizarAnotacoes() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assistido-full"] });
+      qc.invalidateQueries({ queryKey: ["workspace-column"] });
+      qc.invalidateQueries({ queryKey: ["workspace-search"] });
     },
   });
 }

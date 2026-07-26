@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FOTO_ACCEPTED_EXT, validateFotoFile } from "@/lib/validators/file-upload";
 
@@ -17,13 +17,13 @@ export type UploadFotoResult = {
 };
 
 function uuid(): string {
-  // Cripto seguro no browser; fallback simples
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
 }
 
 export function useUploadFotoAssistido() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ assistidoId, orgaoId, file }: UploadFotoInput): Promise<UploadFotoResult> => {
       const err = validateFotoFile(file);
@@ -40,11 +40,46 @@ export function useUploadFotoAssistido() {
         p_foto_path: path,
       });
       if (link.error) {
-        // tentar remover objeto órfão
         await supabase.storage.from(BUCKET).remove([path]).catch(() => undefined);
         return { ok: false, error: "LINK_FAILED" };
       }
       return { ok: true, path };
+    },
+    onSuccess: (r) => {
+      if (r.ok) {
+        qc.invalidateQueries({ queryKey: ["workspace-column"] });
+        qc.invalidateQueries({ queryKey: ["assistido-full"] });
+        qc.invalidateQueries({ queryKey: ["buscar-assistidos"] });
+        qc.invalidateQueries({ queryKey: ["workspace-search"] });
+      }
+    },
+  });
+}
+
+export function useRemoverFotoAssistido() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ assistidoId }: { assistidoId: string }) => {
+      // Ler o path atual antes de limpar (necessário para remover o objeto do bucket).
+      const { data: rec } = await supabase
+        .from("assistidos")
+        .select("foto_path")
+        .eq("id", assistidoId)
+        .maybeSingle();
+      const prevPath = (rec?.foto_path as string | null) ?? null;
+      const { error } = await supabase.rpc("remover_foto_assistido", {
+        p_assistido_id: assistidoId,
+      });
+      if (error) throw error;
+      if (prevPath) {
+        await supabase.storage.from(BUCKET).remove([prevPath]).catch(() => undefined);
+      }
+      return { ok: true };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workspace-column"] });
+      qc.invalidateQueries({ queryKey: ["assistido-full"] });
+      qc.invalidateQueries({ queryKey: ["workspace-search"] });
     },
   });
 }
