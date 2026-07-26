@@ -103,6 +103,61 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aprovar_solicitacao_acesso: {
+        Args: {
+          p_criar_novo?: boolean
+          p_novo_orgao?: Json
+          p_orgao_final_id: string
+          p_request_id: string
+          p_version: number
+        }
+        Returns: Json
+      }
+      cancelar_solicitacao_acesso: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      listar_solicitacoes_acesso: {
+        Args: {
+          p_limit?: number
+          p_status?: Database["public"]["Enums"]["access_request_status"]
+        }
+        Returns: {
+          cargo: string
+          correlation_id: string
+          created_at: string
+          id: string
+          matricula: string
+          nome_completo: string
+          orgao_id: string
+          orgao_nome: string
+          proposta_novo_orgao_cidade: string
+          proposta_novo_orgao_comarca: string
+          proposta_novo_orgao_nome: string
+          proposta_novo_orgao_sigla: string
+          status: Database["public"]["Enums"]["access_request_status"]
+          telefone: string
+          user_id: string
+          version: number
+        }[]
+      }
+      meu_estado_institucional: { Args: never; Returns: Json }
+      rejeitar_solicitacao_acesso: {
+        Args: { p_motivo: string; p_request_id: string; p_version: number }
+        Returns: Json
+      }
+      submeter_solicitacao_acesso: {
+        Args: {
+          p_aceite_termos: boolean
+          p_cargo: string
+          p_matricula: string
+          p_nome_completo: string
+          p_novo_orgao: Json
+          p_orgao_id: string
+          p_telefone: string
+        }
+        Returns: Json
+      }
       tem_papel: {
         Args: { required_role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
