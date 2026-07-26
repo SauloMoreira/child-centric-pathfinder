@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         id: "operacional",
         label: null,
         items: [
-          { to: "/painel", label: "Painel", icon: LayoutDashboard, visible: true },
+          { to: "/area-de-trabalho", label: "Área de trabalho", icon: LayoutDashboard, visible: true },
           {
             to: "/minha-equipe",
             label: "Minha equipe",
