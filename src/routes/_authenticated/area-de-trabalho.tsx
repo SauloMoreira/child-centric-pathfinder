@@ -485,15 +485,6 @@ function AreaDeTrabalhoPage() {
               </Tooltip>
             </div>
           </TooltipProvider>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setConfirmReset(true)}
-            disabled={mutations.reset.isPending}
-          >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-            <span className="ml-1.5">Restaurar padrão</span>
-          </Button>
           <Button size="sm" onClick={openCreate}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
             <span className="ml-1.5">Nova coluna</span>
