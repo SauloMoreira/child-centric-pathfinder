@@ -106,9 +106,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_assign_defensor_role: {
+        Args: {
+          p_idempotency_key?: string
+          p_justificativa?: string
+          p_matricula?: string
+          p_orgao_execucao_id: string
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
       admin_create_orgao_execucao: {
         Args: { p_comarca: string; p_idempotency_key?: string; p_nome: string }
         Returns: Json
+      }
+      admin_detalhar_usuario: { Args: { p_user_id: string }; Returns: Json }
+      admin_listar_usuarios: {
+        Args: { p_limit?: number }
+        Returns: {
+          ativo: boolean
+          cargo: string
+          created_at: string
+          email: string
+          email_confirmado: boolean
+          funcao_interna: string
+          matricula: string
+          membership_id: string
+          nome_completo: string
+          orgao_comarca: string
+          orgao_id: string
+          orgao_nome: string
+          outra_funcao: string
+          role_atual: Database["public"]["Enums"]["app_role"]
+          status: Database["public"]["Enums"]["profile_status"]
+          telefone: string
+          updated_at: string
+          user_id: string
+          vinculado_em: string
+        }[]
       }
       admin_update_orgao_execucao: {
         Args: { p_comarca: string; p_id: string; p_nome: string }
