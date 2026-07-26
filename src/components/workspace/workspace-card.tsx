@@ -77,10 +77,21 @@ export function WorkspaceCard({
             <p className="truncate font-medium text-foreground">
               {data.nome_social || data.nome_completo}
             </p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Baby className="h-3 w-3" aria-hidden />
-              {data.idade} anos · {data.faixa_etaria === "crianca" ? "Criança" : "Adolescente"}
-            </p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Baby className="h-3 w-3" aria-hidden />
+                  <span className="cursor-help">
+                    {data.idade} anos · {data.faixa_etaria === "crianca" ? "Criança" : "Adolescente"}
+                  </span>
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                {data.data_nascimento
+                  ? `Nascimento: ${new Date(data.data_nascimento + "T00:00:00").toLocaleDateString("pt-BR")}`
+                  : "Data de nascimento não informada"}
+              </TooltipContent>
+            </Tooltip>
           </div>
           {(prazoVencido || prazoProximo) && (
             <Tooltip>
