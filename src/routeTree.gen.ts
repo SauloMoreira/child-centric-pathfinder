@@ -19,6 +19,7 @@ import { Route as AuthenticatedSolicitarAcessoRouteImport } from './routes/_auth
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedMinhaEquipeRouteImport } from './routes/_authenticated/minha-equipe'
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
+import { Route as AuthenticatedAreaDeTrabalhoRouteImport } from './routes/_authenticated/area-de-trabalho'
 import { Route as AuthenticatedAlterarOrgaoRouteImport } from './routes/_authenticated/alterar-orgao'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -89,6 +90,12 @@ const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
   path: '/conta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAreaDeTrabalhoRoute =
+  AuthenticatedAreaDeTrabalhoRouteImport.update({
+    id: '/area-de-trabalho',
+    path: '/area-de-trabalho',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAlterarOrgaoRoute =
   AuthenticatedAlterarOrgaoRouteImport.update({
     id: '/alterar-orgao',
@@ -206,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
+  '/area-de-trabalho': typeof AuthenticatedAreaDeTrabalhoRoute
   '/conta': typeof AuthenticatedContaRoute
   '/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/painel': typeof AuthenticatedPainelRoute
@@ -235,6 +243,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
+  '/area-de-trabalho': typeof AuthenticatedAreaDeTrabalhoRoute
   '/conta': typeof AuthenticatedContaRoute
   '/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/painel': typeof AuthenticatedPainelRoute
@@ -266,6 +275,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
+  '/_authenticated/area-de-trabalho': typeof AuthenticatedAreaDeTrabalhoRoute
   '/_authenticated/conta': typeof AuthenticatedContaRoute
   '/_authenticated/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/alterar-orgao'
+    | '/area-de-trabalho'
     | '/conta'
     | '/minha-equipe'
     | '/painel'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/alterar-orgao'
+    | '/area-de-trabalho'
     | '/conta'
     | '/minha-equipe'
     | '/painel'
@@ -356,6 +368,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/alterar-orgao'
+    | '/_authenticated/area-de-trabalho'
     | '/_authenticated/conta'
     | '/_authenticated/minha-equipe'
     | '/_authenticated/painel'
@@ -460,6 +473,13 @@ declare module '@tanstack/react-router' {
       path: '/conta'
       fullPath: '/conta'
       preLoaderRoute: typeof AuthenticatedContaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/area-de-trabalho': {
+      id: '/_authenticated/area-de-trabalho'
+      path: '/area-de-trabalho'
+      fullPath: '/area-de-trabalho'
+      preLoaderRoute: typeof AuthenticatedAreaDeTrabalhoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/alterar-orgao': {
@@ -593,6 +613,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlterarOrgaoRoute: typeof AuthenticatedAlterarOrgaoRoute
+  AuthenticatedAreaDeTrabalhoRoute: typeof AuthenticatedAreaDeTrabalhoRoute
   AuthenticatedContaRoute: typeof AuthenticatedContaRoute
   AuthenticatedMinhaEquipeRoute: typeof AuthenticatedMinhaEquipeRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
@@ -614,6 +635,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlterarOrgaoRoute: AuthenticatedAlterarOrgaoRoute,
+  AuthenticatedAreaDeTrabalhoRoute: AuthenticatedAreaDeTrabalhoRoute,
   AuthenticatedContaRoute: AuthenticatedContaRoute,
   AuthenticatedMinhaEquipeRoute: AuthenticatedMinhaEquipeRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
