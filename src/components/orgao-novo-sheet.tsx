@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, AlertTriangle, Pencil } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Loader2, Plus, AlertTriangle, Pencil, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -19,6 +20,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  useEstadoInstitucional,
+  isAdminTecnico,
+} from "@/hooks/use-estado-institucional";
+
+const MFA_ERROR_PATTERNS = [
+  "AAL2",
+  "MFA",
+  "aal2",
+  "mfa",
+  "insufficient_aal",
+] as const;
+
+const MFA_GUIDANCE_MESSAGE =
+  "Para criar órgãos, o Administrador Técnico precisa concluir a autenticação em dois fatores (MFA). Ative ou confirme o MFA e tente novamente.";
+
+function isMfaError(message: string): boolean {
+  return MFA_ERROR_PATTERNS.some((p) => message.includes(p));
+}
 
 const orgaoSchema = z.object({
   nome: z
@@ -66,11 +86,16 @@ export function OrgaoNovoSheet({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [duplicateId, setDuplicateId] = useState<string | null>(null);
+  const [mfaBlocked, setMfaBlocked] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
     crypto.randomUUID(),
   );
   const qc = useQueryClient();
+  const { data: estado } = useEstadoInstitucional();
   const isEdit = mode === "edit" && !!orgao;
+  const requiresMfa = isAdminTecnico(estado) && !isEdit;
+  const hasAal2 = !!estado?.aal2;
+  const mfaMissing = requiresMfa && !hasAal2;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(orgaoSchema),
@@ -83,6 +108,7 @@ export function OrgaoNovoSheet({
   useEffect(() => {
     if (open) {
       setDuplicateId(null);
+      setMfaBlocked(false);
       if (!isEdit) setIdempotencyKey(crypto.randomUUID());
       form.reset({
         nome: orgao?.nome ?? "",
@@ -138,13 +164,25 @@ export function OrgaoNovoSheet({
         );
         return;
       }
+      if (isMfaError(msg)) {
+        setMfaBlocked(true);
+        toast.error(MFA_GUIDANCE_MESSAGE);
+        return;
+      }
       toast.error(
         msg || (isEdit ? "Falha ao atualizar órgão." : "Falha ao criar órgão."),
       );
     },
   });
 
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const onSubmit = form.handleSubmit((values) => {
+    if (mfaMissing) {
+      setMfaBlocked(true);
+      toast.error(MFA_GUIDANCE_MESSAGE);
+      return;
+    }
+    mutation.mutate(values);
+  });
 
   const defaultTrigger = isEdit ? (
     <Button variant="ghost" size="sm" className="gap-1.5">
@@ -246,6 +284,36 @@ export function OrgaoNovoSheet({
             </section>
           )}
 
+          {(mfaMissing || mfaBlocked) && requiresMfa && (
+            <section
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 p-3"
+            >
+              <div className="flex items-start gap-2">
+                <ShieldAlert
+                  className="mt-0.5 h-4 w-4 text-destructive"
+                  aria-hidden
+                />
+                <div className="flex-1 space-y-2 text-xs">
+                  <p className="font-medium">
+                    MFA obrigatório para esta operação
+                  </p>
+                  <p className="text-muted-foreground">
+                    {MFA_GUIDANCE_MESSAGE}
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Link to="/conta">Configurar MFA em Minha conta</Link>
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
           <SheetFooter className="gap-2">
             <Button
               type="button"
@@ -259,8 +327,14 @@ export function OrgaoNovoSheet({
               type="submit"
               disabled={
                 mutation.isPending ||
+                mfaMissing ||
                 !form.watch("nome")?.trim() ||
                 !form.watch("comarca")?.trim()
+              }
+              title={
+                mfaMissing
+                  ? "Conclua o MFA (AAL2) para criar órgãos."
+                  : undefined
               }
             >
               {mutation.isPending && (
