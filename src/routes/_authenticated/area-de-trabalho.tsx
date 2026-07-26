@@ -44,8 +44,11 @@ import {
   useBuscaAssistidos,
   useColumnAssistidos,
   useWorkspace,
+  useWorkspaceBoardMutations,
   useWorkspaceMutations,
+  useWorkspacesList,
   type WorkspaceColumn,
+  type WorkspaceSummary,
 } from "@/hooks/use-workspace";
 import {
   useEstadoInstitucional,
