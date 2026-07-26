@@ -62,11 +62,7 @@ import {
   type WorkspaceColumn,
   type WorkspaceSummary,
 } from "@/hooks/use-workspace";
-import {
-  useEstadoInstitucional,
-  isAdminTecnico,
-  isAtivo,
-} from "@/hooks/use-estado-institucional";
+import { useEstadoInstitucional, isAdminTecnico, isAtivo } from "@/hooks/use-estado-institucional";
 import { WorkspaceCard, WorkspaceCardSkeleton } from "@/components/workspace/workspace-card";
 import { WorkspaceCardDrawer } from "@/components/workspace/workspace-card-drawer";
 import { WorkspaceColumnForm } from "@/components/workspace/workspace-column-form";
@@ -162,7 +158,6 @@ function AreaDeTrabalhoPage() {
     }
   }, [layoutMode]);
 
-
   const busca = useBuscaAssistidos(
     searchText.trim(),
     null,
@@ -181,8 +176,8 @@ function AreaDeTrabalhoPage() {
         <div className="mt-6 rounded-md border border-border bg-surface p-4 text-sm">
           <p className="font-medium">Complete seu cadastro institucional.</p>
           <p className="mt-1 text-muted-foreground">
-            Sua área de trabalho será liberada após a aprovação do vínculo pelo
-            Administrador Institucional.
+            Sua área de trabalho será liberada após a aprovação do vínculo pelo Administrador
+            Institucional.
           </p>
           <Button asChild size="sm" className="mt-4">
             <Link to="/solicitar-acesso">Preencher dados</Link>
@@ -207,37 +202,38 @@ function AreaDeTrabalhoPage() {
     setFormOpen(true);
   }
 
-  const handleSubmitForm: React.ComponentProps<typeof WorkspaceColumnForm>["onSubmit"] =
-    async (payload) => {
-      try {
-        if (formMode === "create") {
-          if (!workspaceId) throw new Error("Workspace não encontrado");
-          await mutations.create.mutateAsync({
-            workspace_id: workspaceId,
-            title: payload.title,
-            description: payload.description,
-            color_token: payload.color_token,
-            custom_color: payload.custom_color,
-            filter: payload.filter,
-          });
-          toast.success("Coluna criada.");
-        } else if (editingColumn) {
-          await mutations.update.mutateAsync({
-            column_id: editingColumn.id,
-            version: editingColumn.version,
-            title: payload.title,
-            description: payload.description,
-            color_token: payload.color_token,
-            custom_color: payload.custom_color,
-            filter: payload.filter,
-          });
-          toast.success("Coluna atualizada.");
-        }
-      } catch (e) {
-        toast.error((e as Error).message || "Não foi possível salvar a coluna.");
-        throw e;
+  const handleSubmitForm: React.ComponentProps<typeof WorkspaceColumnForm>["onSubmit"] = async (
+    payload,
+  ) => {
+    try {
+      if (formMode === "create") {
+        if (!workspaceId) throw new Error("Workspace não encontrado");
+        await mutations.create.mutateAsync({
+          workspace_id: workspaceId,
+          title: payload.title,
+          description: payload.description,
+          color_token: payload.color_token,
+          custom_color: payload.custom_color,
+          filter: payload.filter,
+        });
+        toast.success("Coluna criada.");
+      } else if (editingColumn) {
+        await mutations.update.mutateAsync({
+          column_id: editingColumn.id,
+          version: editingColumn.version,
+          title: payload.title,
+          description: payload.description,
+          color_token: payload.color_token,
+          custom_color: payload.custom_color,
+          filter: payload.filter,
+        });
+        toast.success("Coluna atualizada.");
       }
-    };
+    } catch (e) {
+      toast.error((e as Error).message || "Não foi possível salvar a coluna.");
+      throw e;
+    }
+  };
 
   async function moveColumn(col: WorkspaceColumn, direction: -1 | 1) {
     if (!workspaceId) return;
@@ -294,9 +290,7 @@ function AreaDeTrabalhoPage() {
       {/* Header */}
       <div className="border-b border-border bg-surface px-4 py-5 lg:px-8">
         <h1 className="text-2xl font-semibold tracking-tight">Área de trabalho</h1>
-        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          {" "}
-        </p>
+        <p className="mt-1 max-w-3xl text-sm text-muted-foreground"> </p>
 
         {/* Busca superior */}
         <form
@@ -390,8 +384,11 @@ function AreaDeTrabalhoPage() {
 
       <CadastrarCriancaSheet open={criancaOpen} onOpenChange={setCriancaOpen} orgaoId={orgaoId} />
       <CadastrarAdultoSheet open={adultoOpen} onOpenChange={setAdultoOpen} orgaoId={orgaoId} />
-      <CadastrarProcessoSheet open={processoOpen} onOpenChange={setProcessoOpen} orgaoId={orgaoId} />
-
+      <CadastrarProcessoSheet
+        open={processoOpen}
+        onOpenChange={setProcessoOpen}
+        orgaoId={orgaoId}
+      />
 
       {/* Resultados da busca */}
       {searchActive && (
@@ -448,16 +445,11 @@ function AreaDeTrabalhoPage() {
             {wsLoading ? "Carregando..." : `${columns.length} coluna(s)`} ·{" "}
             {tecnico
               ? "Administrador Técnico (acesso global disponível)"
-              : estado?.orgao_ativo?.nome ?? "Sem vínculo ativo"}
+              : (estado?.orgao_ativo?.nome ?? "Sem vínculo ativo")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
             ) : (
@@ -511,7 +503,6 @@ function AreaDeTrabalhoPage() {
             <span className="ml-1.5">Restaurar padrão</span>
           </Button>
           <Button size="sm" onClick={openCreate}>
-
             <Plus className="h-3.5 w-3.5" aria-hidden />
             <span className="ml-1.5">Nova coluna</span>
           </Button>
@@ -549,7 +540,6 @@ function AreaDeTrabalhoPage() {
         </div>
       </div>
 
-
       <WorkspaceColumnForm
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -569,8 +559,7 @@ function AreaDeTrabalhoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir coluna?</AlertDialogTitle>
             <AlertDialogDescription>
-              Excluir esta coluna removerá apenas esta visualização. Nenhum
-              cadastro será excluído.
+              Excluir esta coluna removerá apenas esta visualização. Nenhum cadastro será excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -585,8 +574,8 @@ function AreaDeTrabalhoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Restaurar quadro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Todas as colunas personalizadas serão removidas e a coluna base
-              voltará ao padrão. Nenhum cadastro será excluído.
+              Todas as colunas personalizadas serão removidas e a coluna base voltará ao padrão.
+              Nenhum cadastro será excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -686,8 +675,8 @@ function AreaDeTrabalhoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir quadro?</AlertDialogTitle>
             <AlertDialogDescription>
-              O quadro <strong>{confirmDeleteBoard?.nome}</strong> e todas as suas
-              colunas serão removidos. Nenhum cadastro de assistido será excluído.
+              O quadro <strong>{confirmDeleteBoard?.nome}</strong> e todas as suas colunas serão
+              removidos. Nenhum cadastro de assistido será excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -767,10 +756,7 @@ function WorkspaceTabs({
               <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
               <span className="max-w-[180px] truncate">{b.nome}</span>
               {b.is_default && (
-                <Star
-                  className="h-3 w-3 fill-current text-warning"
-                  aria-label="Quadro padrão"
-                />
+                <Star className="h-3 w-3 fill-current text-warning" aria-label="Quadro padrão" />
               )}
             </button>
             {canEdit && (
@@ -904,7 +890,6 @@ function BoardColumn({
   onDuplicate: () => void;
   onMove: (d: -1 | 1) => void;
 }) {
-
   const color = getColorClasses(column.color_token);
   const { data, isLoading } = useColumnAssistidos(column.id, 30);
   const chips = useMemo(
@@ -920,10 +905,7 @@ function BoardColumn({
       )}
     >
       <div
-        className={cn(
-          "flex items-start justify-between gap-2 rounded-t-md p-3",
-          color.headerBg,
-        )}
+        className={cn("flex items-start justify-between gap-2 rounded-t-md p-3", color.headerBg)}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
@@ -999,7 +981,6 @@ function BoardColumn({
             : "flex gap-2 overflow-x-auto",
         )}
       >
-
         {isLoading ? (
           <>
             <WorkspaceCardSkeleton />
@@ -1023,15 +1004,11 @@ function BoardColumn({
           </div>
         ) : (
           (data?.items ?? []).map((c) => (
-            <div
-              key={c.id}
-              className={cn(layout === "rows" && "w-72 shrink-0")}
-            >
+            <div key={c.id} className={cn(layout === "rows" && "w-72 shrink-0")}>
               <WorkspaceCard data={c} onClick={() => onOpenCard(c)} />
             </div>
           ))
         )}
-
       </div>
     </div>
   );
