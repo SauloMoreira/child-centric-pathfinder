@@ -553,10 +553,12 @@ function AreaDeTrabalhoPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+      <AlertDialog open={!!confirmReset} onOpenChange={(o) => !o && setConfirmReset(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Restaurar quadro?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmReset ? `Restaurar “${confirmReset.nome}”?` : "Restaurar quadro?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Todas as colunas personalizadas serão removidas e a coluna base voltará ao padrão.
               Nenhum cadastro será excluído.
