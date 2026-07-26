@@ -242,21 +242,19 @@ export function OrgaoNovoSheet({
                 *
               </span>
             </Label>
-            <Input
-              id="comarca"
-              autoComplete="off"
-              list="comarcas-sugeridas"
-              placeholder="Porto Alegre"
-              maxLength={120}
-              {...form.register("comarca")}
+            <Controller
+              control={form.control}
+              name="comarca"
+              render={({ field, fieldState }) => (
+                <ComarcaCombobox
+                  id="comarca"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={comarcasSugeridas}
+                  aria-invalid={!!fieldState.error}
+                />
+              )}
             />
-            {comarcasSugeridas.length > 0 && (
-              <datalist id="comarcas-sugeridas">
-                {comarcasSugeridas.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            )}
             {form.formState.errors.comarca && (
               <p className="text-xs text-destructive">
                 {form.formState.errors.comarca.message}
