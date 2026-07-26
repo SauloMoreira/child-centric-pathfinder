@@ -391,6 +391,69 @@ export type Database = {
           },
         ]
       }
+      comarcas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          nome_normalizado: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          nome_normalizado: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          nome_normalizado?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      orgao_comarcas: {
+        Row: {
+          comarca_id: string
+          created_at: string
+          created_by: string
+          is_principal: boolean
+          orgao_execucao_id: string
+        }
+        Insert: {
+          comarca_id: string
+          created_at?: string
+          created_by: string
+          is_principal?: boolean
+          orgao_execucao_id: string
+        }
+        Update: {
+          comarca_id?: string
+          created_at?: string
+          created_by?: string
+          is_principal?: boolean
+          orgao_execucao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orgao_comarcas_comarca_id_fkey"
+            columns: ["comarca_id"]
+            isOneToOne: false
+            referencedRelation: "comarcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orgao_comarcas_orgao_execucao_id_fkey"
+            columns: ["orgao_execucao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orgaos_execucao: {
         Row: {
           comarca: string
@@ -690,6 +753,15 @@ export type Database = {
       }
     }
     Functions: {
+      admin_add_comarca_to_orgao: {
+        Args: {
+          p_comarca_nome: string
+          p_idempotency_key?: string
+          p_is_principal?: boolean
+          p_orgao_id: string
+        }
+        Returns: Json
+      }
       admin_assign_defensor_role: {
         Args: {
           p_idempotency_key?: string
@@ -775,6 +847,10 @@ export type Database = {
           p_limit?: number
           p_text?: string
         }
+        Returns: Json
+      }
+      buscar_orgaos_execucao: {
+        Args: { p_limit?: number; p_termo?: string }
         Returns: Json
       }
       cadastrar_assistido_adulto: { Args: { p_payload: Json }; Returns: Json }
