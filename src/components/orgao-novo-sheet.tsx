@@ -89,15 +89,20 @@ export function OrgaoNovoSheet({
   const [open, setOpen] = useState(false);
   const [duplicateId, setDuplicateId] = useState<string | null>(null);
   const [mfaBlocked, setMfaBlocked] = useState(false);
+  const [mfaChallengeOpen, setMfaChallengeOpen] = useState(false);
+  const [hasVerifiedFactor, setHasVerifiedFactor] = useState<boolean | null>(
+    null,
+  );
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
     crypto.randomUUID(),
   );
   const qc = useQueryClient();
-  const { data: estado } = useEstadoInstitucional();
+  const { data: estado, refetch: refetchEstado } = useEstadoInstitucional();
   const isEdit = mode === "edit" && !!orgao;
   const requiresMfa = isAdminTecnico(estado) && !isEdit;
   const hasAal2 = !!estado?.aal2;
   const mfaMissing = requiresMfa && !hasAal2;
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(orgaoSchema),
