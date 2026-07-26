@@ -424,6 +424,7 @@ function AreaDeTrabalhoPage() {
           setBoardDialog({ mode: "duplicate", board: b });
         }}
         onDelete={(b) => setConfirmDeleteBoard(b)}
+        onReset={(b) => setConfirmReset(b)}
         onReorder={(orderedIds) => {
           boardMutations.reordenar.mutate(
             { ordered_ids: orderedIds },
