@@ -44,6 +44,8 @@ import {
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarState } from "@/components/app-shell/sidebar-context";
+import { OperationalOrgSwitcher } from "@/components/app-shell/operational-org-switcher";
+
 
 type NavItem = {
   to: string;
@@ -248,14 +250,11 @@ function AppShellInner({ children }: { children: ReactNode }) {
               </p>
             </div>
           </div>
-          <div className="hidden items-center gap-3 sm:flex">
-            {tecnico && (
-              <span className="rounded-full border border-institutional/40 bg-institutional/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-institutional">
-                Admin técnico
-              </span>
-            )}
+          <div className="flex items-center gap-3">
+            <OperationalOrgSwitcher />
             <StatusChip estado={estado} />
           </div>
+
         </header>
         {modoTecnicoGlobal && (
           <div

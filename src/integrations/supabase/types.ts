@@ -762,6 +762,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_add_defensor_org_membership: {
+        Args: {
+          p_idempotency_key?: string
+          p_orgao_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       admin_assign_defensor_role: {
         Args: {
           p_idempotency_key?: string
@@ -777,6 +785,18 @@ export type Database = {
         Returns: Json
       }
       admin_detalhar_usuario: { Args: { p_user_id: string }; Returns: Json }
+      admin_end_defensor_org_membership: {
+        Args: {
+          p_idempotency_key?: string
+          p_membership_id: string
+          p_motivo?: string
+        }
+        Returns: Json
+      }
+      admin_list_defensor_memberships: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       admin_listar_usuarios: {
         Args: { p_limit?: number }
         Returns: {
@@ -893,14 +913,22 @@ export type Database = {
         }
         Returns: Json
       }
-      defensor_alterar_orgao_ativo: {
-        Args: {
-          p_expected_current_membership_id: string
-          p_idempotency_key?: string
-          p_new_orgao_id: string
-        }
-        Returns: Json
-      }
+      defensor_alterar_orgao_ativo:
+        | {
+            Args: {
+              p_expected_current_membership_id?: string
+              p_new_orgao_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_expected_current_membership_id: string
+              p_idempotency_key?: string
+              p_new_orgao_id: string
+            }
+            Returns: Json
+          }
       delete_workspace_column: { Args: { p_column_id: string }; Returns: Json }
       duplicate_workspace_column: {
         Args: { p_column_id: string }
@@ -951,6 +979,10 @@ export type Database = {
           user_id: string
           vinculado_em: string
         }[]
+      }
+      listar_orgaos_acessiveis: {
+        Args: { p_cursor?: string; p_limit?: number; p_termo?: string }
+        Returns: Json
       }
       listar_solicitacoes_acesso: {
         Args: {
@@ -1023,6 +1055,14 @@ export type Database = {
       }
       reset_workspace_to_default: {
         Args: { p_workspace_id: string }
+        Returns: Json
+      }
+      selecionar_contexto_orgao: {
+        Args: {
+          p_expected_version?: number
+          p_idempotency_key?: string
+          p_orgao_id: string
+        }
         Returns: Json
       }
       show_limit: { Args: never; Returns: number }
