@@ -18,7 +18,12 @@ export type EstadoInstitucional = {
     created_at: string;
     updated_at: string;
   } | null;
-  roles: Array<"admin_institucional" | "defensor_publico" | "membro_equipe">;
+  roles: Array<
+    | "admin_tecnico"
+    | "admin_institucional"
+    | "defensor_publico"
+    | "membro_equipe"
+  >;
   aal2: boolean;
   orgao_ativo: { id: string; nome: string; sigla: string } | null;
   solicitacao_aberta: {
@@ -41,7 +46,18 @@ export function useEstadoInstitucional() {
   });
 }
 
+export function isAdminTecnico(estado?: EstadoInstitucional) {
+  return !!estado?.roles.includes("admin_tecnico");
+}
 export function isAdmin(estado?: EstadoInstitucional) {
+  // Reconhece Administrador Institucional OU Administrador Técnico como
+  // administrador em áreas institucionais compartilhadas (solicitações, órgãos).
+  return (
+    !!estado?.roles.includes("admin_institucional") ||
+    !!estado?.roles.includes("admin_tecnico")
+  );
+}
+export function isAdminInstitucionalStrict(estado?: EstadoInstitucional) {
   return !!estado?.roles.includes("admin_institucional");
 }
 export function isDefensor(estado?: EstadoInstitucional) {
@@ -51,5 +67,7 @@ export function isMembroEquipe(estado?: EstadoInstitucional) {
   return !!estado?.roles.includes("membro_equipe");
 }
 export function isAtivo(estado?: EstadoInstitucional) {
+  // Administrador Técnico não é obrigado a manter vínculo com órgão; profile ativo basta.
   return estado?.profile?.status === "ativo" && estado.profile.ativo;
 }
+
