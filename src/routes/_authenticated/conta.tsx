@@ -266,7 +266,12 @@ function MfaSetup({ onChange }: { onChange: () => void }) {
               <div>
                 <p className="font-medium">{f.friendly_name ?? "Fator TOTP"}</p>
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Estado: {f.status}
+                  MFA configurado · Estado: {f.status}
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  Um fator verificado não eleva a sessão automaticamente. Ao
+                  entrar, informe o código do aplicativo para elevar a sessão
+                  ao nível AAL2.
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => remover(f.id)} disabled={loading}>
