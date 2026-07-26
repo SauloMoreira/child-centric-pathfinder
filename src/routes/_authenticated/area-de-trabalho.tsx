@@ -150,6 +150,18 @@ function AreaDeTrabalhoPage() {
   >(null);
   const [boardNameInput, setBoardNameInput] = useState("");
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<WorkspaceSummary | null>(null);
+  const [layoutMode, setLayoutMode] = useState<"columns" | "rows">(() => {
+    if (typeof window === "undefined") return "columns";
+    const v = window.localStorage.getItem("reintegra.ws.layout");
+    return v === "rows" ? "rows" : "columns";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("reintegra.ws.layout", layoutMode);
+    }
+  }, [layoutMode]);
+
 
   const busca = useBuscaAssistidos(
     searchText.trim(),
