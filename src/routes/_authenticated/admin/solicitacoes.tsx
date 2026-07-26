@@ -327,7 +327,7 @@ function DialogAprovar({
                 <SelectContent>
                   {orgaos.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
-                      {o.sigla} — {o.nome}
+                      {o.sigla ?? "—"} — {o.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
