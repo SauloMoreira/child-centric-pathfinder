@@ -24,7 +24,7 @@ import { VinculoAssistidoPicker } from "@/components/assistidos/vinculo-assistid
 import { isValidCpf, stripCpf, formatCpf } from "@/lib/validators/cpf";
 import { isAdultAtDate } from "@/lib/validators/age";
 import { useCadastrarAdulto, useAtualizarAdulto } from "@/hooks/use-cadastro-assistido";
-import { useUploadFotoAssistido } from "@/hooks/use-upload-foto-assistido";
+import { useUploadFotoAssistido, useRemoverFotoAssistido } from "@/hooks/use-upload-foto-assistido";
 import { useAssistidoFull } from "@/hooks/use-assistido-full";
 
 const schema = z.object({
