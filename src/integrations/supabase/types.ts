@@ -14,16 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orgaos_execucao: {
+        Row: {
+          ativo: boolean
+          cidade: string | null
+          comarca: string | null
+          created_at: string
+          criado_por: string | null
+          id: string
+          nome: string
+          sigla: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cidade?: string | null
+          comarca?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          nome: string
+          sigla: string
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string | null
+          comarca?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          nome?: string
+          sigla?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          created_at: string
+          inativado_em: string | null
+          matricula: string | null
+          motivo_bloqueio: string | null
+          nome_completo: string | null
+          status: Database["public"]["Enums"]["profile_status"]
+          suspenso_em: string | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          inativado_em?: string | null
+          matricula?: string | null
+          motivo_bloqueio?: string | null
+          nome_completo?: string | null
+          status?: Database["public"]["Enums"]["profile_status"]
+          suspenso_em?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          inativado_em?: string | null
+          matricula?: string | null
+          motivo_bloqueio?: string | null
+          nome_completo?: string | null
+          status?: Database["public"]["Enums"]["profile_status"]
+          suspenso_em?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      aprovar_solicitacao_acesso: {
+        Args: {
+          p_criar_novo?: boolean
+          p_novo_orgao?: Json
+          p_orgao_final_id: string
+          p_request_id: string
+          p_version: number
+        }
+        Returns: Json
+      }
+      cancelar_solicitacao_acesso: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      listar_solicitacoes_acesso: {
+        Args: {
+          p_limit?: number
+          p_status?: Database["public"]["Enums"]["access_request_status"]
+        }
+        Returns: {
+          cargo: string
+          correlation_id: string
+          created_at: string
+          id: string
+          matricula: string
+          nome_completo: string
+          orgao_id: string
+          orgao_nome: string
+          proposta_novo_orgao_cidade: string
+          proposta_novo_orgao_comarca: string
+          proposta_novo_orgao_nome: string
+          proposta_novo_orgao_sigla: string
+          status: Database["public"]["Enums"]["access_request_status"]
+          telefone: string
+          user_id: string
+          version: number
+        }[]
+      }
+      meu_estado_institucional: { Args: never; Returns: Json }
+      rejeitar_solicitacao_acesso: {
+        Args: { p_motivo: string; p_request_id: string; p_version: number }
+        Returns: Json
+      }
+      submeter_solicitacao_acesso: {
+        Args: {
+          p_aceite_termos: boolean
+          p_cargo: string
+          p_matricula: string
+          p_nome_completo: string
+          p_novo_orgao: Json
+          p_orgao_id: string
+          p_telefone: string
+        }
+        Returns: Json
+      }
+      tem_papel: {
+        Args: { required_role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      access_request_status:
+        | "pendente"
+        | "em_analise"
+        | "aprovada"
+        | "rejeitada"
+        | "cancelada"
+      app_role: "admin_institucional" | "defensor_publico" | "membro_equipe"
+      audit_result: "sucesso" | "falha" | "negado"
+      profile_status:
+        | "aguardando_dados"
+        | "aguardando_aprovacao"
+        | "ativo"
+        | "suspenso"
+        | "inativo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +304,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      access_request_status: [
+        "pendente",
+        "em_analise",
+        "aprovada",
+        "rejeitada",
+        "cancelada",
+      ],
+      app_role: ["admin_institucional", "defensor_publico", "membro_equipe"],
+      audit_result: ["sucesso", "falha", "negado"],
+      profile_status: [
+        "aguardando_dados",
+        "aguardando_aprovacao",
+        "ativo",
+        "suspenso",
+        "inativo",
+      ],
+    },
   },
 } as const
