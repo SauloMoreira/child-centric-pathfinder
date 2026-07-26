@@ -69,9 +69,10 @@ const formSchema = z
   );
 
 function SolicitarAcesso() {
-  const { data: estado } = useEstadoInstitucional();
+  const { data: estado, isLoading: estadoLoading } = useEstadoInstitucional();
   const navigate = useNavigate();
   const qc = useQueryClient();
+
 
   const orgaosQ = useQuery({
     queryKey: ["orgaos-execucao"],
