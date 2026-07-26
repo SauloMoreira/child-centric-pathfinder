@@ -8,7 +8,6 @@ import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
@@ -30,19 +28,25 @@ export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
 });
 
 const NOVO = "__novo__";
-const formSchema = z.object({
-  nome_completo: z.string().trim().min(3, "Informe seu nome completo.").max(120),
-  matricula: z.string().trim().min(2, "Informe sua matrícula.").max(40),
-  cargo: z.string().trim().min(2, "Informe seu cargo.").max(80),
-  telefone: z.string().trim().max(40).optional().or(z.literal("")),
-  orgao_id: z.string().uuid().optional(),
-  novo_nome: z.string().trim().max(200).optional(),
-  novo_comarca: z.string().trim().max(120).optional(),
-  aceite_termos: z.literal(true, {
-    message: "É necessário aceitar os termos institucionais.",
-  }),
+const CARGO_DEFENSOR = "Defensor Público";
+const CARGO_MEMBRO = "Membro de equipe";
 
-});
+const formSchema = z
+  .object({
+    nome_completo: z.string().trim().min(3, "Informe seu nome completo.").max(120),
+    cargo: z.enum([CARGO_DEFENSOR, CARGO_MEMBRO], {
+      message: "Selecione seu cargo.",
+    }),
+    matricula: z.string().trim().max(40).optional().or(z.literal("")),
+    orgao_id: z.string().uuid().optional(),
+    novo_nome: z.string().trim().max(200).optional(),
+    novo_comarca: z.string().trim().max(120).optional(),
+  })
+  .refine(
+    (v) =>
+      v.cargo !== CARGO_DEFENSOR || (v.matricula && v.matricula.trim().length >= 2),
+    { message: "Informe sua matrícula.", path: ["matricula"] },
+  );
 
 function SolicitarAcesso() {
   const { data: estado } = useEstadoInstitucional();
@@ -62,17 +66,22 @@ function SolicitarAcesso() {
   });
 
   const [orgaoSel, setOrgaoSel] = useState<string>("");
+  const initialCargo =
+    estado?.profile?.cargo === CARGO_MEMBRO
+      ? CARGO_MEMBRO
+      : estado?.profile?.cargo === CARGO_DEFENSOR
+        ? CARGO_DEFENSOR
+        : "";
   const [form, setForm] = useState({
     nome_completo: estado?.profile?.nome_completo ?? "",
     matricula: estado?.profile?.matricula ?? "",
-    cargo: estado?.profile?.cargo ?? "",
-    telefone: estado?.profile?.telefone ?? "",
+    cargo: initialCargo as "" | typeof CARGO_DEFENSOR | typeof CARGO_MEMBRO,
     novo_nome: "",
     novo_comarca: "",
-    aceite: false,
   });
   const [submitting, setSubmitting] = useState(false);
 
+  const isDefensor = form.cargo === CARGO_DEFENSOR;
   const solicitacaoAberta = estado?.solicitacao_aberta;
 
   const cancelar = useMutation({
@@ -97,7 +106,6 @@ function SolicitarAcesso() {
     const parsed = formSchema.safeParse({
       ...form,
       orgao_id: orgaoExistente,
-      aceite_termos: form.aceite,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
@@ -115,12 +123,16 @@ function SolicitarAcesso() {
       return;
     }
 
+    // A RPC exige matrícula (mín. 2 caracteres). Para Membro de equipe,
+    // enviamos sentinela institucional "N/D" (não se aplica).
+    const matriculaSubmit = isDefensor ? form.matricula.trim() : "N/D";
+
     setSubmitting(true);
     const { error } = await supabase.rpc("submeter_solicitacao_acesso", {
       p_nome_completo: form.nome_completo,
-      p_matricula: form.matricula,
+      p_matricula: matriculaSubmit,
       p_cargo: form.cargo,
-      p_telefone: form.telefone || null,
+      p_telefone: null,
       p_orgao_id: orgaoExistente ?? null,
       p_novo_orgao:
         orgaoSel === NOVO
@@ -202,36 +214,40 @@ function SolicitarAcesso() {
                 maxLength={120}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="matricula">Matrícula</Label>
-              <Input
-                id="matricula"
-                className="font-mono"
-                value={form.matricula}
-                onChange={(e) => setForm((f) => ({ ...f, matricula: e.target.value }))}
-                required
-                maxLength={40}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cargo">Cargo</Label>
-              <Input
-                id="cargo"
-                value={form.cargo}
-                onChange={(e) => setForm((f) => ({ ...f, cargo: e.target.value }))}
-                required
-                maxLength={80}
-              />
-            </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="tel">Telefone institucional (opcional)</Label>
-              <Input
-                id="tel"
-                value={form.telefone}
-                onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
-                maxLength={40}
-              />
+              <Label htmlFor="cargo">Cargo</Label>
+              <Select
+                value={form.cargo}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    cargo: v as typeof CARGO_DEFENSOR | typeof CARGO_MEMBRO,
+                    matricula: v === CARGO_DEFENSOR ? f.matricula : "",
+                  }))
+                }
+              >
+                <SelectTrigger id="cargo">
+                  <SelectValue placeholder="Selecione seu cargo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CARGO_DEFENSOR}>Defensor Público</SelectItem>
+                  <SelectItem value={CARGO_MEMBRO}>Membro de equipe</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            {isDefensor && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="matricula">Matrícula</Label>
+                <Input
+                  id="matricula"
+                  className="font-mono"
+                  value={form.matricula}
+                  onChange={(e) => setForm((f) => ({ ...f, matricula: e.target.value }))}
+                  required
+                  maxLength={40}
+                />
+              </div>
+            )}
           </div>
         </section>
 
@@ -290,36 +306,6 @@ function SolicitarAcesso() {
               </div>
             )}
           </div>
-        </section>
-
-        <section className="surface-panel p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Termo institucional
-          </h2>
-          <Textarea
-            readOnly
-            className="mt-4 h-40 resize-none bg-canvas/50 font-mono text-xs"
-            value={
-`Declaro, sob as penas legais, que sou servidor(a) da Defensoria Pública do Estado do Rio Grande do Sul, que os dados funcionais fornecidos são verdadeiros e que estou ciente das seguintes obrigações institucionais:
-
-1. Utilizar o sistema Reintegra Infância exclusivamente para finalidades institucionais legítimas.
-2. Não compartilhar credenciais nem sessões autenticadas.
-3. Tratar dados pessoais de crianças, adolescentes, famílias e demais titulares com estrita observância da LGPD e dos deveres funcionais.
-4. Registrar apenas informações necessárias, adequadas e proporcionais ao acompanhamento do caso.
-5. Comunicar imediatamente à administração qualquer incidente de segurança ou uso indevido.
-6. Aceitar que toda ação sensível será registrada em auditoria institucional.`
-            }
-          />
-          <label className="mt-4 flex items-start gap-3 text-sm">
-            <Checkbox
-              checked={form.aceite}
-              onCheckedChange={(v) => setForm((f) => ({ ...f, aceite: v === true }))}
-            />
-            <span>
-              Li e aceito integralmente o termo institucional acima e confirmo
-              a veracidade dos dados informados.
-            </span>
-          </label>
         </section>
 
         <div className="flex justify-end gap-2">
