@@ -16,10 +16,23 @@ export type WorkspaceColumn = {
 };
 
 export type WorkspaceData = {
+  workspace: {
+    id: string;
+    orgao_execucao_id: string;
+    nome: string;
+    is_default: boolean;
+    version: number;
+  } | null;
+  columns: WorkspaceColumn[];
+  can_edit: boolean;
+};
+
+export type WorkspaceCompat = {
   workspace_id: string | null;
-  context: "orgao" | "todos_orgaos";
+  context: "orgao";
   orgao_id: string | null;
   columns: WorkspaceColumn[];
+  can_edit: boolean;
 };
 
 export type AssistidoCard = {
@@ -48,31 +61,36 @@ export type AssistidoCard = {
   updated_at: string;
 };
 
-async function ensureWorkspace(context: "orgao" | "todos_orgaos", orgaoId: string | null) {
+async function ensureWorkspace(orgaoId: string | null) {
   const { error } = await supabase.rpc("ensure_default_workspace", {
-    p_context: context,
-    p_orgao_id: orgaoId ?? undefined,
+    p_orgao_id: orgaoId ?? (undefined as unknown as string),
   });
   if (error) throw error;
 }
 
-export function useWorkspace(context: "orgao" | "todos_orgaos" = "orgao", orgaoId: string | null = null) {
+export function useWorkspace(_context: "orgao" | "todos_orgaos" = "orgao", orgaoId: string | null = null) {
   const qc = useQueryClient();
-  return useQuery<WorkspaceData>({
-    queryKey: ["workspace", context, orgaoId],
+  return useQuery<WorkspaceCompat>({
+    queryKey: ["workspace", orgaoId],
     queryFn: async () => {
-      await ensureWorkspace(context, orgaoId);
+      await ensureWorkspace(orgaoId);
       const { data, error } = await supabase.rpc("listar_workspace", {
-        p_context: context,
-        p_orgao_id: orgaoId ?? undefined,
+        p_orgao_id: orgaoId ?? (undefined as unknown as string),
       });
       if (error) throw error;
-      const result = data as unknown as WorkspaceData;
-      // Aquece cache do primeiro carregamento
-      qc.setQueryData(["workspace", context, orgaoId], result);
-      return result;
+      const d = data as unknown as WorkspaceData;
+      const compat: WorkspaceCompat = {
+        workspace_id: d.workspace?.id ?? null,
+        context: "orgao",
+        orgao_id: d.workspace?.orgao_execucao_id ?? orgaoId,
+        columns: d.columns ?? [],
+        can_edit: d.can_edit ?? false,
+      };
+      qc.setQueryData(["workspace", orgaoId], compat);
+      return compat;
     },
     staleTime: 30_000,
+    enabled: !!orgaoId,
   });
 }
 

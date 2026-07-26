@@ -3,11 +3,16 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
+import {
+  useEstadoInstitucional,
+  isDefensor,
+} from "@/hooks/use-estado-institucional";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ShieldCheck, KeyRound } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, ShieldCheck, KeyRound, Building2, Landmark } from "lucide-react";
+import { ChangeOrgSheet } from "@/components/conta/change-org-sheet";
 
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({
@@ -27,6 +32,8 @@ const passwordSchema = z
 function MinhaConta() {
   const { data: estado, refetch } = useEstadoInstitucional();
   const isAdmin = estado?.roles.includes("admin_institucional") ?? false;
+  const defensor = isDefensor(estado);
+  const [changeOrgOpen, setChangeOrgOpen] = useState(false);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 p-6 lg:p-8">
@@ -36,9 +43,63 @@ function MinhaConta() {
         </p>
         <h1 className="mt-2 text-2xl font-semibold">Minha conta</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ajuste dados de acesso e credenciais de segurança.
+          Ajuste dados de acesso, credenciais de segurança e vínculo institucional.
         </p>
       </div>
+
+      <section className="surface-panel p-6">
+        <div className="flex items-start gap-3">
+          <Landmark className="mt-0.5 h-5 w-5 text-institutional" aria-hidden />
+          <div className="flex-1">
+            <h2 className="text-base font-semibold">Órgão de execução</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Órgão institucional ao qual seu vínculo ativo está associado.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-md border border-border bg-canvas/40 p-4">
+          {estado?.orgao_ativo ? (
+            <>
+              <p className="text-sm font-medium">{estado.orgao_ativo.nome}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {(estado.comarcas ?? []).length === 0 && estado.orgao_ativo.comarca && (
+                  <Badge variant="outline" className="text-xs">
+                    {estado.orgao_ativo.comarca}
+                  </Badge>
+                )}
+                {(estado.comarcas ?? []).map((c) => (
+                  <Badge
+                    key={c.id}
+                    variant={c.principal ? "default" : "outline"}
+                    className="text-xs"
+                  >
+                    {c.nome}
+                    {c.principal ? " · principal" : ""}
+                  </Badge>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Você ainda não possui vínculo ativo com um órgão de execução.
+            </p>
+          )}
+        </div>
+
+        {defensor && estado?.orgao_ativo && (
+          <div className="mt-4">
+            <Button variant="outline" onClick={() => setChangeOrgOpen(true)}>
+              <Building2 className="mr-2 h-4 w-4" aria-hidden />
+              Alterar órgão de execução
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Alteração imediata, sem aprovação. Registrada em auditoria.
+            </p>
+          </div>
+        )}
+        <ChangeOrgSheet open={changeOrgOpen} onOpenChange={setChangeOrgOpen} />
+      </section>
 
       <section className="surface-panel p-6">
         <div className="flex items-start gap-3">
