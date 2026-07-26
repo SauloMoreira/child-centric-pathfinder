@@ -233,6 +233,8 @@ function SignUpForm() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const { next } = useSearch({ from: "/auth" });
+  const retorno = caminhoSeguro(next);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -249,7 +251,13 @@ function SignUpForm() {
       email: eR.data,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth`,
+        emailRedirectTo: retorno
+          ? `${window.location.origin}${retorno}`
+          : `${window.location.origin}/auth`,
+        data: { nome_completo: nR.data },
+      },
+    });
+
         data: { nome_completo: nR.data },
       },
     });
