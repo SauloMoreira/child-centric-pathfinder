@@ -18,6 +18,17 @@ import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
 import { Route as AuthenticatedAdminSolicitacoesRouteImport } from './routes/_authenticated/admin/solicitacoes'
 import { Route as AuthenticatedAdminOrgaosRouteImport } from './routes/_authenticated/admin/orgaos'
+import { Route as AuthenticatedAdminTecnicoVinculosRouteImport } from './routes/_authenticated/admin-tecnico/vinculos'
+import { Route as AuthenticatedAdminTecnicoUsuariosRouteImport } from './routes/_authenticated/admin-tecnico/usuarios'
+import { Route as AuthenticatedAdminTecnicoSegurancaRouteImport } from './routes/_authenticated/admin-tecnico/seguranca'
+import { Route as AuthenticatedAdminTecnicoPainelRouteImport } from './routes/_authenticated/admin-tecnico/painel'
+import { Route as AuthenticatedAdminTecnicoOrgaosRouteImport } from './routes/_authenticated/admin-tecnico/orgaos'
+import { Route as AuthenticatedAdminTecnicoDiagnosticosRouteImport } from './routes/_authenticated/admin-tecnico/diagnosticos'
+import { Route as AuthenticatedAdminTecnicoConfiguracoesRouteImport } from './routes/_authenticated/admin-tecnico/configuracoes'
+import { Route as AuthenticatedAdminTecnicoAuditoriaRouteImport } from './routes/_authenticated/admin-tecnico/auditoria'
+import { Route as AuthenticatedAdminTecnicoAdministradoresRouteImport } from './routes/_authenticated/admin-tecnico/administradores'
+import { Route as AuthenticatedAdminTecnicoAcessoGlobalRouteImport } from './routes/_authenticated/admin-tecnico/acesso-global'
+import { Route as AuthenticatedAdminTecnicoAcessoEmergencialRouteImport } from './routes/_authenticated/admin-tecnico/acesso-emergencial'
 
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
@@ -66,6 +77,72 @@ const AuthenticatedAdminOrgaosRoute =
     path: '/admin/orgaos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminTecnicoVinculosRoute =
+  AuthenticatedAdminTecnicoVinculosRouteImport.update({
+    id: '/admin-tecnico/vinculos',
+    path: '/admin-tecnico/vinculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoUsuariosRoute =
+  AuthenticatedAdminTecnicoUsuariosRouteImport.update({
+    id: '/admin-tecnico/usuarios',
+    path: '/admin-tecnico/usuarios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoSegurancaRoute =
+  AuthenticatedAdminTecnicoSegurancaRouteImport.update({
+    id: '/admin-tecnico/seguranca',
+    path: '/admin-tecnico/seguranca',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoPainelRoute =
+  AuthenticatedAdminTecnicoPainelRouteImport.update({
+    id: '/admin-tecnico/painel',
+    path: '/admin-tecnico/painel',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoOrgaosRoute =
+  AuthenticatedAdminTecnicoOrgaosRouteImport.update({
+    id: '/admin-tecnico/orgaos',
+    path: '/admin-tecnico/orgaos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoDiagnosticosRoute =
+  AuthenticatedAdminTecnicoDiagnosticosRouteImport.update({
+    id: '/admin-tecnico/diagnosticos',
+    path: '/admin-tecnico/diagnosticos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoConfiguracoesRoute =
+  AuthenticatedAdminTecnicoConfiguracoesRouteImport.update({
+    id: '/admin-tecnico/configuracoes',
+    path: '/admin-tecnico/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAuditoriaRoute =
+  AuthenticatedAdminTecnicoAuditoriaRouteImport.update({
+    id: '/admin-tecnico/auditoria',
+    path: '/admin-tecnico/auditoria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAdministradoresRoute =
+  AuthenticatedAdminTecnicoAdministradoresRouteImport.update({
+    id: '/admin-tecnico/administradores',
+    path: '/admin-tecnico/administradores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAcessoGlobalRoute =
+  AuthenticatedAdminTecnicoAcessoGlobalRouteImport.update({
+    id: '/admin-tecnico/acesso-global',
+    path: '/admin-tecnico/acesso-global',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAcessoEmergencialRoute =
+  AuthenticatedAdminTecnicoAcessoEmergencialRouteImport.update({
+    id: '/admin-tecnico/acesso-emergencial',
+    path: '/admin-tecnico/acesso-emergencial',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +151,17 @@ export interface FileRoutesByFullPath {
   '/conta': typeof AuthenticatedContaRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/solicitar-acesso': typeof AuthenticatedSolicitarAcessoRoute
+  '/admin-tecnico/acesso-emergencial': typeof AuthenticatedAdminTecnicoAcessoEmergencialRoute
+  '/admin-tecnico/acesso-global': typeof AuthenticatedAdminTecnicoAcessoGlobalRoute
+  '/admin-tecnico/administradores': typeof AuthenticatedAdminTecnicoAdministradoresRoute
+  '/admin-tecnico/auditoria': typeof AuthenticatedAdminTecnicoAuditoriaRoute
+  '/admin-tecnico/configuracoes': typeof AuthenticatedAdminTecnicoConfiguracoesRoute
+  '/admin-tecnico/diagnosticos': typeof AuthenticatedAdminTecnicoDiagnosticosRoute
+  '/admin-tecnico/orgaos': typeof AuthenticatedAdminTecnicoOrgaosRoute
+  '/admin-tecnico/painel': typeof AuthenticatedAdminTecnicoPainelRoute
+  '/admin-tecnico/seguranca': typeof AuthenticatedAdminTecnicoSegurancaRoute
+  '/admin-tecnico/usuarios': typeof AuthenticatedAdminTecnicoUsuariosRoute
+  '/admin-tecnico/vinculos': typeof AuthenticatedAdminTecnicoVinculosRoute
   '/admin/orgaos': typeof AuthenticatedAdminOrgaosRoute
   '/admin/solicitacoes': typeof AuthenticatedAdminSolicitacoesRoute
 }
@@ -84,6 +172,17 @@ export interface FileRoutesByTo {
   '/conta': typeof AuthenticatedContaRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/solicitar-acesso': typeof AuthenticatedSolicitarAcessoRoute
+  '/admin-tecnico/acesso-emergencial': typeof AuthenticatedAdminTecnicoAcessoEmergencialRoute
+  '/admin-tecnico/acesso-global': typeof AuthenticatedAdminTecnicoAcessoGlobalRoute
+  '/admin-tecnico/administradores': typeof AuthenticatedAdminTecnicoAdministradoresRoute
+  '/admin-tecnico/auditoria': typeof AuthenticatedAdminTecnicoAuditoriaRoute
+  '/admin-tecnico/configuracoes': typeof AuthenticatedAdminTecnicoConfiguracoesRoute
+  '/admin-tecnico/diagnosticos': typeof AuthenticatedAdminTecnicoDiagnosticosRoute
+  '/admin-tecnico/orgaos': typeof AuthenticatedAdminTecnicoOrgaosRoute
+  '/admin-tecnico/painel': typeof AuthenticatedAdminTecnicoPainelRoute
+  '/admin-tecnico/seguranca': typeof AuthenticatedAdminTecnicoSegurancaRoute
+  '/admin-tecnico/usuarios': typeof AuthenticatedAdminTecnicoUsuariosRoute
+  '/admin-tecnico/vinculos': typeof AuthenticatedAdminTecnicoVinculosRoute
   '/admin/orgaos': typeof AuthenticatedAdminOrgaosRoute
   '/admin/solicitacoes': typeof AuthenticatedAdminSolicitacoesRoute
 }
@@ -96,6 +195,17 @@ export interface FileRoutesById {
   '/_authenticated/conta': typeof AuthenticatedContaRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/solicitar-acesso': typeof AuthenticatedSolicitarAcessoRoute
+  '/_authenticated/admin-tecnico/acesso-emergencial': typeof AuthenticatedAdminTecnicoAcessoEmergencialRoute
+  '/_authenticated/admin-tecnico/acesso-global': typeof AuthenticatedAdminTecnicoAcessoGlobalRoute
+  '/_authenticated/admin-tecnico/administradores': typeof AuthenticatedAdminTecnicoAdministradoresRoute
+  '/_authenticated/admin-tecnico/auditoria': typeof AuthenticatedAdminTecnicoAuditoriaRoute
+  '/_authenticated/admin-tecnico/configuracoes': typeof AuthenticatedAdminTecnicoConfiguracoesRoute
+  '/_authenticated/admin-tecnico/diagnosticos': typeof AuthenticatedAdminTecnicoDiagnosticosRoute
+  '/_authenticated/admin-tecnico/orgaos': typeof AuthenticatedAdminTecnicoOrgaosRoute
+  '/_authenticated/admin-tecnico/painel': typeof AuthenticatedAdminTecnicoPainelRoute
+  '/_authenticated/admin-tecnico/seguranca': typeof AuthenticatedAdminTecnicoSegurancaRoute
+  '/_authenticated/admin-tecnico/usuarios': typeof AuthenticatedAdminTecnicoUsuariosRoute
+  '/_authenticated/admin-tecnico/vinculos': typeof AuthenticatedAdminTecnicoVinculosRoute
   '/_authenticated/admin/orgaos': typeof AuthenticatedAdminOrgaosRoute
   '/_authenticated/admin/solicitacoes': typeof AuthenticatedAdminSolicitacoesRoute
 }
@@ -108,6 +218,17 @@ export interface FileRouteTypes {
     | '/conta'
     | '/painel'
     | '/solicitar-acesso'
+    | '/admin-tecnico/acesso-emergencial'
+    | '/admin-tecnico/acesso-global'
+    | '/admin-tecnico/administradores'
+    | '/admin-tecnico/auditoria'
+    | '/admin-tecnico/configuracoes'
+    | '/admin-tecnico/diagnosticos'
+    | '/admin-tecnico/orgaos'
+    | '/admin-tecnico/painel'
+    | '/admin-tecnico/seguranca'
+    | '/admin-tecnico/usuarios'
+    | '/admin-tecnico/vinculos'
     | '/admin/orgaos'
     | '/admin/solicitacoes'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +239,17 @@ export interface FileRouteTypes {
     | '/conta'
     | '/painel'
     | '/solicitar-acesso'
+    | '/admin-tecnico/acesso-emergencial'
+    | '/admin-tecnico/acesso-global'
+    | '/admin-tecnico/administradores'
+    | '/admin-tecnico/auditoria'
+    | '/admin-tecnico/configuracoes'
+    | '/admin-tecnico/diagnosticos'
+    | '/admin-tecnico/orgaos'
+    | '/admin-tecnico/painel'
+    | '/admin-tecnico/seguranca'
+    | '/admin-tecnico/usuarios'
+    | '/admin-tecnico/vinculos'
     | '/admin/orgaos'
     | '/admin/solicitacoes'
   id:
@@ -129,6 +261,17 @@ export interface FileRouteTypes {
     | '/_authenticated/conta'
     | '/_authenticated/painel'
     | '/_authenticated/solicitar-acesso'
+    | '/_authenticated/admin-tecnico/acesso-emergencial'
+    | '/_authenticated/admin-tecnico/acesso-global'
+    | '/_authenticated/admin-tecnico/administradores'
+    | '/_authenticated/admin-tecnico/auditoria'
+    | '/_authenticated/admin-tecnico/configuracoes'
+    | '/_authenticated/admin-tecnico/diagnosticos'
+    | '/_authenticated/admin-tecnico/orgaos'
+    | '/_authenticated/admin-tecnico/painel'
+    | '/_authenticated/admin-tecnico/seguranca'
+    | '/_authenticated/admin-tecnico/usuarios'
+    | '/_authenticated/admin-tecnico/vinculos'
     | '/_authenticated/admin/orgaos'
     | '/_authenticated/admin/solicitacoes'
   fileRoutesById: FileRoutesById
@@ -205,6 +348,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOrgaosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin-tecnico/vinculos': {
+      id: '/_authenticated/admin-tecnico/vinculos'
+      path: '/admin-tecnico/vinculos'
+      fullPath: '/admin-tecnico/vinculos'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoVinculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/usuarios': {
+      id: '/_authenticated/admin-tecnico/usuarios'
+      path: '/admin-tecnico/usuarios'
+      fullPath: '/admin-tecnico/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/seguranca': {
+      id: '/_authenticated/admin-tecnico/seguranca'
+      path: '/admin-tecnico/seguranca'
+      fullPath: '/admin-tecnico/seguranca'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoSegurancaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/painel': {
+      id: '/_authenticated/admin-tecnico/painel'
+      path: '/admin-tecnico/painel'
+      fullPath: '/admin-tecnico/painel'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoPainelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/orgaos': {
+      id: '/_authenticated/admin-tecnico/orgaos'
+      path: '/admin-tecnico/orgaos'
+      fullPath: '/admin-tecnico/orgaos'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoOrgaosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/diagnosticos': {
+      id: '/_authenticated/admin-tecnico/diagnosticos'
+      path: '/admin-tecnico/diagnosticos'
+      fullPath: '/admin-tecnico/diagnosticos'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoDiagnosticosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/configuracoes': {
+      id: '/_authenticated/admin-tecnico/configuracoes'
+      path: '/admin-tecnico/configuracoes'
+      fullPath: '/admin-tecnico/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/auditoria': {
+      id: '/_authenticated/admin-tecnico/auditoria'
+      path: '/admin-tecnico/auditoria'
+      fullPath: '/admin-tecnico/auditoria'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/administradores': {
+      id: '/_authenticated/admin-tecnico/administradores'
+      path: '/admin-tecnico/administradores'
+      fullPath: '/admin-tecnico/administradores'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAdministradoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/acesso-global': {
+      id: '/_authenticated/admin-tecnico/acesso-global'
+      path: '/admin-tecnico/acesso-global'
+      fullPath: '/admin-tecnico/acesso-global'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAcessoGlobalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/acesso-emergencial': {
+      id: '/_authenticated/admin-tecnico/acesso-emergencial'
+      path: '/admin-tecnico/acesso-emergencial'
+      fullPath: '/admin-tecnico/acesso-emergencial'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAcessoEmergencialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -212,6 +432,17 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContaRoute: typeof AuthenticatedContaRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedSolicitarAcessoRoute: typeof AuthenticatedSolicitarAcessoRoute
+  AuthenticatedAdminTecnicoAcessoEmergencialRoute: typeof AuthenticatedAdminTecnicoAcessoEmergencialRoute
+  AuthenticatedAdminTecnicoAcessoGlobalRoute: typeof AuthenticatedAdminTecnicoAcessoGlobalRoute
+  AuthenticatedAdminTecnicoAdministradoresRoute: typeof AuthenticatedAdminTecnicoAdministradoresRoute
+  AuthenticatedAdminTecnicoAuditoriaRoute: typeof AuthenticatedAdminTecnicoAuditoriaRoute
+  AuthenticatedAdminTecnicoConfiguracoesRoute: typeof AuthenticatedAdminTecnicoConfiguracoesRoute
+  AuthenticatedAdminTecnicoDiagnosticosRoute: typeof AuthenticatedAdminTecnicoDiagnosticosRoute
+  AuthenticatedAdminTecnicoOrgaosRoute: typeof AuthenticatedAdminTecnicoOrgaosRoute
+  AuthenticatedAdminTecnicoPainelRoute: typeof AuthenticatedAdminTecnicoPainelRoute
+  AuthenticatedAdminTecnicoSegurancaRoute: typeof AuthenticatedAdminTecnicoSegurancaRoute
+  AuthenticatedAdminTecnicoUsuariosRoute: typeof AuthenticatedAdminTecnicoUsuariosRoute
+  AuthenticatedAdminTecnicoVinculosRoute: typeof AuthenticatedAdminTecnicoVinculosRoute
   AuthenticatedAdminOrgaosRoute: typeof AuthenticatedAdminOrgaosRoute
   AuthenticatedAdminSolicitacoesRoute: typeof AuthenticatedAdminSolicitacoesRoute
 }
@@ -220,6 +451,26 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContaRoute: AuthenticatedContaRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedSolicitarAcessoRoute: AuthenticatedSolicitarAcessoRoute,
+  AuthenticatedAdminTecnicoAcessoEmergencialRoute:
+    AuthenticatedAdminTecnicoAcessoEmergencialRoute,
+  AuthenticatedAdminTecnicoAcessoGlobalRoute:
+    AuthenticatedAdminTecnicoAcessoGlobalRoute,
+  AuthenticatedAdminTecnicoAdministradoresRoute:
+    AuthenticatedAdminTecnicoAdministradoresRoute,
+  AuthenticatedAdminTecnicoAuditoriaRoute:
+    AuthenticatedAdminTecnicoAuditoriaRoute,
+  AuthenticatedAdminTecnicoConfiguracoesRoute:
+    AuthenticatedAdminTecnicoConfiguracoesRoute,
+  AuthenticatedAdminTecnicoDiagnosticosRoute:
+    AuthenticatedAdminTecnicoDiagnosticosRoute,
+  AuthenticatedAdminTecnicoOrgaosRoute: AuthenticatedAdminTecnicoOrgaosRoute,
+  AuthenticatedAdminTecnicoPainelRoute: AuthenticatedAdminTecnicoPainelRoute,
+  AuthenticatedAdminTecnicoSegurancaRoute:
+    AuthenticatedAdminTecnicoSegurancaRoute,
+  AuthenticatedAdminTecnicoUsuariosRoute:
+    AuthenticatedAdminTecnicoUsuariosRoute,
+  AuthenticatedAdminTecnicoVinculosRoute:
+    AuthenticatedAdminTecnicoVinculosRoute,
   AuthenticatedAdminOrgaosRoute: AuthenticatedAdminOrgaosRoute,
   AuthenticatedAdminSolicitacoesRoute: AuthenticatedAdminSolicitacoesRoute,
 }

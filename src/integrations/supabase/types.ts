@@ -142,6 +142,23 @@ export type Database = {
         }[]
       }
       meu_estado_institucional: { Args: never; Returns: Json }
+      promover_admin_tecnico: {
+        Args: { p_justificativa: string; p_target_user_id: string }
+        Returns: Json
+      }
+      registrar_acesso_orgao_externo: {
+        Args: { p_finalidade?: string; p_modulo: string; p_orgao_id: string }
+        Returns: Json
+      }
+      registrar_break_glass: {
+        Args: {
+          p_chamado: string
+          p_justificativa: string
+          p_orgao_id: string
+          p_prazo_minutos?: number
+        }
+        Returns: Json
+      }
       rejeitar_solicitacao_acesso: {
         Args: { p_motivo: string; p_request_id: string; p_version: number }
         Returns: Json
@@ -170,7 +187,11 @@ export type Database = {
         | "aprovada"
         | "rejeitada"
         | "cancelada"
-      app_role: "admin_institucional" | "defensor_publico" | "membro_equipe"
+      app_role:
+        | "admin_tecnico"
+        | "admin_institucional"
+        | "defensor_publico"
+        | "membro_equipe"
       audit_result: "sucesso" | "falha" | "negado"
       profile_status:
         | "aguardando_dados"
@@ -312,7 +333,12 @@ export const Constants = {
         "rejeitada",
         "cancelada",
       ],
-      app_role: ["admin_institucional", "defensor_publico", "membro_equipe"],
+      app_role: [
+        "admin_tecnico",
+        "admin_institucional",
+        "defensor_publico",
+        "membro_equipe",
+      ],
       audit_result: ["sucesso", "falha", "negado"],
       profile_status: [
         "aguardando_dados",
