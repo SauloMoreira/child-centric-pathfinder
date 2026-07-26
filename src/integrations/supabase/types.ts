@@ -170,7 +170,11 @@ export type Database = {
         | "aprovada"
         | "rejeitada"
         | "cancelada"
-      app_role: "admin_institucional" | "defensor_publico" | "membro_equipe"
+      app_role:
+        | "admin_tecnico"
+        | "admin_institucional"
+        | "defensor_publico"
+        | "membro_equipe"
       audit_result: "sucesso" | "falha" | "negado"
       profile_status:
         | "aguardando_dados"
@@ -312,7 +316,12 @@ export const Constants = {
         "rejeitada",
         "cancelada",
       ],
-      app_role: ["admin_institucional", "defensor_publico", "membro_equipe"],
+      app_role: [
+        "admin_tecnico",
+        "admin_institucional",
+        "defensor_publico",
+        "membro_equipe",
+      ],
       audit_result: ["sucesso", "falha", "negado"],
       profile_status: [
         "aguardando_dados",
