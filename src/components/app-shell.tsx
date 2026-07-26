@@ -187,6 +187,14 @@ function AppShellInner({ children }: { children: ReactNode }) {
     />
   );
 
+  const sidebarOrgBlock = (
+    <SidebarOrgBlock
+      collapsed={collapsed && !isMobile}
+      estado={estado}
+      tecnico={tecnico}
+    />
+  );
+
   const sidebarUserBlock = (
     <SidebarUserBlock
       collapsed={collapsed && !isMobile}
@@ -204,6 +212,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <DesktopSidebar>
         <SidebarHeader collapsed={collapsed} />
         {sidebarNav}
+        {sidebarOrgBlock}
         {sidebarUserBlock}
       </DesktopSidebar>
 
@@ -220,41 +229,23 @@ function AppShellInner({ children }: { children: ReactNode }) {
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
             {sidebarNav}
+            {sidebarOrgBlock}
             {sidebarUserBlock}
           </div>
         </SheetContent>
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              aria-label="Abrir menu lateral"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu className="h-5 w-5" aria-hidden />
-            </Button>
-            <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-                Defensoria Pública do RS
-              </p>
-              <p className="truncate text-sm font-medium text-foreground">
-                {estado?.orgao_ativo
-                  ? `${estado.orgao_ativo.nome}${estado.orgao_ativo.comarca ? ` · ${estado.orgao_ativo.comarca}` : ""}`
-                  : tecnico
-                    ? "Administrador Técnico — acesso global"
-                    : "Vínculo institucional pendente"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <OperationalOrgSwitcher />
-            <StatusChip estado={estado} />
-          </div>
-
+        <header className="flex h-12 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden lg:px-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Abrir menu lateral"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-5 w-5" aria-hidden />
+          </Button>
+          <StatusChip estado={estado} />
         </header>
         {modoTecnicoGlobal && (
           <div
@@ -269,6 +260,59 @@ function AppShellInner({ children }: { children: ReactNode }) {
         )}
         <main className="flex-1 overflow-x-hidden">{children}</main>
       </div>
+    </div>
+  );
+}
+
+function SidebarOrgBlock({
+  collapsed,
+  estado,
+  tecnico,
+}: {
+  collapsed: boolean;
+  estado: ReturnType<typeof useEstadoInstitucional>["data"];
+  tecnico: boolean;
+}) {
+  const { toggleCollapsed } = useSidebarState();
+  const nomeOrgao = estado?.orgao_ativo?.nome
+    ?? (tecnico ? "Acesso técnico global" : "Sem vínculo ativo");
+
+  if (collapsed) {
+    return (
+      <div className="border-t border-sidebar-border p-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label={`Órgão em uso: ${nomeOrgao}. Expandir menu para trocar.`}
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <Building2 className="h-4 w-4 text-institutional" aria-hidden />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <div className="text-xs">
+              <p className="font-mono uppercase tracking-[0.14em] text-muted-foreground">
+                Órgão em uso
+              </p>
+              <p className="font-medium">{nomeOrgao}</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-sidebar-border p-3">
+      <p className="px-1 pb-1.5 font-mono text-[9px] uppercase tracking-[0.24em] text-sidebar-muted">
+        Órgão em uso
+      </p>
+      <p className="mb-2 px-1 truncate text-xs font-medium text-sidebar-foreground" title={nomeOrgao}>
+        {nomeOrgao}
+      </p>
+      <OperationalOrgSwitcher />
     </div>
   );
 }
