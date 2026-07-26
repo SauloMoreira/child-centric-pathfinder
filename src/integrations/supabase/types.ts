@@ -649,6 +649,7 @@ export type Database = {
           entidade_acolhimento: string | null
           faixa_etaria: string | null
           familiar_dpe: boolean | null
+          foto_path: string | null
           foto_url: string | null
           genero: string | null
           id: string | null
@@ -683,6 +684,7 @@ export type Database = {
           entidade_acolhimento?: never
           faixa_etaria?: never
           familiar_dpe?: never
+          foto_path?: string | null
           foto_url?: string | null
           genero?: string | null
           id?: string | null
@@ -715,6 +717,7 @@ export type Database = {
           entidade_acolhimento?: never
           faixa_etaria?: never
           familiar_dpe?: never
+          foto_path?: string | null
           foto_url?: string | null
           genero?: string | null
           id?: string | null
