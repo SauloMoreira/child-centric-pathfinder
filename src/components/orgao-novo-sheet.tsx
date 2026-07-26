@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Plus, AlertTriangle, Pencil, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { ComarcaCombobox, normalizeComarca } from "@/components/comarca-combobox";
 
 import {
   Sheet,
@@ -181,7 +182,12 @@ export function OrgaoNovoSheet({
       toast.error(MFA_GUIDANCE_MESSAGE);
       return;
     }
-    mutation.mutate(values);
+    // Snap comarca to existing canonical when normalized value matches.
+    const norm = normalizeComarca(values.comarca);
+    const canonical =
+      comarcasSugeridas.find((c) => normalizeComarca(c) === norm) ??
+      values.comarca;
+    mutation.mutate({ ...values, comarca: canonical });
   });
 
   const defaultTrigger = isEdit ? (
@@ -238,21 +244,19 @@ export function OrgaoNovoSheet({
                 *
               </span>
             </Label>
-            <Input
-              id="comarca"
-              autoComplete="off"
-              list="comarcas-sugeridas"
-              placeholder="Porto Alegre"
-              maxLength={120}
-              {...form.register("comarca")}
+            <Controller
+              control={form.control}
+              name="comarca"
+              render={({ field, fieldState }) => (
+                <ComarcaCombobox
+                  id="comarca"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={comarcasSugeridas}
+                  aria-invalid={!!fieldState.error}
+                />
+              )}
             />
-            {comarcasSugeridas.length > 0 && (
-              <datalist id="comarcas-sugeridas">
-                {comarcasSugeridas.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            )}
             {form.formState.errors.comarca && (
               <p className="text-xs text-destructive">
                 {form.formState.errors.comarca.message}
