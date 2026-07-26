@@ -65,6 +65,7 @@ export type AssistidoCard = {
   faixa_etaria: "crianca" | "adolescente";
   sexo_registral: string;
   foto_url: string | null;
+  foto_path?: string | null;
   situacao_atual: string;
   orgao_execucao_id: string;
   orgao_nome?: string | null;

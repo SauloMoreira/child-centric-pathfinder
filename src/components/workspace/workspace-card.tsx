@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { AlertCircle, Baby, Clock, Home, Scale, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import type { AssistidoCard } from "@/hooks/use-workspace";
 import {
   Tooltip,
@@ -7,6 +9,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+function useAssistidoFotoUrl(fotoUrl: string | null | undefined, fotoPath: string | null | undefined) {
+  const [url, setUrl] = useState<string | null>(fotoUrl ?? null);
+  useEffect(() => {
+    if (fotoUrl) {
+      setUrl(fotoUrl);
+      return;
+    }
+    if (!fotoPath) {
+      setUrl(null);
+      return;
+    }
+    let cancelled = false;
+    supabase.storage
+      .from("assistidos-fotos")
+      .createSignedUrl(fotoPath, 60 * 60)
+      .then(({ data }) => {
+        if (!cancelled && data?.signedUrl) setUrl(data.signedUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fotoUrl, fotoPath]);
+  return url;
+}
 
 const SITUACAO_LABEL: Record<string, string> = {
   familia_natural: "Família natural",
@@ -49,6 +76,7 @@ export function WorkspaceCard({
   );
   const prazoVencido = prazoDias != null && prazoDias < 0;
   const prazoProximo = prazoDias != null && prazoDias >= 0 && prazoDias <= 7;
+  const fotoUrl = useAssistidoFotoUrl(data.foto_url, data.foto_path);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -62,10 +90,10 @@ export function WorkspaceCard({
       >
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs font-semibold text-muted-foreground">
-            {data.foto_url ? (
+            {fotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={data.foto_url}
+                src={fotoUrl}
                 alt=""
                 className="h-full w-full rounded-md object-cover"
               />
