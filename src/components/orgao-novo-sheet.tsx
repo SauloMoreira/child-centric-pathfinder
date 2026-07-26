@@ -333,20 +333,34 @@ export function OrgaoNovoSheet({
                     MFA obrigatório para esta operação
                   </p>
                   <p className="text-muted-foreground">
-                    {MFA_GUIDANCE_MESSAGE}
+                    {hasVerifiedFactor
+                      ? "Confirme seu código MFA para continuar. Sua sessão ainda não está elevada (AAL2)."
+                      : "Configure a autenticação em dois fatores para executar esta ação."}
                   </p>
-                  <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                  >
-                    <Link to="/conta">Configurar MFA em Minha conta</Link>
-                  </Button>
+                  {hasVerifiedFactor ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setMfaChallengeOpen(true)}
+                    >
+                      Confirmar MFA agora
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Link to="/conta">Configurar MFA em Minha conta</Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             </section>
           )}
+
 
           <SheetFooter className="gap-2">
             <Button
