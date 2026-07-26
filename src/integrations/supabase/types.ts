@@ -427,6 +427,105 @@ export type Database = {
         }
         Relationships: []
       }
+      processo_assistidos: {
+        Row: {
+          assistido_id: string
+          created_at: string
+          created_by: string
+          processo_id: string
+        }
+        Insert: {
+          assistido_id: string
+          created_at?: string
+          created_by: string
+          processo_id: string
+        }
+        Update: {
+          assistido_id?: string
+          created_at?: string
+          created_by?: string
+          processo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_assistidos_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_assistidos_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "v_assistidos_card"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_assistidos_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processos: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_inicio: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          numero_processo: string
+          numero_processo_normalizado: string
+          observacoes: string | null
+          orgao_execucao_id: string
+          status: Database["public"]["Enums"]["situacao_processo_enum"] | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data_inicio: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          numero_processo: string
+          numero_processo_normalizado: string
+          observacoes?: string | null
+          orgao_execucao_id: string
+          status?: Database["public"]["Enums"]["situacao_processo_enum"] | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_inicio?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          numero_processo?: string
+          numero_processo_normalizado?: string
+          observacoes?: string | null
+          orgao_execucao_id?: string
+          status?: Database["public"]["Enums"]["situacao_processo_enum"] | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processos_orgao_execucao_id_fkey"
+            columns: ["orgao_execucao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean
