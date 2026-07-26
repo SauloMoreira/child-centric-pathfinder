@@ -56,21 +56,24 @@ const nomeSchema = z
   .max(120);
 
 function AuthPage() {
-  const { modo } = useSearch({ from: "/auth" });
+  const { modo, next } = useSearch({ from: "/auth" });
   const navigate = useNavigate();
+  const retorno = caminhoSeguro(next);
 
-  // Se já estiver autenticado, mandar para /painel.
+  // Se já estiver autenticado, retornar ao destino solicitado ou ao painel.
   useEffect(() => {
     let alive = true;
     supabase.auth.getSession().then(({ data }) => {
       if (alive && data.session) {
-        navigate({ to: "/painel", replace: true });
+        if (retorno) window.location.replace(retorno);
+        else navigate({ to: "/painel", replace: true });
       }
     });
     return () => {
       alive = false;
     };
-  }, [navigate]);
+  }, [navigate, retorno]);
+
 
   return (
     <div className="min-h-screen bg-canvas">
