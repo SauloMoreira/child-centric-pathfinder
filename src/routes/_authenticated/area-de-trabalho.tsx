@@ -732,8 +732,8 @@ function WorkspaceTabs({
   onCreate,
   onRename,
   onDuplicate,
-  onSetDefault,
   onDelete,
+  onReorder,
 }: {
   boards: WorkspaceSummary[];
   activeId: string | null;
@@ -742,9 +742,42 @@ function WorkspaceTabs({
   onCreate: () => void;
   onRename: (b: WorkspaceSummary) => void;
   onDuplicate: (b: WorkspaceSummary) => void;
-  onSetDefault: (b: WorkspaceSummary) => void;
   onDelete: (b: WorkspaceSummary) => void;
+  onReorder: (orderedIds: string[]) => void;
 }) {
+  const dragId = useRef<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    if (!canEdit) return;
+    dragId.current = id;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+  function handleDragOver(e: React.DragEvent, id: string) {
+    if (!canEdit || !dragId.current || dragId.current === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (overId !== id) setOverId(id);
+  }
+  function handleDrop(e: React.DragEvent, targetId: string) {
+    e.preventDefault();
+    const src = dragId.current;
+    dragId.current = null;
+    setOverId(null);
+    if (!canEdit || !src || src === targetId) return;
+    const ids = boards.map((b) => b.id);
+    const from = ids.indexOf(src);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    onReorder(ids);
+  }
+  function handleDragEnd() {
+    dragId.current = null;
+    setOverId(null);
+  }
+
   return (
     <div
       role="tablist"
@@ -753,16 +786,31 @@ function WorkspaceTabs({
     >
       {boards.map((b) => {
         const active = b.id === activeId;
+        const Icon = getBoardIcon(b.icone);
+        const isOver = overId === b.id;
         return (
           <div
             key={b.id}
+            draggable={canEdit}
+            onDragStart={(e) => handleDragStart(e, b.id)}
+            onDragOver={(e) => handleDragOver(e, b.id)}
+            onDrop={(e) => handleDrop(e, b.id)}
+            onDragEnd={handleDragEnd}
             className={cn(
               "group flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors",
               active
                 ? "border-primary/40 bg-primary/10 text-primary"
                 : "border-transparent hover:bg-muted",
+              isOver && "ring-2 ring-primary/60",
+              canEdit && "cursor-grab active:cursor-grabbing",
             )}
           >
+            {canEdit && (
+              <GripVertical
+                className="h-3 w-3 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-80"
+                aria-hidden
+              />
+            )}
             <button
               type="button"
               role="tab"
@@ -770,11 +818,8 @@ function WorkspaceTabs({
               onClick={() => onSelect(b.id)}
               className="flex items-center gap-1.5 font-medium"
             >
-              <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+              <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="max-w-[180px] truncate">{b.nome}</span>
-              {b.is_default && (
-                <Star className="h-3 w-3 fill-current text-warning" aria-label="Quadro padrão" />
-              )}
             </button>
             {canEdit && (
               <DropdownMenu>
@@ -789,20 +834,14 @@ function WorkspaceTabs({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => onRename(b)}>
-                    <Pencil className="mr-2 h-3.5 w-3.5" /> Renomear
+                    <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => onDuplicate(b)}>
                     <Copy className="mr-2 h-3.5 w-3.5" /> Duplicar
                   </DropdownMenuItem>
-                  {!b.is_default && (
-                    <DropdownMenuItem onSelect={() => onSetDefault(b)}>
-                      <Star className="mr-2 h-3.5 w-3.5" /> Definir como padrão
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive"
-                    disabled={b.is_default}
                     onSelect={() => onDelete(b)}
                   >
                     <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
@@ -826,6 +865,7 @@ function WorkspaceTabs({
     </div>
   );
 }
+
 
 function WorkspaceSkeleton() {
   return (
