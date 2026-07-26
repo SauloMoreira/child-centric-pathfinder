@@ -1,10 +1,15 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
+import {
+  useEstadoInstitucional,
+  isAtivo,
+  isAdminTecnico,
+  type EstadoInstitucional,
+} from "@/hooks/use-estado-institucional";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
@@ -24,8 +30,22 @@ export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
+  beforeLoad: async () => {
+    const { data, error } = await supabase.rpc("meu_estado_institucional");
+    if (error) return;
+    const estado = data as EstadoInstitucional | null;
+    if (!estado) return;
+    // Perfil já ativo ou admin técnico: não deve ver o formulário.
+    if (isAtivo(estado) || isAdminTecnico(estado)) {
+      throw redirect({ to: "/area-de-trabalho", replace: true });
+    }
+    if (estado.profile?.status === "suspenso" || estado.profile?.status === "inativo") {
+      throw redirect({ to: "/conta", replace: true });
+    }
+  },
   component: SolicitarAcesso,
 });
+
 
 const NOVO = "__novo__";
 const CARGO_DEFENSOR = "Defensor Público";
@@ -49,9 +69,10 @@ const formSchema = z
   );
 
 function SolicitarAcesso() {
-  const { data: estado } = useEstadoInstitucional();
+  const { data: estado, isLoading: estadoLoading } = useEstadoInstitucional();
   const navigate = useNavigate();
   const qc = useQueryClient();
+
 
   const orgaosQ = useQuery({
     queryKey: ["orgaos-execucao"],
@@ -145,15 +166,43 @@ function SolicitarAcesso() {
     } as never);
     setSubmitting(false);
     if (error) {
-      toast.error(error.message || "Falha ao enviar solicitação.");
+      const code = (error as { code?: string; message?: string }).code;
+      const msg = error.message || "";
+      if (code === "PROFILE_ALREADY_ACTIVE" || /já processado/i.test(msg) || /already.?active/i.test(msg)) {
+        toast.info("Seu acesso já está ativo. Redirecionamos você para a Área de Trabalho.");
+        await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
+        navigate({ to: "/area-de-trabalho", replace: true });
+        return;
+      }
+      toast.error(msg || "Falha ao enviar solicitação.");
       return;
     }
     toast.success("Solicitação enviada. Aguarde aprovação institucional.");
     await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
-    navigate({ to: "/painel" });
+    navigate({ to: "/area-de-trabalho", replace: true });
+  }
+
+  if (estadoLoading) {
+    return (
+      <div className="mx-auto max-w-2xl p-6 lg:p-8" aria-busy="true">
+        <p className="text-sm text-muted-foreground">Verificando seu acesso institucional…</p>
+        <div className="mt-6 space-y-3">
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // Segunda camada: se o estado indicar perfil ativo, sair do formulário.
+  if (isAtivo(estado) || isAdminTecnico(estado)) {
+    navigate({ to: "/area-de-trabalho", replace: true });
+    return null;
   }
 
   if (solicitacaoAberta) {
+
     return (
       <div className="mx-auto max-w-2xl p-6 lg:p-8">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
