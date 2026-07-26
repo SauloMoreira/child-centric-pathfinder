@@ -27,6 +27,7 @@ import {
   isAdmin,
   isAdminTecnico,
   isAdminInstitucionalStrict,
+  isDefensor,
   isAtivo,
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
