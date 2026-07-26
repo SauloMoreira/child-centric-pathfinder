@@ -713,6 +713,7 @@ function WorkspaceTabs({
   onDuplicate,
   onDelete,
   onReorder,
+  onReset,
 }: {
   boards: WorkspaceSummary[];
   activeId: string | null;
@@ -723,6 +724,7 @@ function WorkspaceTabs({
   onDuplicate: (b: WorkspaceSummary) => void;
   onDelete: (b: WorkspaceSummary) => void;
   onReorder: (orderedIds: string[]) => void;
+  onReset: (b: WorkspaceSummary) => void;
 }) {
   const dragId = useRef<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
