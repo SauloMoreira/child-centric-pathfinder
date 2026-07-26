@@ -31,7 +31,12 @@ export default defineTool({
       .order("nome", { ascending: true })
       .limit(limite ?? 50);
 
-    if (busca) query = query.or(`nome.ilike.%${busca}%,comarca.ilike.%${busca}%`);
+    if (busca) {
+      // Escapa caracteres especiais do PostgREST no valor de busca antes de
+      // interpolar no filtro OR (vírgula, parênteses e ponto e vírgula).
+      const safe = busca.replace(/([,()\\;])/g, "\\$1");
+      query = query.or(`nome.ilike.%${safe}%,comarca.ilike.%${safe}%`);
+    }
 
     const { data, error } = await query;
     if (error) return erro(error.message);
