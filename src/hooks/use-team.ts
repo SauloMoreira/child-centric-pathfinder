@@ -211,33 +211,6 @@ export function useUpdateMember() {
   });
 }
 
-export function useChangeDefenderOrg() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      newOrgaoId: string;
-      expectedCurrentMembershipId?: string | null;
-    }) => {
-      const idempotencyKey = crypto.randomUUID();
-      const { data, error } = await supabase.rpc(
-        "defensor_alterar_orgao_ativo",
-        {
-          p_new_orgao_id: input.newOrgaoId,
-          p_expected_current_membership_id:
-            (input.expectedCurrentMembershipId ?? undefined) as string,
-          p_idempotency_key: idempotencyKey,
-        },
-      );
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["estado-institucional"] });
-      qc.invalidateQueries({ queryKey: ["team-members"] });
-      qc.invalidateQueries({ queryKey: ["team-invitations"] });
-    },
-  });
-}
 
 export function useMyPendingInvitation() {
   return useQuery({
