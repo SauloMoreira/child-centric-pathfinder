@@ -465,6 +465,42 @@ function AreaDeTrabalhoPage() {
             )}
             <span className="ml-1.5">Atualizar</span>
           </Button>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex items-center gap-0.5 rounded-md border border-border bg-canvas p-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant={layoutMode === "columns" ? "default" : "ghost"}
+                    className="h-7 w-7"
+                    aria-label="Exibir em colunas"
+                    aria-pressed={layoutMode === "columns"}
+                    onClick={() => setLayoutMode("columns")}
+                  >
+                    <Columns3 className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Colunas lado a lado</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant={layoutMode === "rows" ? "default" : "ghost"}
+                    className="h-7 w-7"
+                    aria-label="Exibir em linhas"
+                    aria-pressed={layoutMode === "rows"}
+                    onClick={() => setLayoutMode("rows")}
+                  >
+                    <Rows3 className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Linhas empilhadas</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
           <Button
             size="sm"
             variant="outline"
@@ -475,6 +511,7 @@ function AreaDeTrabalhoPage() {
             <span className="ml-1.5">Restaurar padrão</span>
           </Button>
           <Button size="sm" onClick={openCreate}>
+
             <Plus className="h-3.5 w-3.5" aria-hidden />
             <span className="ml-1.5">Nova coluna</span>
           </Button>
