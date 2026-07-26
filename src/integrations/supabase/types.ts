@@ -858,6 +858,10 @@ export type Database = {
         }
         Returns: Json
       }
+      atualizar_workspace_meta: {
+        Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
+        Returns: Json
+      }
       bloquear_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
@@ -926,7 +930,7 @@ export type Database = {
         Returns: Json
       }
       criar_workspace: {
-        Args: { p_nome: string; p_orgao_id: string }
+        Args: { p_icone?: string; p_nome: string; p_orgao_id: string }
         Returns: Json
       }
       defensor_alterar_orgao_ativo: {
@@ -1075,6 +1079,10 @@ export type Database = {
       }
       renomear_workspace: {
         Args: { p_nome: string; p_workspace_id: string }
+        Returns: Json
+      }
+      reordenar_workspaces: {
+        Args: { p_ordered_ids: string[]; p_orgao_id: string }
         Returns: Json
       }
       reorder_workspace_columns: {
