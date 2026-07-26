@@ -824,6 +824,9 @@ function WorkspaceTabs({
                   <DropdownMenuItem onSelect={() => onDuplicate(b)}>
                     <Copy className="mr-2 h-3.5 w-3.5" /> Duplicar
                   </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onReset(b)}>
+                    <RotateCcw className="mr-2 h-3.5 w-3.5" /> Restaurar padrão
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive"
