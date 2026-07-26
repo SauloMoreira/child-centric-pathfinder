@@ -12,6 +12,9 @@ import {
   Trash2,
   Pencil,
   Loader2,
+  Baby,
+  UserRound,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +56,10 @@ import { WorkspaceColumnForm } from "@/components/workspace/workspace-column-for
 import { getColorClasses } from "@/lib/workspace/colors";
 import { describeActive } from "@/lib/workspace/filters";
 import type { AssistidoCard } from "@/hooks/use-workspace";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CadastrarCriancaSheet } from "@/components/assistidos/cadastrar-crianca-sheet";
+import { CadastrarAdultoSheet } from "@/components/assistidos/cadastrar-adulto-sheet";
+import { CadastrarProcessoSheet } from "@/components/processos/cadastrar-processo-sheet";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
@@ -88,6 +95,9 @@ function AreaDeTrabalhoPage() {
   const [editingColumn, setEditingColumn] = useState<WorkspaceColumn | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<WorkspaceColumn | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [criancaOpen, setCriancaOpen] = useState(false);
+  const [adultoOpen, setAdultoOpen] = useState(false);
+  const [processoOpen, setProcessoOpen] = useState(false);
 
   const busca = useBuscaAssistidos(
     searchText.trim(),
@@ -268,9 +278,60 @@ function AreaDeTrabalhoPage() {
             <Button type="submit" disabled={searchText.trim().length < 2}>
               Buscar
             </Button>
+            <TooltipProvider delayDuration={200}>
+              <div className="ml-1 flex items-center gap-1 border-l border-border pl-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setCriancaOpen(true)}
+                      aria-label="Cadastrar criança ou adolescente"
+                    >
+                      <Baby className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cadastrar criança ou adolescente</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setAdultoOpen(true)}
+                      aria-label="Cadastrar adulto assistido"
+                    >
+                      <UserRound className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cadastrar adulto assistido</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setProcessoOpen(true)}
+                      aria-label="Cadastrar processo judicial"
+                    >
+                      <Scale className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cadastrar processo judicial</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
         </form>
       </div>
+
+      <CadastrarCriancaSheet open={criancaOpen} onOpenChange={setCriancaOpen} orgaoId={orgaoId} />
+      <CadastrarAdultoSheet open={adultoOpen} onOpenChange={setAdultoOpen} orgaoId={orgaoId} />
+      <CadastrarProcessoSheet open={processoOpen} onOpenChange={setProcessoOpen} orgaoId={orgaoId} />
+
 
       {/* Resultados da busca */}
       {searchActive && (
