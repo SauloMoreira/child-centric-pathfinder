@@ -124,6 +124,30 @@ export function OrgaoNovoSheet({
     }
   }, [open, isEdit, orgao, form]);
 
+  // Ao abrir o sheet com bloqueio de MFA, descobrir se o usuário já tem
+  // fator TOTP verificado para decidir entre "Confirmar MFA" vs "Configurar".
+  useEffect(() => {
+    if (!open || !mfaMissing) {
+      setHasVerifiedFactor(null);
+      return;
+    }
+    let alive = true;
+    supabase.auth.mfa.listFactors().then(({ data, error }) => {
+      if (!alive) return;
+      if (error) {
+        setHasVerifiedFactor(false);
+        return;
+      }
+      setHasVerifiedFactor(
+        (data?.totp ?? []).some((f) => f.status === "verified"),
+      );
+    });
+    return () => {
+      alive = false;
+    };
+  }, [open, mfaMissing]);
+
+
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       if (isEdit) {
