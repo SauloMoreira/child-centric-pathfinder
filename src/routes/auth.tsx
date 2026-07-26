@@ -204,46 +204,54 @@ function SignInForm() {
 
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="email">E-mail institucional</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          maxLength={255}
-        />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="password">Senha</Label>
-          <Link
-            to="/auth"
-            search={{ modo: "recuperar" }}
-            className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Esqueci minha senha
-          </Link>
+    <>
+      <form onSubmit={onSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail institucional</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            maxLength={255}
+          />
         </div>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={1}
-          maxLength={128}
-        />
-      </div>
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-        Entrar
-      </Button>
-    </form>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Senha</Label>
+            <Link
+              to="/auth"
+              search={{ modo: "recuperar" }}
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={1}
+            maxLength={128}
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+          Entrar
+        </Button>
+      </form>
+      <MfaChallengeDialog
+        open={mfaOpen}
+        onOpenChange={setMfaOpen}
+        signOutOnCancel
+        onSuccess={concluirRedirect}
+      />
+    </>
   );
 }
 
