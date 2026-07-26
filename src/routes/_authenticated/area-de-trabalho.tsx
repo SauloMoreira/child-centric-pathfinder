@@ -95,6 +95,9 @@ function AreaDeTrabalhoPage() {
   const [editingColumn, setEditingColumn] = useState<WorkspaceColumn | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<WorkspaceColumn | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [criancaOpen, setCriancaOpen] = useState(false);
+  const [adultoOpen, setAdultoOpen] = useState(false);
+  const [processoOpen, setProcessoOpen] = useState(false);
 
   const busca = useBuscaAssistidos(
     searchText.trim(),
