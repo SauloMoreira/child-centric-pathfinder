@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orgaos_execucao: {
+        Row: {
+          ativo: boolean
+          cidade: string | null
+          comarca: string | null
+          created_at: string
+          criado_por: string | null
+          id: string
+          nome: string
+          sigla: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cidade?: string | null
+          comarca?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          nome: string
+          sigla: string
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string | null
+          comarca?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          nome?: string
+          sigla?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          created_at: string
+          inativado_em: string | null
+          matricula: string | null
+          motivo_bloqueio: string | null
+          nome_completo: string | null
+          status: Database["public"]["Enums"]["profile_status"]
+          suspenso_em: string | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          inativado_em?: string | null
+          matricula?: string | null
+          motivo_bloqueio?: string | null
+          nome_completo?: string | null
+          status?: Database["public"]["Enums"]["profile_status"]
+          suspenso_em?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          inativado_em?: string | null
+          matricula?: string | null
+          motivo_bloqueio?: string | null
+          nome_completo?: string | null
+          status?: Database["public"]["Enums"]["profile_status"]
+          suspenso_em?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
