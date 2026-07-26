@@ -391,12 +391,49 @@ function AreaDeTrabalhoPage() {
         />
       )}
 
+      {/* Abas de quadros */}
+      <WorkspaceTabs
+        boards={boards?.workspaces ?? []}
+        activeId={selectedWorkspaceId}
+        canEdit={boards?.can_edit ?? false}
+        onSelect={(id) => setSelectedWorkspaceId(id)}
+        onCreate={() => {
+          setBoardNameInput("");
+          setBoardDialog({ mode: "create" });
+        }}
+        onRename={(b) => {
+          setBoardNameInput(b.nome);
+          setBoardDialog({ mode: "rename", board: b });
+        }}
+        onDuplicate={(b) => {
+          setBoardNameInput(`${b.nome} (cópia)`);
+          setBoardDialog({ mode: "duplicate", board: b });
+        }}
+        onSetDefault={(b) => {
+          boardMutations.definirPadrao.mutate(b.id, {
+            onSuccess: () => toast.success("Quadro padrão atualizado"),
+            onError: (err) =>
+              toast.error("Não foi possível atualizar", {
+                description: err instanceof Error ? err.message : String(err),
+              }),
+          });
+        }}
+        onDelete={(b) => setConfirmDeleteBoard(b)}
+      />
+
       {/* Toolbar do quadro */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 lg:px-8">
         <div>
-          <h2 className="text-sm font-semibold">Meu quadro</h2>
+          <h2 className="text-sm font-semibold">
+            {workspace?.nome ?? "Meu quadro"}
+            {workspace?.is_default && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                <Star className="h-3 w-3" aria-hidden /> Padrão
+              </span>
+            )}
+          </h2>
           <p className="text-xs text-muted-foreground">
-            {columns.length} coluna(s) ·{" "}
+            {wsLoading ? "Carregando..." : `${columns.length} coluna(s)`} ·{" "}
             {tecnico
               ? "Administrador Técnico (acesso global disponível)"
               : estado?.orgao_ativo?.nome ?? "Sem vínculo ativo"}
