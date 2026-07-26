@@ -21,9 +21,9 @@ export function useBuscarAssistidosPicker(
     staleTime: 15_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("buscar_assistidos_picker", {
-        p_text: text || null,
-        p_categoria: categoria === "todos" ? null : categoria,
-        p_exclude: excludeIds.length ? excludeIds : null,
+        p_text: text || undefined,
+        p_categoria: categoria === "todos" ? undefined : categoria,
+        p_exclude: excludeIds.length ? excludeIds : undefined,
         p_limit: 20,
       });
       if (error) throw error;
