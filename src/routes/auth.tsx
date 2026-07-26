@@ -11,7 +11,18 @@ import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 
 const authSearchSchema = z.object({
   modo: z.enum(["entrar", "cadastro", "recuperar"]).optional().default("entrar"),
+  // Caminho relativo de mesma origem para retorno após autenticação
+  // (usado pelo consentimento OAuth do servidor MCP).
+  next: z.string().optional(),
 });
+
+/** Aceita apenas caminhos relativos de mesma origem. */
+function caminhoSeguro(next: string | undefined): string | null {
+  if (!next) return null;
+  if (!next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
