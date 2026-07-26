@@ -25,7 +25,7 @@ export type EstadoInstitucional = {
     | "membro_equipe"
   >;
   aal2: boolean;
-  orgao_ativo: { id: string; nome: string; sigla: string } | null;
+  orgao_ativo: { id: string; nome: string; comarca: string | null } | null;
   solicitacao_aberta: {
     id: string;
     status: "pendente" | "em_analise";
