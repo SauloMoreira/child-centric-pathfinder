@@ -117,10 +117,14 @@ function AuthPage() {
               onValueChange={(v) =>
                 navigate({
                   to: "/auth",
-                  search: { modo: v as "entrar" | "cadastro" | "recuperar" },
+                  search: {
+                    modo: v as "entrar" | "cadastro" | "recuperar",
+                    next,
+                  },
                   replace: true,
                 })
               }
+
             >
               <TabsList className="w-full">
                 <TabsTrigger value="entrar" className="flex-1">Entrar</TabsTrigger>
