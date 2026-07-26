@@ -109,7 +109,7 @@ function AreaDeTrabalhoPage() {
     const persisted = storageKey ? localStorage.getItem(storageKey) : null;
     const existing = list.find((w) => w.id === selectedWorkspaceId);
     const fromStorage = persisted ? list.find((w) => w.id === persisted) : null;
-    const fallback = list.find((w) => w.is_default) ?? list[0];
+    const fallback = list[0];
     const next = existing ?? fromStorage ?? fallback;
     if (next && next.id !== selectedWorkspaceId) setSelectedWorkspaceId(next.id);
   }, [orgaoId, boards, storageKey, selectedWorkspaceId]);
