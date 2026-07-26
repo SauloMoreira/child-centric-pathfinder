@@ -12,6 +12,9 @@ import {
   Trash2,
   Pencil,
   Loader2,
+  Baby,
+  UserRound,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
