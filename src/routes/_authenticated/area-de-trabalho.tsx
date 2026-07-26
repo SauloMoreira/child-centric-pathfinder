@@ -234,8 +234,7 @@ function AreaDeTrabalhoPage() {
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">Área de trabalho</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          Localize crianças e adolescentes acessíveis ao seu órgão de execução e
-          organize sua rotina em colunas personalizáveis.
+          {" "}
         </p>
 
         {/* Busca superior */}
