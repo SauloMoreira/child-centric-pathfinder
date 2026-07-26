@@ -23,7 +23,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      access_request_status:
+        | "pendente"
+        | "em_analise"
+        | "aprovada"
+        | "rejeitada"
+        | "cancelada"
+      app_role: "admin_institucional" | "defensor_publico" | "membro_equipe"
+      audit_result: "sucesso" | "falha" | "negado"
+      profile_status:
+        | "aguardando_dados"
+        | "aguardando_aprovacao"
+        | "ativo"
+        | "suspenso"
+        | "inativo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +163,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      access_request_status: [
+        "pendente",
+        "em_analise",
+        "aprovada",
+        "rejeitada",
+        "cancelada",
+      ],
+      app_role: ["admin_institucional", "defensor_publico", "membro_equipe"],
+      audit_result: ["sucesso", "falha", "negado"],
+      profile_status: [
+        "aguardando_dados",
+        "aguardando_aprovacao",
+        "ativo",
+        "suspenso",
+        "inativo",
+      ],
+    },
   },
 } as const
