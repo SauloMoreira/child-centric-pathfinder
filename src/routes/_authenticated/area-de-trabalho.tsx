@@ -991,7 +991,15 @@ function BoardColumn({
         </DropdownMenu>
       </div>
 
-      <div className="max-h-[calc(100vh-360px)] flex-1 space-y-2 overflow-y-auto p-3">
+      <div
+        className={cn(
+          "flex-1 p-3",
+          layout === "columns"
+            ? "max-h-[calc(100vh-360px)] space-y-2 overflow-y-auto"
+            : "flex gap-2 overflow-x-auto",
+        )}
+      >
+
         {isLoading ? (
           <>
             <WorkspaceCardSkeleton />
