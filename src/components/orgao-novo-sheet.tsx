@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, AlertTriangle, Pencil } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Loader2, Plus, AlertTriangle, Pencil, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -19,6 +20,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  useEstadoInstitucional,
+  isAdminTecnico,
+} from "@/hooks/use-estado-institucional";
+
+const MFA_ERROR_PATTERNS = [
+  "AAL2",
+  "MFA",
+  "aal2",
+  "mfa",
+  "insufficient_aal",
+] as const;
+
+const MFA_GUIDANCE_MESSAGE =
+  "Para criar órgãos, o Administrador Técnico precisa concluir a autenticação em dois fatores (MFA). Ative ou confirme o MFA e tente novamente.";
+
+function isMfaError(message: string): boolean {
+  return MFA_ERROR_PATTERNS.some((p) => message.includes(p));
+}
 
 const orgaoSchema = z.object({
   nome: z
