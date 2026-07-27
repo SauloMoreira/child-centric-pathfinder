@@ -285,7 +285,6 @@ function PanelBoard({
       access={data.access}
       columns={data.columns}
       cards={data.cards}
-      queryKey={key as unknown as readonly unknown[]}
       onRefetch={() => qc.invalidateQueries({ queryKey: key })}
     />
   );
