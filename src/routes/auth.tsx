@@ -14,7 +14,7 @@ import {
 } from "@/components/mfa-challenge-dialog";
 
 const authSearchSchema = z.object({
-  modo: z.enum(["entrar", "cadastro", "recuperar"]).optional().default("entrar"),
+  modo: z.enum(["entrar", "cadastro", "recuperar"]).optional(),
   // Caminho relativo de mesma origem para retorno após autenticação
   // (usado pelo consentimento OAuth do servidor MCP).
   next: z.string().optional(),
@@ -119,7 +119,7 @@ function AuthPage() {
         <main className="flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-md">
             <Tabs
-              value={modo}
+              value={modo ?? "entrar"}
               onValueChange={(v) =>
                 navigate({
                   to: "/auth",
