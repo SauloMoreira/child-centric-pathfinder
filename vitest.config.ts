@@ -18,10 +18,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "json-summary"],
       reportsDirectory: "coverage",
-      include: [
-        "src/features/work-area/**/*.{ts,tsx}",
-        "src/lib/workspace-keys.ts",
-      ],
+      include: ["src/features/work-area/**/*.{ts,tsx}", "src/lib/workspace-keys.ts"],
       exclude: [
         "**/*.test.{ts,tsx}",
         "**/__tests__/**",

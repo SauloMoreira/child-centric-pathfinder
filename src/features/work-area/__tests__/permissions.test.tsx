@@ -5,9 +5,7 @@ import { createAccessFixture } from "@/test/fixtures/work-area";
 
 describe("usePanelPermissions", () => {
   it("owner libera todas as capabilities", () => {
-    const { result } = renderHook(() =>
-      usePanelPermissions(createAccessFixture("owner")),
-    );
+    const { result } = renderHook(() => usePanelPermissions(createAccessFixture("owner")));
     expect(result.current.isOwner).toBe(true);
     expect(result.current.canCreatePanel).toBe(true);
     expect(result.current.canRenamePanel).toBe(true);
@@ -19,9 +17,7 @@ describe("usePanelPermissions", () => {
   });
 
   it("team_readonly desabilita todas as mutações", () => {
-    const { result } = renderHook(() =>
-      usePanelPermissions(createAccessFixture("team_readonly")),
-    );
+    const { result } = renderHook(() => usePanelPermissions(createAccessFixture("team_readonly")));
     expect(result.current.isTeamReadonly).toBe(true);
     expect(result.current.canCreatePanel).toBe(false);
     expect(result.current.canRenamePanel).toBe(false);

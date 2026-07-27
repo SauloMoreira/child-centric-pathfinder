@@ -30,8 +30,18 @@ const teamReadonly = createAccessFixture("team_readonly");
 
 function panelsFactory() {
   return [
-    createPanelFixture({ id: SYN_PANEL_1, defenderUserId: SYN_DEFENDER_A, name: "Um", position: 0 }),
-    createPanelFixture({ id: SYN_PANEL_2, defenderUserId: SYN_DEFENDER_A, name: "Dois", position: 1 }),
+    createPanelFixture({
+      id: SYN_PANEL_1,
+      defenderUserId: SYN_DEFENDER_A,
+      name: "Um",
+      position: 0,
+    }),
+    createPanelFixture({
+      id: SYN_PANEL_2,
+      defenderUserId: SYN_DEFENDER_A,
+      name: "Dois",
+      position: 1,
+    }),
   ];
 }
 
@@ -130,12 +140,8 @@ describe("PanelTabs — permissões", () => {
       />,
       { wrapper },
     );
-    expect(
-      screen.queryByRole("button", { name: /novo painel/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText(/Ações do Painel/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /novo painel/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Ações do Painel/i)).not.toBeInTheDocument();
   });
 });
 

@@ -20,9 +20,7 @@ export const SYN_ITEM_1 = "00000000-4444-4000-8000-000000000001";
 
 let panelCounter = 0;
 
-export function createPanelFixture(
-  overrides: Partial<PanelSummary> = {},
-): PanelSummary {
+export function createPanelFixture(overrides: Partial<PanelSummary> = {}): PanelSummary {
   panelCounter += 1;
   return {
     id: overrides.id ?? `00000000-1111-4000-8000-${String(panelCounter).padStart(12, "0")}`,
@@ -35,9 +33,7 @@ export function createPanelFixture(
   };
 }
 
-export function createAccessFixture(
-  mode: PanelAccessMode = "owner",
-): WorkspaceAccess {
+export function createAccessFixture(mode: PanelAccessMode = "owner"): WorkspaceAccess {
   const isOwner = mode === "owner";
   const isReadonly = mode === "team_readonly" || mode === "technical_readonly";
   return {
@@ -51,16 +47,12 @@ export function createAccessFixture(
   };
 }
 
-export function createWorkAreaFixture(
-  overrides: Partial<WorkArea> = {},
-): WorkArea {
+export function createWorkAreaFixture(overrides: Partial<WorkArea> = {}): WorkArea {
   const defenderUserId = overrides.defenderUserId ?? SYN_DEFENDER_A;
-  const panels =
-    overrides.panels ??
-    [
-      createPanelFixture({ id: SYN_PANEL_1, defenderUserId, position: 0, name: "Painel 1" }),
-      createPanelFixture({ id: SYN_PANEL_2, defenderUserId, position: 1, name: "Painel 2" }),
-    ];
+  const panels = overrides.panels ?? [
+    createPanelFixture({ id: SYN_PANEL_1, defenderUserId, position: 0, name: "Painel 1" }),
+    createPanelFixture({ id: SYN_PANEL_2, defenderUserId, position: 1, name: "Painel 2" }),
+  ];
   return {
     defenderUserId,
     panels,
@@ -70,9 +62,7 @@ export function createWorkAreaFixture(
   };
 }
 
-export function createColumnFixture(
-  overrides: Partial<PanelColumn> = {},
-): PanelColumn {
+export function createColumnFixture(overrides: Partial<PanelColumn> = {}): PanelColumn {
   return {
     id: overrides.id ?? SYN_COLUMN_1,
     panelId: overrides.panelId ?? SYN_PANEL_1,

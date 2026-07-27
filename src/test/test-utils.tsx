@@ -15,7 +15,6 @@ export function createTestQueryClient(): QueryClient {
   });
 }
 
-
 export function renderWithQueryClient(
   ui: ReactElement,
   options: {

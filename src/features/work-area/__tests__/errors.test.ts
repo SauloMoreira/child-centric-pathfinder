@@ -29,15 +29,13 @@ describe("parsePanelErrorCode", () => {
   }
 
   it("reconhece PostgREST 42501 como FORBIDDEN", () => {
-    expect(parsePanelErrorCode(new Error("42501: permission denied"))).toBe(
-      "FORBIDDEN",
-    );
+    expect(parsePanelErrorCode(new Error("42501: permission denied"))).toBe("FORBIDDEN");
   });
 
   it("reconhece ITEM_ALREADY_IN_WORKSPACE como DUPLICATE_PANEL_ITEM", () => {
-    expect(
-      parsePanelErrorCode(new Error("ITEM_ALREADY_IN_WORKSPACE")),
-    ).toBe("DUPLICATE_PANEL_ITEM");
+    expect(parsePanelErrorCode(new Error("ITEM_ALREADY_IN_WORKSPACE"))).toBe(
+      "DUPLICATE_PANEL_ITEM",
+    );
   });
 
   it("retorna UNKNOWN para código não mapeado", () => {
@@ -45,9 +43,7 @@ describe("parsePanelErrorCode", () => {
   });
 
   it("aceita valores não-Error convertendo para string", () => {
-    expect(parsePanelErrorCode("PANEL_LIMIT_REACHED")).toBe(
-      "PANEL_LIMIT_REACHED",
-    );
+    expect(parsePanelErrorCode("PANEL_LIMIT_REACHED")).toBe("PANEL_LIMIT_REACHED");
     expect(parsePanelErrorCode(null)).toBe("UNKNOWN");
     expect(parsePanelErrorCode(undefined)).toBe("UNKNOWN");
   });
@@ -80,9 +76,7 @@ describe("panelErrorMessage", () => {
 
 describe("panelErrorFromUnknown", () => {
   it("retorna {code, message} coerentes", () => {
-    const { code, message } = panelErrorFromUnknown(
-      new Error("CONCURRENT_CHANGE"),
-    );
+    const { code, message } = panelErrorFromUnknown(new Error("CONCURRENT_CHANGE"));
     expect(code).toBe("CONCURRENT_CHANGE");
     expect(message).toBe(panelErrorMessage("CONCURRENT_CHANGE"));
   });
@@ -101,8 +95,6 @@ describe("isConcurrentChangeError", () => {
 
   it("false para outros códigos", () => {
     expect(isConcurrentChangeError(new Error("FORBIDDEN"))).toBe(false);
-    expect(isConcurrentChangeError(new Error("PANEL_LIMIT_REACHED"))).toBe(
-      false,
-    );
+    expect(isConcurrentChangeError(new Error("PANEL_LIMIT_REACHED"))).toBe(false);
   });
 });

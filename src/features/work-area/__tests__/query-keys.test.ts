@@ -76,8 +76,6 @@ describe("workAreaKeys", () => {
   });
 
   it("estabilidade — chamadas idempotentes produzem valores estruturalmente iguais", () => {
-    expect(workAreaKeys.panels(SYN_DEFENDER_A)).toEqual(
-      workAreaKeys.panels(SYN_DEFENDER_A),
-    );
+    expect(workAreaKeys.panels(SYN_DEFENDER_A)).toEqual(workAreaKeys.panels(SYN_DEFENDER_A));
   });
 });

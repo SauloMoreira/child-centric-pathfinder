@@ -1,11 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  cardDragId,
-  columnDragId,
-  isPanelDrag,
-  panelDragId,
-  parseDragId,
-} from "../dnd";
+import { cardDragId, columnDragId, isPanelDrag, panelDragId, parseDragId } from "../dnd";
 
 describe("*DragId builders", () => {
   it("panelDragId aplica o prefixo panel:", () => {
@@ -54,12 +48,8 @@ describe("isPanelDrag", () => {
     expect(isPanelDrag({ type: "panel", panelId: "p1" })).toBe(true);
   });
   it("false para dragData de coluna/card", () => {
-    expect(isPanelDrag({ type: "column", panelId: "p", columnId: "c" })).toBe(
-      false,
-    );
-    expect(
-      isPanelDrag({ type: "card", panelId: "p", columnId: "c", cardId: "x" }),
-    ).toBe(false);
+    expect(isPanelDrag({ type: "column", panelId: "p", columnId: "c" })).toBe(false);
+    expect(isPanelDrag({ type: "card", panelId: "p", columnId: "c", cardId: "x" })).toBe(false);
   });
   it("false para valores inválidos", () => {
     expect(isPanelDrag(null)).toBe(false);

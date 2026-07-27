@@ -2,12 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import {
-  useArchivePanel,
-  useCreatePanel,
-  useRenamePanel,
-  useReorderPanels,
-} from "../hooks";
+import { useArchivePanel, useCreatePanel, useRenamePanel, useReorderPanels } from "../hooks";
 import { workAreaKeys } from "@/lib/workspace-keys";
 import { createTestQueryClient } from "@/test/test-utils";
 import {
@@ -134,9 +129,9 @@ describe("useCreatePanel", () => {
     const { result } = renderHook(() => useCreatePanel(SYN_DEFENDER_A), {
       wrapper,
     });
-    await expect(
-      result.current.mutateAsync({ name: "X", expectedCount: 8 }),
-    ).rejects.toThrow(/PANEL_LIMIT_REACHED/);
+    await expect(result.current.mutateAsync({ name: "X", expectedCount: 8 })).rejects.toThrow(
+      /PANEL_LIMIT_REACHED/,
+    );
   });
 
   it("não invalida cache de outro Defensor", async () => {
@@ -197,8 +192,18 @@ describe("useRenamePanel", () => {
     const wa = createWorkAreaFixture({
       defenderUserId: SYN_DEFENDER_A,
       panels: [
-        createPanelFixture({ id: SYN_PANEL_1, defenderUserId: SYN_DEFENDER_A, name: "Antigo", position: 0 }),
-        createPanelFixture({ id: SYN_PANEL_2, defenderUserId: SYN_DEFENDER_A, name: "Outro", position: 1 }),
+        createPanelFixture({
+          id: SYN_PANEL_1,
+          defenderUserId: SYN_DEFENDER_A,
+          name: "Antigo",
+          position: 0,
+        }),
+        createPanelFixture({
+          id: SYN_PANEL_2,
+          defenderUserId: SYN_DEFENDER_A,
+          name: "Outro",
+          position: 1,
+        }),
       ],
     });
     client.setQueryData(workAreaKeys.panels(SYN_DEFENDER_A), wa);
@@ -214,9 +219,7 @@ describe("useRenamePanel", () => {
       });
     });
     await waitFor(() => {
-      const now = client.getQueryData<WorkArea>(
-        workAreaKeys.panels(SYN_DEFENDER_A),
-      );
+      const now = client.getQueryData<WorkArea>(workAreaKeys.panels(SYN_DEFENDER_A));
       expect(now?.panels.find((p) => p.id === SYN_PANEL_1)?.name).toBe("Novo");
       // Outros painéis preservados.
       expect(now?.panels.find((p) => p.id === SYN_PANEL_2)?.name).toBe("Outro");
@@ -232,14 +235,22 @@ describe("useRenamePanel", () => {
     const wa = createWorkAreaFixture({
       defenderUserId: SYN_DEFENDER_A,
       panels: [
-        createPanelFixture({ id: SYN_PANEL_1, defenderUserId: SYN_DEFENDER_A, name: "Antigo", position: 0 }),
-        createPanelFixture({ id: SYN_PANEL_2, defenderUserId: SYN_DEFENDER_A, name: "Outro", position: 1 }),
+        createPanelFixture({
+          id: SYN_PANEL_1,
+          defenderUserId: SYN_DEFENDER_A,
+          name: "Antigo",
+          position: 0,
+        }),
+        createPanelFixture({
+          id: SYN_PANEL_2,
+          defenderUserId: SYN_DEFENDER_A,
+          name: "Outro",
+          position: 1,
+        }),
       ],
     });
     client.setQueryData(workAreaKeys.panels(SYN_DEFENDER_A), wa);
-    const before = client.getQueryData<WorkArea>(
-      workAreaKeys.panels(SYN_DEFENDER_A),
-    );
+    const before = client.getQueryData<WorkArea>(workAreaKeys.panels(SYN_DEFENDER_A));
     const { result } = renderHook(() => useRenamePanel(SYN_DEFENDER_A), {
       wrapper,
     });
@@ -253,9 +264,7 @@ describe("useRenamePanel", () => {
       ).rejects.toThrow();
     });
     // onSettled invalida a query, mas sem observer + queryFn, o cache mantém o snapshot restaurado.
-    const after = client.getQueryData<WorkArea>(
-      workAreaKeys.panels(SYN_DEFENDER_A),
-    );
+    const after = client.getQueryData<WorkArea>(workAreaKeys.panels(SYN_DEFENDER_A));
     expect(after?.panels.find((p) => p.id === SYN_PANEL_1)?.name).toBe(
       before?.panels.find((p) => p.id === SYN_PANEL_1)?.name,
     );
@@ -272,8 +281,18 @@ describe("useReorderPanels", () => {
       wrapper,
     });
     const items = [
-      createPanelFixture({ id: SYN_PANEL_2, defenderUserId: SYN_DEFENDER_A, position: 1, optimisticVersion: 3 }),
-      createPanelFixture({ id: SYN_PANEL_1, defenderUserId: SYN_DEFENDER_A, position: 0, optimisticVersion: 5 }),
+      createPanelFixture({
+        id: SYN_PANEL_2,
+        defenderUserId: SYN_DEFENDER_A,
+        position: 1,
+        optimisticVersion: 3,
+      }),
+      createPanelFixture({
+        id: SYN_PANEL_1,
+        defenderUserId: SYN_DEFENDER_A,
+        position: 0,
+        optimisticVersion: 5,
+      }),
     ];
     await act(async () => {
       await result.current.mutateAsync({ items });
@@ -304,9 +323,7 @@ describe("useReorderPanels", () => {
       promise = result.current.mutateAsync({ items: [p2, p1] });
     });
     await waitFor(() => {
-      const now = client.getQueryData<WorkArea>(
-        workAreaKeys.panels(SYN_DEFENDER_A),
-      );
+      const now = client.getQueryData<WorkArea>(workAreaKeys.panels(SYN_DEFENDER_A));
       expect(now?.panels.map((p) => p.id)).toEqual([SYN_PANEL_2, SYN_PANEL_1]);
       expect(now?.panels.map((p) => p.position)).toEqual([0, 1]);
     });
@@ -328,13 +345,9 @@ describe("useReorderPanels", () => {
       wrapper,
     });
     await act(async () => {
-      await expect(
-        result.current.mutateAsync({ items: [p2, p1] }),
-      ).rejects.toThrow();
+      await expect(result.current.mutateAsync({ items: [p2, p1] })).rejects.toThrow();
     });
-    const after = client.getQueryData<WorkArea>(
-      workAreaKeys.panels(SYN_DEFENDER_A),
-    );
+    const after = client.getQueryData<WorkArea>(workAreaKeys.panels(SYN_DEFENDER_A));
     expect(after?.panels.map((p) => p.id)).toEqual([SYN_PANEL_1, SYN_PANEL_2]);
   });
 
@@ -353,9 +366,7 @@ describe("useReorderPanels", () => {
     await act(async () => {
       await result.current.mutateAsync({ items: [p2, p1] });
     });
-    const after = client.getQueryData<WorkArea>(
-      workAreaKeys.panels(SYN_DEFENDER_A),
-    );
+    const after = client.getQueryData<WorkArea>(workAreaKeys.panels(SYN_DEFENDER_A));
     const ids = after?.panels.map((p) => p.id) ?? [];
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(2);
@@ -387,9 +398,7 @@ describe("useArchivePanel", () => {
   });
 
   it("invalida cache do defensor em onSettled (sucesso e erro)", async () => {
-    archivePanelMock.mockRejectedValueOnce(
-      new Error("LAST_PANEL_CANNOT_BE_DELETED"),
-    );
+    archivePanelMock.mockRejectedValueOnce(new Error("LAST_PANEL_CANNOT_BE_DELETED"));
     const { client, wrapper } = makeWrapper();
     const spy = vi.spyOn(client, "invalidateQueries");
     const { result } = renderHook(() => useArchivePanel(SYN_DEFENDER_A), {
@@ -445,18 +454,9 @@ describe("idempotency keys entre ações distintas", () => {
       nextActivePanelId: null,
     });
     const { wrapper } = makeWrapper();
-    const { result: create } = renderHook(
-      () => useCreatePanel(SYN_DEFENDER_A),
-      { wrapper },
-    );
-    const { result: rename } = renderHook(
-      () => useRenamePanel(SYN_DEFENDER_A),
-      { wrapper },
-    );
-    const { result: archive } = renderHook(
-      () => useArchivePanel(SYN_DEFENDER_A),
-      { wrapper },
-    );
+    const { result: create } = renderHook(() => useCreatePanel(SYN_DEFENDER_A), { wrapper });
+    const { result: rename } = renderHook(() => useRenamePanel(SYN_DEFENDER_A), { wrapper });
+    const { result: archive } = renderHook(() => useArchivePanel(SYN_DEFENDER_A), { wrapper });
     await act(async () => {
       await create.current.mutateAsync({ name: "N", expectedCount: 0 });
     });

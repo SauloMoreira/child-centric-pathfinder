@@ -22,49 +22,35 @@ describe("useSelectedPanel", () => {
   ];
 
   it("seleciona o primeiro Painel quando não há preferência salva", () => {
-    const { result } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_A, panelsA),
-    );
+    const { result } = renderHook(() => useSelectedPanel(SYN_DEFENDER_A, panelsA));
     expect(result.current.selectedId).toBe(SYN_PANEL_1);
     expect(result.current.selectedPanel?.id).toBe(SYN_PANEL_1);
   });
 
   it("recupera preferência válida do localStorage", () => {
     window.localStorage.setItem(STORAGE_KEY(SYN_DEFENDER_A), SYN_PANEL_2);
-    const { result } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_A, panelsA),
-    );
+    const { result } = renderHook(() => useSelectedPanel(SYN_DEFENDER_A, panelsA));
     expect(result.current.selectedId).toBe(SYN_PANEL_2);
   });
 
   it("ignora preferência inexistente e volta para o primeiro Painel", () => {
     window.localStorage.setItem(STORAGE_KEY(SYN_DEFENDER_A), "id-inexistente");
-    const { result } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_A, panelsA),
-    );
+    const { result } = renderHook(() => useSelectedPanel(SYN_DEFENDER_A, panelsA));
     expect(result.current.selectedId).toBe(SYN_PANEL_1);
     // Substituiu a preferência inválida.
-    expect(window.localStorage.getItem(STORAGE_KEY(SYN_DEFENDER_A))).toBe(
-      SYN_PANEL_1,
-    );
+    expect(window.localStorage.getItem(STORAGE_KEY(SYN_DEFENDER_A))).toBe(SYN_PANEL_1);
   });
 
   it("select() persiste no storage", () => {
-    const { result } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_A, panelsA),
-    );
+    const { result } = renderHook(() => useSelectedPanel(SYN_DEFENDER_A, panelsA));
     act(() => result.current.select(SYN_PANEL_2));
     expect(result.current.selectedId).toBe(SYN_PANEL_2);
-    expect(window.localStorage.getItem(STORAGE_KEY(SYN_DEFENDER_A))).toBe(
-      SYN_PANEL_2,
-    );
+    expect(window.localStorage.getItem(STORAGE_KEY(SYN_DEFENDER_A))).toBe(SYN_PANEL_2);
   });
 
   it("isola preferência por Defensor", () => {
     window.localStorage.setItem(STORAGE_KEY(SYN_DEFENDER_A), SYN_PANEL_2);
-    const { result: a } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_A, panelsA),
-    );
+    const { result: a } = renderHook(() => useSelectedPanel(SYN_DEFENDER_A, panelsA));
     const panelsB = [
       createPanelFixture({
         id: "00000000-1111-4000-8000-0000000000B0",
@@ -72,9 +58,7 @@ describe("useSelectedPanel", () => {
         position: 0,
       }),
     ];
-    const { result: b } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_B, panelsB),
-    );
+    const { result: b } = renderHook(() => useSelectedPanel(SYN_DEFENDER_B, panelsB));
     expect(a.current.selectedId).toBe(SYN_PANEL_2);
     expect(b.current.selectedId).not.toBe(SYN_PANEL_2);
   });
@@ -87,10 +71,9 @@ describe("useSelectedPanel", () => {
         position: 0,
       }),
     ];
-    const { result, rerender } = renderHook(
-      ({ uid, panels }) => useSelectedPanel(uid, panels),
-      { initialProps: { uid: SYN_DEFENDER_A, panels: panelsA } },
-    );
+    const { result, rerender } = renderHook(({ uid, panels }) => useSelectedPanel(uid, panels), {
+      initialProps: { uid: SYN_DEFENDER_A, panels: panelsA },
+    });
     expect(result.current.selectedId).toBe(SYN_PANEL_1);
     rerender({ uid: SYN_DEFENDER_B, panels: panelsB });
     expect(result.current.selectedId).toBe(panelsB[0].id);
@@ -109,9 +92,7 @@ describe("useSelectedPanel", () => {
   });
 
   it("armazena apenas o ID (nunca o DTO completo)", () => {
-    const { result } = renderHook(() =>
-      useSelectedPanel(SYN_DEFENDER_A, panelsA),
-    );
+    const { result } = renderHook(() => useSelectedPanel(SYN_DEFENDER_A, panelsA));
     act(() => result.current.select(SYN_PANEL_2));
     const stored = window.localStorage.getItem(STORAGE_KEY(SYN_DEFENDER_A));
     expect(stored).toBe(SYN_PANEL_2);

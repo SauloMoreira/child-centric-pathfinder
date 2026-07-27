@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  panelNameSchema,
-  createPanelSchema,
-  renamePanelSchema,
-} from "../schemas";
+import { panelNameSchema, createPanelSchema, renamePanelSchema } from "../schemas";
 import { PANEL_ICON_ALLOWLIST, PANEL_NAME_MAX } from "../types";
 
 describe("panelNameSchema", () => {
@@ -38,17 +34,13 @@ describe("panelNameSchema", () => {
   });
 
   it("preserva acentuação sem conversão silenciosa", () => {
-    expect(panelNameSchema.parse("Coordenação — Ações")).toBe(
-      "Coordenação — Ações",
-    );
+    expect(panelNameSchema.parse("Coordenação — Ações")).toBe("Coordenação — Ações");
   });
 
   it("rejeita valores não textuais", () => {
     expect(() => panelNameSchema.parse(123 as unknown as string)).toThrow();
     expect(() => panelNameSchema.parse(null as unknown as string)).toThrow();
-    expect(() =>
-      panelNameSchema.parse(undefined as unknown as string),
-    ).toThrow();
+    expect(() => panelNameSchema.parse(undefined as unknown as string)).toThrow();
   });
 });
 
@@ -69,9 +61,7 @@ describe("createPanelSchema", () => {
   });
 
   it("rejeita ícone fora da allowlist", () => {
-    expect(() =>
-      createPanelSchema.parse({ name: "Painel", icon: "rocket" }),
-    ).toThrow();
+    expect(() => createPanelSchema.parse({ name: "Painel", icon: "rocket" })).toThrow();
   });
 
   it("rejeita nome inválido", () => {
@@ -87,9 +77,7 @@ describe("renamePanelSchema", () => {
   });
 
   it("rejeita ícone inválido", () => {
-    expect(() =>
-      renamePanelSchema.parse({ name: "Nome", icon: "invalid" }),
-    ).toThrow();
+    expect(() => renamePanelSchema.parse({ name: "Nome", icon: "invalid" })).toThrow();
   });
 });
 
