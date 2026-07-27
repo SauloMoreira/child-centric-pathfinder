@@ -14,383 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      assistido_acolhimentos: {
-        Row: {
-          assistido_id: string
-          ativo: boolean | null
-          created_at: string
-          data_ingresso: string
-          data_reavaliacao: string | null
-          data_saida: string | null
-          entidade_nome: string
-          id: string
-          motivo_encerramento: string | null
-          tipo: Database["public"]["Enums"]["tipo_acolhimento_enum"]
-          updated_at: string
-        }
-        Insert: {
-          assistido_id: string
-          ativo?: boolean | null
-          created_at?: string
-          data_ingresso: string
-          data_reavaliacao?: string | null
-          data_saida?: string | null
-          entidade_nome: string
-          id?: string
-          motivo_encerramento?: string | null
-          tipo: Database["public"]["Enums"]["tipo_acolhimento_enum"]
-          updated_at?: string
-        }
-        Update: {
-          assistido_id?: string
-          ativo?: boolean | null
-          created_at?: string
-          data_ingresso?: string
-          data_reavaliacao?: string | null
-          data_saida?: string | null
-          entidade_nome?: string
-          id?: string
-          motivo_encerramento?: string | null
-          tipo?: Database["public"]["Enums"]["tipo_acolhimento_enum"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistido_acolhimentos_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_acolhimentos_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assistido_familiares: {
-        Row: {
-          assistido_id: string
-          assistido_pela_dpe: boolean
-          created_at: string
-          id: string
-          nome: string
-          observacoes: string | null
-          parentesco: Database["public"]["Enums"]["parentesco_enum"]
-          responsavel: boolean
-        }
-        Insert: {
-          assistido_id: string
-          assistido_pela_dpe?: boolean
-          created_at?: string
-          id?: string
-          nome: string
-          observacoes?: string | null
-          parentesco: Database["public"]["Enums"]["parentesco_enum"]
-          responsavel?: boolean
-        }
-        Update: {
-          assistido_id?: string
-          assistido_pela_dpe?: boolean
-          created_at?: string
-          id?: string
-          nome?: string
-          observacoes?: string | null
-          parentesco?: Database["public"]["Enums"]["parentesco_enum"]
-          responsavel?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistido_familiares_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_familiares_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assistido_processos: {
-        Row: {
-          assistido_id: string
-          created_at: string
-          extrajudicial: boolean
-          id: string
-          numero_processo: string | null
-          prazo_proximo: string | null
-          prioridade: Database["public"]["Enums"]["prioridade_enum"]
-          situacao: Database["public"]["Enums"]["situacao_processo_enum"]
-          tipo: string | null
-          updated_at: string
-        }
-        Insert: {
-          assistido_id: string
-          created_at?: string
-          extrajudicial?: boolean
-          id?: string
-          numero_processo?: string | null
-          prazo_proximo?: string | null
-          prioridade?: Database["public"]["Enums"]["prioridade_enum"]
-          situacao?: Database["public"]["Enums"]["situacao_processo_enum"]
-          tipo?: string | null
-          updated_at?: string
-        }
-        Update: {
-          assistido_id?: string
-          created_at?: string
-          extrajudicial?: boolean
-          id?: string
-          numero_processo?: string | null
-          prazo_proximo?: string | null
-          prioridade?: Database["public"]["Enums"]["prioridade_enum"]
-          situacao?: Database["public"]["Enums"]["situacao_processo_enum"]
-          tipo?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistido_processos_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_processos_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assistido_providencias: {
-        Row: {
-          assistido_id: string
-          concluida_em: string | null
-          created_at: string
-          descricao: string
-          id: string
-          prazo: string | null
-          prioridade: Database["public"]["Enums"]["prioridade_enum"]
-          responsavel_user_id: string | null
-        }
-        Insert: {
-          assistido_id: string
-          concluida_em?: string | null
-          created_at?: string
-          descricao: string
-          id?: string
-          prazo?: string | null
-          prioridade?: Database["public"]["Enums"]["prioridade_enum"]
-          responsavel_user_id?: string | null
-        }
-        Update: {
-          assistido_id?: string
-          concluida_em?: string | null
-          created_at?: string
-          descricao?: string
-          id?: string
-          prazo?: string | null
-          prioridade?: Database["public"]["Enums"]["prioridade_enum"]
-          responsavel_user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistido_providencias_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_providencias_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assistido_vinculos: {
-        Row: {
-          created_at: string
-          created_by: string
-          deleted_at: string | null
-          deleted_by: string | null
-          destino_id: string
-          id: string
-          observacoes: string | null
-          orgao_execucao_id: string
-          origem_id: string
-          tipo: Database["public"]["Enums"]["vinculo_enum"]
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          deleted_at?: string | null
-          deleted_by?: string | null
-          destino_id: string
-          id?: string
-          observacoes?: string | null
-          orgao_execucao_id: string
-          origem_id: string
-          tipo: Database["public"]["Enums"]["vinculo_enum"]
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          deleted_at?: string | null
-          deleted_by?: string | null
-          destino_id?: string
-          id?: string
-          observacoes?: string | null
-          orgao_execucao_id?: string
-          origem_id?: string
-          tipo?: Database["public"]["Enums"]["vinculo_enum"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistido_vinculos_destino_id_fkey"
-            columns: ["destino_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_vinculos_destino_id_fkey"
-            columns: ["destino_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_vinculos_orgao_execucao_id_fkey"
-            columns: ["orgao_execucao_id"]
-            isOneToOne: false
-            referencedRelation: "orgaos_execucao"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_vinculos_origem_id_fkey"
-            columns: ["origem_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assistido_vinculos_origem_id_fkey"
-            columns: ["origem_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assistidos: {
-        Row: {
-          categoria:
-            | Database["public"]["Enums"]["assistido_categoria_enum"]
-            | null
-          cpf: string | null
-          created_at: string
-          created_by: string | null
-          data_nascimento: string
-          deleted_at: string | null
-          foto_path: string | null
-          foto_url: string | null
-          genero: string | null
-          id: string
-          nome_completo: string
-          nome_mae: string | null
-          nome_pai: string | null
-          nome_social: string | null
-          observacoes: string | null
-          orgao_execucao_id: string
-          prenome: string | null
-          responsavel_user_id: string | null
-          search_text: string | null
-          sexo_registral: Database["public"]["Enums"]["sexo_registral_enum"]
-          situacao_atual: Database["public"]["Enums"]["situacao_atual_enum"]
-          sobrenome: string | null
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          categoria?:
-            | Database["public"]["Enums"]["assistido_categoria_enum"]
-            | null
-          cpf?: string | null
-          created_at?: string
-          created_by?: string | null
-          data_nascimento: string
-          deleted_at?: string | null
-          foto_path?: string | null
-          foto_url?: string | null
-          genero?: string | null
-          id?: string
-          nome_completo: string
-          nome_mae?: string | null
-          nome_pai?: string | null
-          nome_social?: string | null
-          observacoes?: string | null
-          orgao_execucao_id: string
-          prenome?: string | null
-          responsavel_user_id?: string | null
-          search_text?: string | null
-          sexo_registral?: Database["public"]["Enums"]["sexo_registral_enum"]
-          situacao_atual?: Database["public"]["Enums"]["situacao_atual_enum"]
-          sobrenome?: string | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          categoria?:
-            | Database["public"]["Enums"]["assistido_categoria_enum"]
-            | null
-          cpf?: string | null
-          created_at?: string
-          created_by?: string | null
-          data_nascimento?: string
-          deleted_at?: string | null
-          foto_path?: string | null
-          foto_url?: string | null
-          genero?: string | null
-          id?: string
-          nome_completo?: string
-          nome_mae?: string | null
-          nome_pai?: string | null
-          nome_social?: string | null
-          observacoes?: string | null
-          orgao_execucao_id?: string
-          prenome?: string | null
-          responsavel_user_id?: string | null
-          search_text?: string | null
-          sexo_registral?: Database["public"]["Enums"]["sexo_registral_enum"]
-          situacao_atual?: Database["public"]["Enums"]["situacao_atual_enum"]
-          sobrenome?: string | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistidos_orgao_execucao_id_fkey"
-            columns: ["orgao_execucao_id"]
-            isOneToOne: false
-            referencedRelation: "orgaos_execucao"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comarcas: {
         Row: {
           created_at: string
@@ -831,105 +454,6 @@ export type Database = {
         }
         Relationships: []
       }
-      processo_assistidos: {
-        Row: {
-          assistido_id: string
-          created_at: string
-          created_by: string
-          processo_id: string
-        }
-        Insert: {
-          assistido_id: string
-          created_at?: string
-          created_by: string
-          processo_id: string
-        }
-        Update: {
-          assistido_id?: string
-          created_at?: string
-          created_by?: string
-          processo_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "processo_assistidos_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "assistidos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "processo_assistidos_assistido_id_fkey"
-            columns: ["assistido_id"]
-            isOneToOne: false
-            referencedRelation: "v_assistidos_card"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "processo_assistidos_processo_id_fkey"
-            columns: ["processo_id"]
-            isOneToOne: false
-            referencedRelation: "processos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      processos: {
-        Row: {
-          created_at: string
-          created_by: string
-          data_inicio: string
-          deleted_at: string | null
-          deleted_by: string | null
-          id: string
-          numero_processo: string
-          numero_processo_normalizado: string
-          observacoes: string | null
-          orgao_execucao_id: string
-          status: Database["public"]["Enums"]["situacao_processo_enum"] | null
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          data_inicio: string
-          deleted_at?: string | null
-          deleted_by?: string | null
-          id?: string
-          numero_processo: string
-          numero_processo_normalizado: string
-          observacoes?: string | null
-          orgao_execucao_id: string
-          status?: Database["public"]["Enums"]["situacao_processo_enum"] | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          data_inicio?: string
-          deleted_at?: string | null
-          deleted_by?: string | null
-          id?: string
-          numero_processo?: string
-          numero_processo_normalizado?: string
-          observacoes?: string | null
-          orgao_execucao_id?: string
-          status?: Database["public"]["Enums"]["situacao_processo_enum"] | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "processos_orgao_execucao_id_fkey"
-            columns: ["orgao_execucao_id"]
-            isOneToOne: false
-            referencedRelation: "orgaos_execucao"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           ativo: boolean
@@ -983,118 +507,7 @@ export type Database = {
       }
     }
     Views: {
-      v_assistidos_card: {
-        Row: {
-          acolhimento_ativo_id: string | null
-          data_nascimento: string | null
-          entidade_acolhimento: string | null
-          faixa_etaria: string | null
-          familiar_dpe: boolean | null
-          foto_path: string | null
-          foto_url: string | null
-          genero: string | null
-          id: string | null
-          idade: number | null
-          nome_completo: string | null
-          nome_social: string | null
-          orgao_execucao_id: string | null
-          prazo_processo_mais_proximo: string | null
-          prazo_providencia_mais_proximo: string | null
-          processos_ativos: number | null
-          providencias_pendentes: number | null
-          proxima_reavaliacao: string | null
-          responsavel_user_id: string | null
-          search_text: string | null
-          sexo_registral:
-            | Database["public"]["Enums"]["sexo_registral_enum"]
-            | null
-          situacao_atual:
-            | Database["public"]["Enums"]["situacao_atual_enum"]
-            | null
-          tempo_acolhimento_dias: number | null
-          tipo_acolhimento:
-            | Database["public"]["Enums"]["tipo_acolhimento_enum"]
-            | null
-          total_familiares: number | null
-          total_irmaos: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          acolhimento_ativo_id?: never
-          data_nascimento?: string | null
-          entidade_acolhimento?: never
-          faixa_etaria?: never
-          familiar_dpe?: never
-          foto_path?: string | null
-          foto_url?: string | null
-          genero?: string | null
-          id?: string | null
-          idade?: never
-          nome_completo?: string | null
-          nome_social?: string | null
-          orgao_execucao_id?: string | null
-          prazo_processo_mais_proximo?: never
-          prazo_providencia_mais_proximo?: never
-          processos_ativos?: never
-          providencias_pendentes?: never
-          proxima_reavaliacao?: never
-          responsavel_user_id?: string | null
-          search_text?: string | null
-          sexo_registral?:
-            | Database["public"]["Enums"]["sexo_registral_enum"]
-            | null
-          situacao_atual?:
-            | Database["public"]["Enums"]["situacao_atual_enum"]
-            | null
-          tempo_acolhimento_dias?: never
-          tipo_acolhimento?: never
-          total_familiares?: never
-          total_irmaos?: never
-          updated_at?: string | null
-        }
-        Update: {
-          acolhimento_ativo_id?: never
-          data_nascimento?: string | null
-          entidade_acolhimento?: never
-          faixa_etaria?: never
-          familiar_dpe?: never
-          foto_path?: string | null
-          foto_url?: string | null
-          genero?: string | null
-          id?: string | null
-          idade?: never
-          nome_completo?: string | null
-          nome_social?: string | null
-          orgao_execucao_id?: string | null
-          prazo_processo_mais_proximo?: never
-          prazo_providencia_mais_proximo?: never
-          processos_ativos?: never
-          providencias_pendentes?: never
-          proxima_reavaliacao?: never
-          responsavel_user_id?: string | null
-          search_text?: string | null
-          sexo_registral?:
-            | Database["public"]["Enums"]["sexo_registral_enum"]
-            | null
-          situacao_atual?:
-            | Database["public"]["Enums"]["situacao_atual_enum"]
-            | null
-          tempo_acolhimento_dias?: never
-          tipo_acolhimento?: never
-          total_familiares?: never
-          total_irmaos?: never
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assistidos_orgao_execucao_id_fkey"
-            columns: ["orgao_execucao_id"]
-            isOneToOne: false
-            referencedRelation: "orgaos_execucao"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       adicionar_card_workspace: {
@@ -1184,18 +597,6 @@ export type Database = {
         Returns: Json
       }
       arquivar_item: { Args: { p_item_id: string }; Returns: undefined }
-      atualizar_anotacoes_assistido: {
-        Args: { p_assistido_id: string; p_observacoes: string }
-        Returns: Json
-      }
-      atualizar_assistido_adulto: {
-        Args: { p_assistido_id: string; p_payload: Json }
-        Returns: Json
-      }
-      atualizar_assistido_crianca: {
-        Args: { p_assistido_id: string; p_payload: Json }
-        Returns: Json
-      }
       atualizar_card_workspace: {
         Args: { p_card_id: string; p_note: string }
         Returns: undefined
@@ -1233,32 +634,10 @@ export type Database = {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
       }
-      buscar_assistidos: {
-        Args: {
-          p_filter?: Json
-          p_limit?: number
-          p_offset?: number
-          p_orgao_id?: string
-          p_text?: string
-        }
-        Returns: Json
-      }
-      buscar_assistidos_picker: {
-        Args: {
-          p_categoria?: Database["public"]["Enums"]["assistido_categoria_enum"]
-          p_exclude?: string[]
-          p_limit?: number
-          p_text?: string
-        }
-        Returns: Json
-      }
       buscar_orgaos_execucao: {
         Args: { p_limit?: number; p_termo?: string }
         Returns: Json
       }
-      cadastrar_assistido_adulto: { Args: { p_payload: Json }; Returns: Json }
-      cadastrar_assistido_crianca: { Args: { p_payload: Json }; Returns: Json }
-      cadastrar_processo: { Args: { p_payload: Json }; Returns: Json }
       cancelar_convite_equipe: {
         Args: { p_invitation_id: string; p_motivo: string }
         Returns: Json
@@ -1359,10 +738,6 @@ export type Database = {
       excluir_workspace_defensor: {
         Args: { p_workspace_id: string }
         Returns: undefined
-      }
-      get_workspace_column_assistidos: {
-        Args: { p_column_id: string; p_limit?: number; p_offset?: number }
-        Returns: Json
       }
       listar_biblioteca: {
         Args: {
@@ -1589,10 +964,6 @@ export type Database = {
         Args: { p_card_id: string }
         Returns: undefined
       }
-      remover_foto_assistido: {
-        Args: { p_assistido_id: string }
-        Returns: Json
-      }
       renomear_workspace: {
         Args: { p_nome: string; p_workspace_id: string }
         Returns: Json
@@ -1663,10 +1034,6 @@ export type Database = {
         }
         Returns: Json
       }
-      vincular_foto_assistido: {
-        Args: { p_assistido_id: string; p_foto_path: string }
-        Returns: Json
-      }
     }
     Enums: {
       access_request_status:
@@ -1680,45 +1047,17 @@ export type Database = {
         | "admin_institucional"
         | "defensor_publico"
         | "membro_equipe"
-      assistido_categoria_enum: "crianca_adolescente" | "adulto"
       audit_result: "sucesso" | "falha" | "negado"
       content_kind: "atendimento" | "cota"
       content_status: "rascunho" | "publicado" | "arquivado"
       content_visibility: "privado" | "orgao" | "institucional"
       member_defensor_bond_status: "ativo" | "encerrado"
-      parentesco_enum:
-        | "mae"
-        | "pai"
-        | "irmao"
-        | "irma"
-        | "avo"
-        | "ava"
-        | "tio"
-        | "tia"
-        | "padrasto"
-        | "madrasta"
-        | "responsavel_legal"
-        | "outro"
-      prioridade_enum: "baixa" | "media" | "alta" | "urgente"
       profile_status:
         | "aguardando_dados"
         | "aguardando_aprovacao"
         | "ativo"
         | "suspenso"
         | "inativo"
-      sexo_registral_enum: "feminino" | "masculino" | "nao_informado"
-      situacao_atual_enum:
-        | "familia_natural"
-        | "familia_extensa"
-        | "familia_substituta"
-        | "acolhimento_institucional"
-        | "acolhimento_familiar"
-        | "guarda_provisoria"
-        | "adocao_acompanhamento"
-        | "situacao_rua"
-        | "nao_informado"
-        | "outro"
-      situacao_processo_enum: "ativo" | "suspenso" | "arquivado" | "concluido"
       team_invitation_status:
         | "preparando"
         | "enviado"
@@ -1726,8 +1065,6 @@ export type Database = {
         | "expirado"
         | "cancelado"
         | "falhou"
-      tipo_acolhimento_enum: "institucional" | "familiar"
-      vinculo_enum: "pai" | "mae" | "familia_extensa" | "irmao"
       workspace_color_enum:
         | "neutral"
         | "green"
@@ -1878,27 +1215,11 @@ export const Constants = {
         "defensor_publico",
         "membro_equipe",
       ],
-      assistido_categoria_enum: ["crianca_adolescente", "adulto"],
       audit_result: ["sucesso", "falha", "negado"],
       content_kind: ["atendimento", "cota"],
       content_status: ["rascunho", "publicado", "arquivado"],
       content_visibility: ["privado", "orgao", "institucional"],
       member_defensor_bond_status: ["ativo", "encerrado"],
-      parentesco_enum: [
-        "mae",
-        "pai",
-        "irmao",
-        "irma",
-        "avo",
-        "ava",
-        "tio",
-        "tia",
-        "padrasto",
-        "madrasta",
-        "responsavel_legal",
-        "outro",
-      ],
-      prioridade_enum: ["baixa", "media", "alta", "urgente"],
       profile_status: [
         "aguardando_dados",
         "aguardando_aprovacao",
@@ -1906,20 +1227,6 @@ export const Constants = {
         "suspenso",
         "inativo",
       ],
-      sexo_registral_enum: ["feminino", "masculino", "nao_informado"],
-      situacao_atual_enum: [
-        "familia_natural",
-        "familia_extensa",
-        "familia_substituta",
-        "acolhimento_institucional",
-        "acolhimento_familiar",
-        "guarda_provisoria",
-        "adocao_acompanhamento",
-        "situacao_rua",
-        "nao_informado",
-        "outro",
-      ],
-      situacao_processo_enum: ["ativo", "suspenso", "arquivado", "concluido"],
       team_invitation_status: [
         "preparando",
         "enviado",
@@ -1928,8 +1235,6 @@ export const Constants = {
         "cancelado",
         "falhou",
       ],
-      tipo_acolhimento_enum: ["institucional", "familiar"],
-      vinculo_enum: ["pai", "mae", "familia_extensa", "irmao"],
       workspace_color_enum: [
         "neutral",
         "green",
