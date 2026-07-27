@@ -6,10 +6,7 @@ import {
   type UseMutationResult,
 } from "@tanstack/react-query";
 import { workAreaKeys } from "@/lib/workspace-keys";
-import {
-  useEstadoInstitucional,
-  isDefensor,
-} from "@/hooks/use-estado-institucional";
+import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
 import {
   archivePanel,
   createPanel,
