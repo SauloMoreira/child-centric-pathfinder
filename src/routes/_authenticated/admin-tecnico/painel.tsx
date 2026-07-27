@@ -1,14 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TecnicoPage } from "@/components/tecnico-guard";
-import {
-  Users,
-  ScrollText,
-  Siren,
-  ShieldCheck,
-  Activity,
-  Lock,
-  Sliders,
-} from "lucide-react";
+import { Users, ScrollText, Siren, ShieldCheck, Activity, Lock, Sliders } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin-tecnico/painel")({
   head: () => ({
