@@ -233,41 +233,48 @@ export type Database = {
           created_at: string
           id: string
           item_id: string
-          note: string | null
           order_position: number
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           column_id: string
           created_at?: string
           id?: string
           item_id: string
-          note?: string | null
           order_position?: number
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           column_id?: string
           created_at?: string
           id?: string
           item_id?: string
-          note?: string | null
           order_position?: number
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "defensor_workspace_cards_column_id_fkey"
-            columns: ["column_id"]
+            foreignKeyName: "defensor_workspace_cards_column_ws_fk"
+            columns: ["column_id", "workspace_id"]
             isOneToOne: false
             referencedRelation: "defensor_workspace_columns"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "workspace_id"]
           },
           {
-            foreignKeyName: "defensor_workspace_cards_item_id_fkey"
+            foreignKeyName: "defensor_workspace_cards_item_fk"
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defensor_workspace_cards_workspace_fk"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "defensor_workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -275,7 +282,9 @@ export type Database = {
       defensor_workspace_columns: {
         Row: {
           cor: string | null
+          cor_token: Database["public"]["Enums"]["workspace_color_enum"]
           created_at: string
+          descricao: string | null
           id: string
           nome: string
           order_position: number
@@ -284,7 +293,9 @@ export type Database = {
         }
         Insert: {
           cor?: string | null
+          cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
           created_at?: string
+          descricao?: string | null
           id?: string
           nome: string
           order_position?: number
@@ -293,7 +304,9 @@ export type Database = {
         }
         Update: {
           cor?: string | null
+          cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
           created_at?: string
+          descricao?: string | null
           id?: string
           nome?: string
           order_position?: number
@@ -312,33 +325,39 @@ export type Database = {
       }
       defensor_workspaces: {
         Row: {
+          archived_at: string | null
           created_at: string
           defensor_user_id: string
           icone: string | null
           id: string
           nome: string
+          optimistic_version: number
           order_position: number
-          orgao_id: string
+          orgao_id: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           defensor_user_id: string
           icone?: string | null
           id?: string
           nome: string
+          optimistic_version?: number
           order_position?: number
-          orgao_id: string
+          orgao_id?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           defensor_user_id?: string
           icone?: string | null
           id?: string
           nome?: string
+          optimistic_version?: number
           order_position?: number
-          orgao_id?: string
+          orgao_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -533,8 +552,13 @@ export type Database = {
     }
     Functions: {
       adicionar_card_workspace: {
-        Args: { p_column_id: string; p_item_id: string; p_note?: string }
-        Returns: string
+        Args: {
+          p_column_id: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+          p_item_id: string
+        }
+        Returns: Json
       }
       admin_add_comarca_to_orgao: {
         Args: {
@@ -626,13 +650,17 @@ export type Database = {
         }
         Returns: Json
       }
-      atualizar_card_workspace: {
-        Args: { p_card_id: string; p_note: string }
-        Returns: undefined
-      }
       atualizar_coluna_workspace: {
-        Args: { p_column_id: string; p_cor?: string; p_nome: string }
-        Returns: undefined
+        Args: {
+          p_column_id: string
+          p_cor_custom?: string
+          p_cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
+          p_descricao?: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+          p_nome: string
+        }
+        Returns: number
       }
       atualizar_membro_equipe: {
         Args: {
@@ -656,6 +684,16 @@ export type Database = {
           p_title: string
         }
         Returns: Json
+      }
+      atualizar_workspace_defensor: {
+        Args: {
+          p_expected_workspace_version: number
+          p_icone?: string
+          p_idempotency_key: string
+          p_nome: string
+          p_workspace_id: string
+        }
+        Returns: number
       }
       atualizar_workspace_meta: {
         Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
@@ -693,8 +731,16 @@ export type Database = {
         Returns: Json
       }
       criar_coluna_workspace: {
-        Args: { p_cor?: string; p_nome: string; p_workspace_id: string }
-        Returns: string
+        Args: {
+          p_cor_custom?: string
+          p_cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
+          p_descricao?: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+          p_nome: string
+          p_workspace_id: string
+        }
+        Returns: Json
       }
       criar_content_item: {
         Args: {
@@ -722,15 +768,6 @@ export type Database = {
       criar_workspace: {
         Args: { p_icone?: string; p_nome: string; p_orgao_id: string }
         Returns: Json
-      }
-      criar_workspace_defensor: {
-        Args: {
-          p_defensor_user_id: string
-          p_icone?: string
-          p_nome: string
-          p_orgao_id: string
-        }
-        Returns: string
       }
       defensor_alterar_orgao_ativo: {
         Args: {
@@ -770,15 +807,20 @@ export type Database = {
         Returns: Json
       }
       ensure_default_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
+      ensure_defensor_workspace: {
+        Args: { p_defensor_user_id: string; p_idempotency_key?: string }
+        Returns: string
+      }
       excluir_coluna_workspace: {
-        Args: { p_column_id: string }
-        Returns: undefined
+        Args: {
+          p_column_id: string
+          p_destination_column_id: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+        }
+        Returns: number
       }
       excluir_workspace: { Args: { p_workspace_id: string }; Returns: Json }
-      excluir_workspace_defensor: {
-        Args: { p_workspace_id: string }
-        Returns: undefined
-      }
       listar_biblioteca: {
         Args: {
           p_apenas_meus?: boolean
@@ -800,20 +842,6 @@ export type Database = {
           visibility: Database["public"]["Enums"]["content_visibility"]
         }[]
       }
-      listar_cards_coluna: {
-        Args: { p_column_id: string }
-        Returns: {
-          categoria: string
-          id: string
-          item_id: string
-          kind: Database["public"]["Enums"]["content_kind"]
-          note: string
-          order_position: number
-          status: Database["public"]["Enums"]["content_status"]
-          titulo: string
-          updated_at: string
-        }[]
-      }
       listar_categorias_biblioteca: {
         Args: { p_kind?: Database["public"]["Enums"]["content_kind"] }
         Returns: {
@@ -822,16 +850,6 @@ export type Database = {
           kind: Database["public"]["Enums"]["content_kind"]
           nome: string
           order_position: number
-        }[]
-      }
-      listar_colunas_workspace: {
-        Args: { p_workspace_id: string }
-        Returns: {
-          cor: string
-          id: string
-          nome: string
-          order_position: number
-          total_cards: number
         }[]
       }
       listar_convites_equipe: {
@@ -914,17 +932,9 @@ export type Database = {
         Args: { p_orgao_id?: string; p_workspace_id?: string }
         Returns: Json
       }
-      listar_workspaces_defensor: {
-        Args: { p_defensor_user_id: string; p_orgao_id: string }
-        Returns: {
-          icone: string
-          id: string
-          nome: string
-          order_position: number
-          total_cards: number
-          total_colunas: number
-          updated_at: string
-        }[]
+      listar_workspace_completo: {
+        Args: { p_defensor_user_id: string }
+        Returns: Json
       }
       listar_workspaces_orgao: { Args: { p_orgao_id?: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
@@ -932,10 +942,21 @@ export type Database = {
       mover_card_workspace: {
         Args: {
           p_card_id: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
           p_new_position: number
           p_target_column_id: string
         }
-        Returns: undefined
+        Returns: number
+      }
+      mover_coluna_workspace: {
+        Args: {
+          p_column_id: string
+          p_direction: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+        }
+        Returns: number
       }
       obter_item_biblioteca: {
         Args: { p_item_id: string }
@@ -1005,16 +1026,16 @@ export type Database = {
         Returns: Json
       }
       remover_card_workspace: {
-        Args: { p_card_id: string }
-        Returns: undefined
+        Args: {
+          p_card_id: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+        }
+        Returns: number
       }
       renomear_workspace: {
         Args: { p_nome: string; p_workspace_id: string }
         Returns: Json
-      }
-      renomear_workspace_defensor: {
-        Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
-        Returns: undefined
       }
       reordenar_colunas_workspace: {
         Args: { p_column_ids: string[]; p_workspace_id: string }
@@ -1023,14 +1044,6 @@ export type Database = {
       reordenar_workspaces: {
         Args: { p_ordered_ids: string[]; p_orgao_id: string }
         Returns: Json
-      }
-      reordenar_workspaces_defensor: {
-        Args: {
-          p_defensor_user_id: string
-          p_orgao_id: string
-          p_workspace_ids: string[]
-        }
-        Returns: undefined
       }
       reorder_workspace_columns: {
         Args: { p_ordered_ids: string[]; p_workspace_id: string }
