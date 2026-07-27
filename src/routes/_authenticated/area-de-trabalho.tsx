@@ -218,57 +218,93 @@ function WorkArea({ defensorId }: { defensorId: string }) {
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
   const activePanel = selectedPanel ?? panels[0] ?? null;
 
+  const contextoNome = estado?.profile?.nome_completo ?? "Defensor(a) Público(a)";
+  const contextoLabel =
+    access.accessMode === "owner"
+      ? "Sua área de trabalho pessoal"
+      : access.accessMode === "team_readonly"
+        ? "Somente leitura · Membro da equipe"
+        : access.accessMode === "technical_readonly"
+          ? "Modo técnico · Somente leitura"
+          : "";
+
   return (
-    <div className="flex h-full min-h-[calc(100vh-2rem)] flex-col px-6 py-6">
-      <header className="mb-3 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            Ágora · Área de trabalho
-          </p>
-          <h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            {activePanel && <PanelHeadingIcon iconName={activePanel.icon} />}
-            {activePanel?.name ?? "Área de Trabalho"}
-          </h1>
-          {access.accessMode === "team_readonly" && (
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Somente leitura · Membro de equipe
+    <div
+      className="flex min-h-[100dvh] flex-col bg-canvas"
+      style={{ ["--work-area-header-total" as string]: "12.5rem" }}
+    >
+      {/* Cabeçalho institucional */}
+      <header className="border-b border-border bg-surface px-4 py-4 lg:px-8 lg:py-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+              Ágora · Área de trabalho
             </p>
-          )}
-          {access.accessMode === "technical_readonly" && (
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-warning-foreground">
-              Modo técnico · Somente leitura
+            <h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl">
+              Área de Trabalho
+            </h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" aria-hidden />
+                <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
+              </span>
+              {contextoLabel && (
+                <>
+                  <span aria-hidden className="text-muted-foreground/40">·</span>
+                  <span
+                    className={cn(
+                      "font-mono text-[10px] uppercase tracking-[0.18em]",
+                      access.accessMode === "technical_readonly"
+                        ? "text-warning-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {contextoLabel}
+                  </span>
+                </>
+              )}
             </p>
-          )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/biblioteca">
+                <BookOpen className="h-4 w-4" /> Biblioteca
+              </Link>
+            </Button>
+          </div>
         </div>
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link to="/biblioteca">
-            <BookOpen className="h-4 w-4" /> Biblioteca
-          </Link>
-        </Button>
+
+        {/* Barra de Painéis */}
+        <div className="mt-4">
+          <p className="mb-1.5 px-1 font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
+            Painéis
+          </p>
+          <PanelTabs
+            defenderUserId={defensorId}
+            panels={panels}
+            selectedId={activePanelId}
+            onSelect={select}
+            access={access}
+            onCreate={() => setCreateOpen(true)}
+            onRename={(p) => setRenameTarget(p)}
+            onArchive={(p) => setArchiveTarget(p)}
+          />
+        </div>
       </header>
 
-      <PanelTabs
-        defenderUserId={defensorId}
-        panels={panels}
-        selectedId={activePanelId}
-        onSelect={select}
-        access={access}
-        onCreate={() => setCreateOpen(true)}
-        onRename={(p) => setRenameTarget(p)}
-        onArchive={(p) => setArchiveTarget(p)}
-      />
-
-      <div className="mt-4 flex-1 min-h-0">
+      {/* Corpo — Painel selecionado */}
+      <div className="flex min-h-0 flex-1 flex-col">
         {activePanelId ? (
           <PanelBoard
             key={activePanelId}
             defensorId={defensorId}
             panelId={activePanelId}
+            activePanel={activePanel}
             allPanels={panels}
           />
         ) : (
-          <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
-            Selecione um Painel.
+          <div className="m-4 flex-1 rounded-lg border border-dashed border-border bg-surface/60 p-12 text-center text-sm text-muted-foreground lg:m-8">
+            Selecione um Painel na barra acima.
           </div>
         )}
       </div>
@@ -301,8 +337,10 @@ function WorkArea({ defensorId }: { defensorId: string }) {
 
 function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
   const Icon = panelIconComponent(iconName);
-  return <Icon className="h-6 w-6 text-institutional" aria-hidden />;
+  return <Icon className="h-5 w-5 text-institutional" aria-hidden />;
 }
+
+
 
 // -----------------------------------------------------------------------------
 // PanelBoard — carrega apenas o Painel selecionado
