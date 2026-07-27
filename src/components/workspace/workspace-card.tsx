@@ -10,7 +10,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-function useAssistidoFotoUrl(fotoUrl: string | null | undefined, fotoPath: string | null | undefined) {
+function useAssistidoFotoUrl(
+  fotoUrl: string | null | undefined,
+  fotoPath: string | null | undefined,
+) {
   const [url, setUrl] = useState<string | null>(fotoUrl ?? null);
   useEffect(() => {
     if (fotoUrl) {
@@ -24,7 +27,9 @@ function useAssistidoFotoUrl(fotoUrl: string | null | undefined, fotoPath: strin
     let cancelled = false;
     supabase.storage
       .from("assistidos-fotos")
-      .createSignedUrl(fotoPath, 60 * 60)
+      .createSignedUrl(fotoPath, 60 * 60, {
+        transform: { width: 192, height: 192, resize: "cover", quality: 75 },
+      })
       .then(({ data }) => {
         if (!cancelled && data?.signedUrl) setUrl(data.signedUrl);
       });
@@ -77,6 +82,7 @@ export function WorkspaceCard({
   const prazoVencido = prazoDias != null && prazoDias < 0;
   const prazoProximo = prazoDias != null && prazoDias >= 0 && prazoDias <= 7;
   const fotoUrl = useAssistidoFotoUrl(data.foto_url, data.foto_path);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -84,29 +90,44 @@ export function WorkspaceCard({
         type="button"
         onClick={onClick}
         className={cn(
-          "group flex w-full rounded-md border border-border bg-canvas p-3 text-left text-sm transition",
+          "group flex w-full items-stretch gap-3 rounded-md border border-border bg-canvas p-3 text-left text-sm transition",
           "hover:border-institutional/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-institutional/50",
         )}
       >
-        {/* Foto/iniciais: quadrada, preenchendo toda a altura disponível do card.
-            Conteúdo absoluto para não interferir no sizing do container
-            (evita feedback de tamanho intrínseco do <img>). */}
-        <div className="relative flex aspect-square shrink-0 self-stretch items-center justify-center overflow-hidden rounded-md bg-muted font-mono text-base font-semibold text-muted-foreground">
+        {/* Avatar quadrado com tamanho fixo — foto ou iniciais, sempre visível. */}
+        <div
+          className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-muted"
+          style={{ aspectRatio: "1 / 1" }}
+        >
           {fotoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={fotoUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            <>
+              {!imgLoaded && (
+                <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden />
+              )}
+              <img
+                src={fotoUrl}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width={96}
+                height={96}
+                onLoad={() => setImgLoaded(true)}
+                className={cn(
+                  "h-full w-full object-cover object-[center_30%] transition-opacity duration-300",
+                  "[filter:contrast(1.05)_saturate(1.05)]",
+                  imgLoaded ? "opacity-100" : "opacity-0",
+                )}
+              />
+            </>
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center px-1 text-center leading-tight">
+            <span className="absolute inset-0 flex items-center justify-center px-1 text-center font-mono text-lg font-semibold leading-tight text-muted-foreground">
               {initials(data.nome_completo)}
             </span>
           )}
         </div>
 
-        <div className="min-w-0 flex-1 pl-3">
+        <div className="min-w-0 flex-1">
+
           <div className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-foreground">
