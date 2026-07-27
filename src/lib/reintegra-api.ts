@@ -229,43 +229,32 @@ function uuid(): string {
   return crypto.randomUUID();
 }
 
-export async function ensureDefensorWorkspace(defensorUserId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("ensure_defensor_workspace", {
-    p_defensor_user_id: defensorUserId,
-    p_idempotency_key: uuid(),
-  } as never);
-  if (error) throw error;
-  return data as string;
-}
-
+/**
+ * Leitura canônica do Painel pelo `panelId`.
+ *
+ * Não seleciona Painel implicitamente e não depende de órgão. Autorização
+ * é aplicada por `private.user_workspace_access`:
+ *   - owner (Defensor proprietário)
+ *   - team_readonly (membro com vínculo ativo + contexto)
+ *   - technical_readonly (Admin Técnico)
+ *
+ * O parâmetro `defensorUserId` é mantido apenas para compatibilidade com
+ * chamadas existentes (que passavam-no como fonte de "identidade da Área");
+ * ele **não** é enviado ao backend — a autorização usa `panelId` e a
+ * sessão do chamador.
+ */
 export async function listarWorkspaceCompleto(
-  defensorUserId: string,
-  panelId?: string | null,
+  _defensorUserId: string,
+  panelId: string,
 ): Promise<WorkspaceCompleto> {
+  if (!panelId) throw new Error("PANEL_ID_REQUIRED");
   const { data, error } = await supabase.rpc("listar_workspace_completo", {
-    p_defensor_user_id: defensorUserId,
-    p_panel_id: panelId ?? null,
+    p_panel_id: panelId,
   } as never);
   if (error) throw error;
   return data as WorkspaceCompleto;
 }
 
-export async function atualizarWorkspaceDefensor(params: {
-  workspaceId: string;
-  expectedWorkspaceVersion: number;
-  nome: string;
-  icone?: string | null;
-}): Promise<number> {
-  const { data, error } = await supabase.rpc("atualizar_workspace_defensor", {
-    p_workspace_id: params.workspaceId,
-    p_expected_workspace_version: params.expectedWorkspaceVersion,
-    p_idempotency_key: uuid(),
-    p_nome: params.nome,
-    p_icone: params.icone ?? null,
-  } as never);
-  if (error) throw error;
-  return Number(data);
-}
 
 export async function criarColunaWorkspace(params: {
   workspaceId: string;
