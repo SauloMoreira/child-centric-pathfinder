@@ -22,7 +22,7 @@ import {
   isAdminTecnico,
   isAtivo,
 } from "@/hooks/use-estado-institucional";
-import { EmptyState } from "@/components/team-kanban";
+import { EmptyState } from "@/components/empty-state";
 import { friendlyTeamError } from "@/lib/team-errors";
 import {
   useCurrentDefenderContext,
