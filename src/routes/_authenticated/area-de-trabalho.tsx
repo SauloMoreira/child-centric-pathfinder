@@ -642,10 +642,14 @@ function ColumnsBoard({
 
   const onDragCancel = () => setDragActive(null);
 
-  const [novaCol, setNovaCol] = useState("");
+  const [creatorOpen, setCreatorOpen] = useState(false);
+  const boardScrollRef = useRef<HTMLDivElement | null>(null);
 
   // "Adicionar a outro Painel"
   const [copyTarget, setCopyTarget] = useState<WorkspaceCardDto | null>(null);
+
+  const totalCards = cards.length;
+  const PanelIcon = panelIconComponent(activePanel?.icon ?? null);
 
   return (
     <>
@@ -657,9 +661,71 @@ function ColumnsBoard({
         onDragEnd={onDragEnd}
         onDragCancel={onDragCancel}
       >
-        <div className="h-full overflow-x-auto pb-4">
+        {/* Barra operacional do painel */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <PanelIcon className="h-4 w-4 shrink-0 text-institutional" aria-hidden />
+            <span className="truncate text-sm font-semibold text-foreground">
+              {activePanel?.name ?? "Painel"}
+            </span>
+          </div>
+          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <Layers className="h-3.5 w-3.5" aria-hidden />
+            {orderedColumns.length} {orderedColumns.length === 1 ? "coluna" : "colunas"}
+          </span>
+          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            {totalCards} {totalCards === 1 ? "card" : "cards"}
+          </span>
+
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => onRefetch()}
+              disabled={isFetching}
+              title="Atualizar Painel"
+            >
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", isFetching && "animate-spin")}
+                aria-hidden
+              />
+              Atualizar
+            </Button>
+            {access.canManageColumns && (
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => {
+                  setCreatorOpen(true);
+                  // rola para o fim para o input ficar visível
+                  requestAnimationFrame(() => {
+                    const el = boardScrollRef.current;
+                    if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                  });
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                Nova coluna
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Board — altura calculada para permitir rolagem vertical dentro das colunas */}
+        <div
+          ref={boardScrollRef}
+          className="kanban-scroll flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 lg:px-8"
+          style={{
+            minHeight: 0,
+          }}
+        >
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-            <div className="flex h-full min-w-max items-start gap-4">
+            <div className="flex h-full min-w-max items-stretch gap-4">
               {orderedColumns.map((c, idx) => (
                 <SortableColumn
                   key={c.id}
@@ -684,29 +750,16 @@ function ColumnsBoard({
               ))}
 
               {access.canManageColumns && (
-                <div className="w-72 shrink-0">
-                  <form
-                    className="surface-panel flex items-center gap-2 p-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const n = novaCol.trim();
-                      if (!n) return;
-                      criarCol.mutate(n);
-                      setNovaCol("");
-                    }}
-                  >
-                    <Input
-                      value={novaCol}
-                      onChange={(e) => setNovaCol(e.target.value)}
-                      placeholder="Nova coluna"
-                      className="h-8"
-                      maxLength={80}
-                    />
-                    <Button size="sm" type="submit" disabled={criarCol.isPending}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </form>
-                </div>
+                <AddColumnCard
+                  open={creatorOpen}
+                  setOpen={setCreatorOpen}
+                  onSubmit={(nome) => {
+                    criarCol.mutate(nome, {
+                      onSuccess: () => setCreatorOpen(false),
+                    });
+                  }}
+                  isPending={criarCol.isPending}
+                />
               )}
             </div>
           </SortableContext>
@@ -738,6 +791,94 @@ function ColumnsBoard({
     </>
   );
 }
+
+// -----------------------------------------------------------------------------
+// AddColumnCard — placeholder integrado ao Kanban
+// -----------------------------------------------------------------------------
+function AddColumnCard({
+  open,
+  setOpen,
+  onSubmit,
+  isPending,
+}: {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  onSubmit: (nome: string) => void;
+  isPending: boolean;
+}) {
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => inputRef.current?.focus());
+    } else {
+      setValue("");
+    }
+  }, [open]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="kanban-column group flex h-full min-h-[16rem] flex-col items-center justify-center gap-2 border-dashed bg-surface/40 text-sm text-muted-foreground transition-colors hover:border-institutional/60 hover:bg-institutional/[0.04] hover:text-institutional"
+      >
+        <Plus className="h-5 w-5" aria-hidden />
+        Nova coluna
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="kanban-column flex h-full min-h-[16rem] flex-col gap-3 p-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const n = value.trim();
+        if (!n) return;
+        onSubmit(n);
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          Nova coluna
+        </span>
+        <button
+          type="button"
+          className="rounded p-1 text-muted-foreground hover:bg-muted"
+          onClick={() => setOpen(false)}
+          aria-label="Cancelar"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Nome da coluna"
+        className="h-9"
+        maxLength={80}
+      />
+      <div className="mt-auto flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen(false)}
+          disabled={isPending}
+        >
+          Cancelar
+        </Button>
+        <Button size="sm" type="submit" disabled={isPending || !value.trim()}>
+          Criar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 
 // -----------------------------------------------------------------------------
 // SortableColumn
