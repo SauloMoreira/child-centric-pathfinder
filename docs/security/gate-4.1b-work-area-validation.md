@@ -152,3 +152,96 @@ Refatorados:
   aplicada formatação global cega.
 - `pg_trgm` permanece em `public` (herdado da Fase 1 — ver Sub-gate 4.1.a).
 - Testes automatizados de concorrência real permanecem para 3.C.3.d.
+
+---
+
+## Turno 3.C.3.c.1.a — Scaffold E2E (Playwright + Axe)
+
+**Status:** scaffold concluído. Execução autenticada real fica reservada
+para o Turno 3.C.3.c.1.b após bootstrap manual de usuários MFA.
+
+### Dependências
+- `@playwright/test@1.62.0`
+- `@axe-core/playwright@4.12.1`
+
+### Scripts (package.json)
+`test:e2e`, `test:e2e:headed`, `test:e2e:ui`, `test:e2e:update`,
+`test:e2e:install`, `e2e:prepare`, `e2e:mint-sessions`, `e2e:validate`.
+
+Sem `--passWithNoTests`. Nenhum spec marcado como `skip`.
+
+### Configuração Playwright
+`playwright.config.ts` define três projetos com `storageState` real:
+- `chromium-desktop-1440`
+- `chromium-mobile-390`
+- `chromium-reduced-motion`
+
+`webServer` aponta para `bun run dev` no `E2E_BASE_URL`. Retries: 0 local,
+1 no CI. Trace on-first-retry, screenshot e vídeo apenas em falha.
+
+### Ambiente sintético
+- Seed em `scripts/e2e/seed-work-area.sql` — **fora** de `supabase/migrations/`.
+- Guarda dupla: exige `app.environment = 'e2e'` (GUC externa) e o script
+  **não** define a GUC para si mesmo.
+- Não toca em `auth.users`, `auth.identities`, `auth.sessions`,
+  `auth.refresh_tokens`, `auth.mfa_factors`, `auth.mfa_challenges`.
+- Localiza os três usuários por email fornecido em GUCs
+  (`app.e2e_owner_email`, `app.e2e_team_email`, `app.e2e_tech_email`),
+  valida distinção e recusa domínios de produção.
+- Namespace fixo `e2e0000*-0000-4000-8000-*` para todos os UUIDs
+  funcionais (órgão, painéis, colunas, itens, versões, cards).
+- Nomes com prefixo literal `[E2E]`.
+
+### Cleanup
+`scripts/e2e/cleanup-work-area.sql` — mesma guarda de ambiente,
+transacional, sem `TRUNCATE`, sem `CASCADE`, remove exclusivamente pelos
+UUIDs fixos do namespace, aborta se qualquer card sintético apontar para
+item fora do namespace.
+
+### Autenticação
+- `scripts/e2e/mint-sessions.ts` faz login real pela UI, resolve MFA via
+  TOTP RFC 6238 (SHA-1 / 30s / 6 dígitos) usando o segredo do
+  `.env.e2e.local`, e salva `storageState` em `.playwright/.auth/`.
+- Não imprime tokens, cookies, senhas nem segredos TOTP.
+- Falha explícita com `E2E_AUTH_BOOTSTRAP_REQUIRED` quando qualquer
+  perfil não existe ou não tem MFA matriculado.
+- Nenhum modo especial de autenticação no backend. Nenhum header secreto.
+
+### Variáveis e segredos
+- `.env.e2e.example` com apenas nomes.
+- `.env.e2e.local` git-ignored (regra `*.local` já existente).
+- `.playwright/.auth/`, `playwright-report/`, `test-results/`
+  ignorados via `.gitignore` local por diretório.
+- `scripts/e2e/validate-environment.ts` verifica presença, distinção de
+  e-mails, marcador E2E, URL local/homologada, banco não-produtivo,
+  ausência de service role e `.gitignore` cobrindo os artefatos.
+
+### Specs preparados (a executar em 3.C.3.c.1.b)
+- `e2e/auth.setup.ts`
+- `e2e/owner-panels.spec.ts` — carregamento, criação, nome vazio,
+  duplicidade, renomeação, arquivamento com cards (bloqueado),
+  persistência após reload.
+- `e2e/panel-limit.spec.ts` — atinge 8 Painéis, valida botão desabilitado
+  com título de limite, persiste após reload, arquiva no `afterAll`.
+- `e2e/fixtures.ts` expõe fixture `axe` para auditoria por página.
+
+### Comandos executados agora
+- `bun run test` — Vitest verde (128 casos, mesmo escopo do 3.C.3.b.1).
+- `bun run test:coverage` — cobertura V8 gerada.
+- `bunx tsgo --noEmit` — typecheck verde.
+- `bun run build` — build verde.
+- `bun run test:e2e` — **falha controlada esperada**
+  (`E2E_AUTH_BOOTSTRAP_REQUIRED`) enquanto storage states não existem.
+
+### Bloqueio conhecido
+Bootstrap manual dos três usuários Auth + matrícula MFA é pré-requisito
+inevitável do 3.C.3.c.1.b. O ambiente Lovable Cloud não expõe service
+role para automação, e este scaffold **não** cria bypass. Consulte
+`docs/testing/work-area-e2e-bootstrap.md`.
+
+### Pendências
+- **3.C.3.c.1.b** — bootstrap manual, geração dos storage states e
+  execução real do owner + confirmação de dois storage states readonly.
+- **3.C.3.c.2** — DnD real, readonly, aria-live, foco e falhas de rede.
+- **3.C.3.c.3** — Axe completo, cinco resoluções, screenshots, zoom 200%.
+- **3.C.3.d** — SQL/pgTAP e concorrência real.
