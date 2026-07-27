@@ -66,10 +66,14 @@ function ItemEditor() {
     }
   }, [item]);
 
+  const expectedVersion = item?.optimistic_version ?? 1;
+
   const salvar = useMutation({
     mutationFn: () =>
       atualizarRascunho({
         item_id: itemId,
+        expected_version: expectedVersion,
+        idempotency_key: crypto.randomUUID(),
         titulo: titulo.trim() || "(sem título)",
         body_json: { text: texto },
         body_text: texto,
@@ -80,29 +84,41 @@ function ItemEditor() {
       qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
     },
     onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao salvar"),
+      toast.error(mensagemErro(e, "Falha ao salvar")),
   });
 
   const publicar = useMutation({
-    mutationFn: () => publicarVersao({ item_id: itemId, visibility }),
+    mutationFn: () =>
+      publicarVersao({
+        item_id: itemId,
+        expected_version: expectedVersion,
+        idempotency_key: crypto.randomUUID(),
+        visibility,
+      }),
     onSuccess: () => {
       toast.success("Versão publicada");
       qc.invalidateQueries({ queryKey: ["biblioteca-item", itemId] });
       qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
     },
     onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao publicar"),
+      toast.error(mensagemErro(e, "Falha ao publicar")),
   });
 
   const arquivar = useMutation({
-    mutationFn: () => arquivarItem(itemId),
+    mutationFn: () =>
+      arquivarItem({
+        item_id: itemId,
+        expected_version: expectedVersion,
+        idempotency_key: crypto.randomUUID(),
+      }),
     onSuccess: () => {
       toast.success("Modelo arquivado");
       navigate({ to: "/biblioteca" });
     },
     onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao arquivar"),
+      toast.error(mensagemErro(e, "Falha ao arquivar")),
   });
+
 
   const kindLabel = useMemo(
     () => (item?.kind === "cota" ? "Cota" : "Atendimento"),
