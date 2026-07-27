@@ -264,10 +264,8 @@ function MinhaEquipePage() {
         </div>
       )}
 
-      <AddTeamMemberSheet open={add} onOpenChange={setAdd} />
-    </div>
-  );
-}
+
+
 
       <DefenderBondsSection
         estado={estado}
