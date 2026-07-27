@@ -41,6 +41,7 @@ function PublicLanding() {
           </div>
           <Link
             to="/auth"
+            search={{}}
             className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
           >
             Acessar sistema <ArrowRight className="h-4 w-4" aria-hidden />
@@ -55,18 +56,19 @@ function PublicLanding() {
               Plataforma institucional · uso interno
             </p>
             <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Acompanhamento centrado na criança para casos de reintegração
-              familiar.
+              Plataforma colaborativa de atendimentos e cotas da Defensoria
+              Pública.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Um centro de comando institucional da Defensoria Pública do RS
-              para articulação entre defensores, equipe técnica e rede de
-              proteção. O acesso é concedido mediante aprovação institucional.
+              Espaço institucional para criar, organizar e utilizar modelos
+              reutilizáveis de atendimento e cotas. O acesso é concedido
+              mediante aprovação institucional.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/auth"
+                search={{}}
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
               >
                 Entrar com e-mail institucional
