@@ -383,22 +383,43 @@ function UsuariosTecnico() {
   );
 }
 
-function UsuarioDrawer({
-  user,
-  onClose,
-}: {
-  user: UsuarioRow | null;
-  onClose: () => void;
-}) {
+type UsuarioRolHistorico = {
+  role: string;
+  granted_at: string;
+  revoked_at: string | null;
+};
+
+type UsuarioMembership = {
+  id: string;
+  orgao_nome: string | null;
+  orgao_comarca: string | null;
+  ativo: boolean;
+  since: string;
+  until: string | null;
+};
+
+type UsuarioAuditEntry = {
+  action: string;
+  result: string;
+  at: string;
+};
+
+type UsuarioDetalhe = {
+  roles?: UsuarioRolHistorico[];
+  memberships?: UsuarioMembership[];
+  audit?: UsuarioAuditEntry[];
+};
+
+function UsuarioDrawer({ user, onClose }: { user: UsuarioRow | null; onClose: () => void }) {
   const detalhesQ = useQuery({
     queryKey: ["admin-tecnico", "usuario-detalhe", user?.user_id],
     enabled: !!user,
-    queryFn: async () => {
+    queryFn: async (): Promise<UsuarioDetalhe> => {
       const { data, error } = await supabase.rpc("admin_detalhar_usuario", {
         p_user_id: user!.user_id,
       });
       if (error) throw error;
-      return data as any;
+      return (data as UsuarioDetalhe) ?? {};
     },
   });
 
@@ -447,7 +468,7 @@ function UsuarioDrawer({
                     Histórico de papéis
                   </h4>
                   <ul className="space-y-1">
-                    {detalhesQ.data.roles.map((r: any, i: number) => (
+                    {detalhesQ.data.roles.map((r, i) => (
                       <li
                         key={i}
                         className="rounded border border-border bg-muted/30 p-2 text-xs"
@@ -459,8 +480,7 @@ function UsuarioDrawer({
                           </span>
                         </div>
                         <div className="text-muted-foreground">
-                          Concedido em{" "}
-                          {new Date(r.granted_at).toLocaleString("pt-BR")}
+                          Concedido em {new Date(r.granted_at).toLocaleString("pt-BR")}
                         </div>
                       </li>
                     ))}
@@ -474,7 +494,7 @@ function UsuarioDrawer({
                     Histórico de vínculos
                   </h4>
                   <ul className="space-y-1">
-                    {detalhesQ.data.memberships.map((m: any) => (
+                    {detalhesQ.data.memberships.map((m) => (
                       <li
                         key={m.id}
                         className="rounded border border-border bg-muted/30 p-2 text-xs"
@@ -504,7 +524,7 @@ function UsuarioDrawer({
                     Auditoria recente
                   </h4>
                   <ul className="space-y-1">
-                    {detalhesQ.data.audit.slice(0, 10).map((a: any, i: number) => (
+                    {detalhesQ.data.audit.slice(0, 10).map((a, i) => (
                       <li
                         key={i}
                         className="rounded border border-border bg-muted/30 p-2 text-xs"
@@ -536,3 +556,4 @@ function UsuarioDrawer({
     </Sheet>
   );
 }
+
