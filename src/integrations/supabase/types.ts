@@ -331,6 +331,7 @@ export type Database = {
           icone: string | null
           id: string
           nome: string
+          nome_normalizado: string | null
           optimistic_version: number
           order_position: number
           orgao_id: string | null
@@ -343,6 +344,7 @@ export type Database = {
           icone?: string | null
           id?: string
           nome: string
+          nome_normalizado?: string | null
           optimistic_version?: number
           order_position?: number
           orgao_id?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           icone?: string | null
           id?: string
           nome?: string
+          nome_normalizado?: string | null
           optimistic_version?: number
           order_position?: number
           orgao_id?: string | null
@@ -650,6 +653,14 @@ export type Database = {
         }
         Returns: Json
       }
+      arquivar_painel: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key: string
+          p_panel_id: string
+        }
+        Returns: Json
+      }
       atualizar_coluna_workspace: {
         Args: {
           p_column_id: string
@@ -695,10 +706,6 @@ export type Database = {
         }
         Returns: number
       }
-      atualizar_workspace_meta: {
-        Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
-        Returns: Json
-      }
       bloquear_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
@@ -717,17 +724,6 @@ export type Database = {
       }
       completar_onboarding_equipe: {
         Args: { p_aceite_termos: boolean }
-        Returns: Json
-      }
-      create_workspace_column: {
-        Args: {
-          p_color_token?: string
-          p_custom_color?: string
-          p_description?: string
-          p_filter?: Json
-          p_title: string
-          p_workspace_id: string
-        }
         Returns: Json
       }
       criar_coluna_workspace: {
@@ -765,8 +761,14 @@ export type Database = {
         }
         Returns: Json
       }
-      criar_workspace: {
-        Args: { p_icone?: string; p_nome: string; p_orgao_id: string }
+      criar_painel: {
+        Args: {
+          p_defensor_user_id: string
+          p_expected_count?: number
+          p_icone?: string
+          p_idempotency_key?: string
+          p_nome: string
+        }
         Returns: Json
       }
       defensor_alterar_orgao_ativo: {
@@ -778,19 +780,6 @@ export type Database = {
       }
       defensor_autovincular_orgao: {
         Args: { p_idempotency_key?: string; p_orgao_id: string }
-        Returns: Json
-      }
-      definir_workspace_padrao: {
-        Args: { p_workspace_id: string }
-        Returns: Json
-      }
-      delete_workspace_column: { Args: { p_column_id: string }; Returns: Json }
-      duplicar_workspace: {
-        Args: { p_nome?: string; p_workspace_id: string }
-        Returns: Json
-      }
-      duplicate_workspace_column: {
-        Args: { p_column_id: string }
         Returns: Json
       }
       encerrar_member_defensor_bond: {
@@ -806,7 +795,10 @@ export type Database = {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
       }
-      ensure_default_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
+      ensure_defensor_work_area: {
+        Args: { p_defensor_user_id: string; p_idempotency_key?: string }
+        Returns: Json
+      }
       ensure_defensor_workspace: {
         Args: { p_defensor_user_id: string; p_idempotency_key?: string }
         Returns: string
@@ -820,7 +812,6 @@ export type Database = {
         }
         Returns: number
       }
-      excluir_workspace: { Args: { p_workspace_id: string }; Returns: Json }
       listar_biblioteca: {
         Args: {
           p_apenas_meus?: boolean
@@ -928,15 +919,10 @@ export type Database = {
           version_number: number
         }[]
       }
-      listar_workspace: {
-        Args: { p_orgao_id?: string; p_workspace_id?: string }
-        Returns: Json
-      }
       listar_workspace_completo: {
         Args: { p_defensor_user_id: string }
         Returns: Json
       }
-      listar_workspaces_orgao: { Args: { p_orgao_id?: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
       meu_estado_institucional: { Args: never; Returns: Json }
       mover_card_workspace: {
@@ -1033,24 +1019,26 @@ export type Database = {
         }
         Returns: number
       }
-      renomear_workspace: {
-        Args: { p_nome: string; p_workspace_id: string }
+      renomear_painel: {
+        Args: {
+          p_expected_version: number
+          p_icone: string
+          p_idempotency_key: string
+          p_nome: string
+          p_panel_id: string
+        }
         Returns: Json
       }
       reordenar_colunas_workspace: {
         Args: { p_column_ids: string[]; p_workspace_id: string }
         Returns: undefined
       }
-      reordenar_workspaces: {
-        Args: { p_ordered_ids: string[]; p_orgao_id: string }
-        Returns: Json
-      }
-      reorder_workspace_columns: {
-        Args: { p_ordered_ids: string[]; p_workspace_id: string }
-        Returns: Json
-      }
-      reset_workspace_to_default: {
-        Args: { p_workspace_id: string }
+      reordenar_paineis_defensor: {
+        Args: {
+          p_defensor_user_id: string
+          p_idempotency_key: string
+          p_items: Json
+        }
         Returns: Json
       }
       selecionar_contexto_defensor: {
@@ -1082,18 +1070,6 @@ export type Database = {
       tem_papel: {
         Args: { required_role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
-      }
-      update_workspace_column: {
-        Args: {
-          p_color_token?: string
-          p_column_id: string
-          p_custom_color?: string
-          p_description?: string
-          p_filter?: Json
-          p_title: string
-          p_version: number
-        }
-        Returns: Json
       }
     }
     Enums: {
