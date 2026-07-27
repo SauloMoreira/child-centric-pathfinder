@@ -530,6 +530,29 @@ function ColumnsBoard({
     onError: handleMutationError,
   });
 
+  const editarCol = useMutation({
+    mutationFn: (v: {
+      columnId: string;
+      nome: string;
+      descricao: string | null;
+      corToken: WorkspaceColor;
+    }) =>
+      atualizarColunaWorkspace({
+        columnId: v.columnId,
+        expectedWorkspaceVersion: workspace.optimisticVersion,
+        nome: v.nome,
+        descricao: v.descricao ?? undefined,
+        corToken: v.corToken,
+        corCustom: null,
+      }),
+    onSuccess: () => {
+      toast.success("Coluna atualizada");
+      announce("Coluna atualizada");
+      onRefetch();
+    },
+    onError: handleMutationError,
+  });
+
   const removerCard = useMutation({
     mutationFn: (cardId: string) =>
       removerCardWorkspace({
