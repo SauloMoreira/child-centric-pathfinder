@@ -84,119 +84,125 @@ export function WorkspaceCard({
         type="button"
         onClick={onClick}
         className={cn(
-          "group w-full rounded-md border border-border bg-canvas p-3 text-left text-sm transition",
+          "group flex w-full rounded-md border border-border bg-canvas p-3 text-left text-sm transition",
           "hover:border-institutional/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-institutional/50",
         )}
       >
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs font-semibold text-muted-foreground">
-            {fotoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={fotoUrl}
-                alt=""
-                className="h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              initials(data.nome_completo)
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-foreground">
-              {data.nome_social || data.nome_completo}
-            </p>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Baby className="h-3 w-3" aria-hidden />
-                  <span className="cursor-help">
-                    {data.idade} anos · {data.faixa_etaria === "crianca" ? "Criança" : "Adolescente"}
-                  </span>
-                </p>
-              </TooltipTrigger>
-              <TooltipContent>
-                {data.data_nascimento
-                  ? `Nascimento: ${new Date(data.data_nascimento + "T00:00:00").toLocaleDateString("pt-BR")}`
-                  : "Data de nascimento não informada"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          {(prazoVencido || prazoProximo) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={cn(
-                    "inline-flex h-6 w-6 items-center justify-center rounded-full",
-                    prazoVencido
-                      ? "bg-destructive/15 text-destructive"
-                      : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-                  )}
-                  aria-label={prazoVencido ? "Prazo vencido" : "Prazo próximo"}
-                >
-                  <AlertCircle className="h-3.5 w-3.5" aria-hidden />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {prazoVencido
-                  ? `Prazo vencido há ${Math.abs(prazoDias!)} dias`
-                  : `Prazo em ${prazoDias} dias`}
-              </TooltipContent>
-            </Tooltip>
+        {/* Foto/iniciais: quadrada, preenchendo toda a altura disponível do card */}
+        <div className="relative flex aspect-square shrink-0 self-stretch items-center justify-center overflow-hidden rounded-md bg-muted font-mono text-base font-semibold text-muted-foreground">
+          {fotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={fotoUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="px-1 text-center leading-tight">
+              {initials(data.nome_completo)}
+            </span>
           )}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="inline-flex items-center rounded border border-border bg-surface px-1.5 py-0.5">
-            {SITUACAO_LABEL[data.situacao_atual] ?? data.situacao_atual}
-          </span>
-          {data.entidade_acolhimento && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
-                  <Home className="h-3 w-3" aria-hidden />
-                  {data.tempo_acolhimento_dias ?? 0}d
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{data.entidade_acolhimento}</TooltipContent>
-            </Tooltip>
-          )}
-          {data.processos_ativos > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
-                  <Scale className="h-3 w-3" aria-hidden />
-                  {data.processos_ativos}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {data.processos_ativos} processo(s) ativo(s)
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {data.providencias_pendentes > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
-                  <Clock className="h-3 w-3" aria-hidden />
-                  {data.providencias_pendentes}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {data.providencias_pendentes} providência(s) pendente(s)
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {data.total_irmaos > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
-                  <Users className="h-3 w-3" aria-hidden />
-                  {data.total_irmaos}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{data.total_irmaos} irmão(s) cadastrado(s)</TooltipContent>
-            </Tooltip>
-          )}
+        <div className="min-w-0 flex-1 pl-3">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-foreground">
+                {data.nome_social || data.nome_completo}
+              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Baby className="h-3 w-3" aria-hidden />
+                    <span className="cursor-help">
+                      {data.idade} anos · {data.faixa_etaria === "crianca" ? "Criança" : "Adolescente"}
+                    </span>
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {data.data_nascimento
+                    ? `Nascimento: ${new Date(data.data_nascimento + "T00:00:00").toLocaleDateString("pt-BR")}`
+                    : "Data de nascimento não informada"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            {(prazoVencido || prazoProximo) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={cn(
+                      "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                      prazoVencido
+                        ? "bg-destructive/15 text-destructive"
+                        : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+                    )}
+                    aria-label={prazoVencido ? "Prazo vencido" : "Prazo próximo"}
+                  >
+                    <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {prazoVencido
+                    ? `Prazo vencido há ${Math.abs(prazoDias!)} dias`
+                    : `Prazo em ${prazoDias} dias`}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center rounded border border-border bg-surface px-1.5 py-0.5">
+              {SITUACAO_LABEL[data.situacao_atual] ?? data.situacao_atual}
+            </span>
+            {data.entidade_acolhimento && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                    <Home className="h-3 w-3" aria-hidden />
+                    {data.tempo_acolhimento_dias ?? 0}d
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{data.entidade_acolhimento}</TooltipContent>
+              </Tooltip>
+            )}
+            {data.processos_ativos > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                    <Scale className="h-3 w-3" aria-hidden />
+                    {data.processos_ativos}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {data.processos_ativos} processo(s) ativo(s)
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {data.providencias_pendentes > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                    <Clock className="h-3 w-3" aria-hidden />
+                    {data.providencias_pendentes}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {data.providencias_pendentes} providência(s) pendente(s)
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {data.total_irmaos > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5">
+                    <Users className="h-3 w-3" aria-hidden />
+                    {data.total_irmaos}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{data.total_irmaos} irmão(s) cadastrado(s)</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </button>
     </TooltipProvider>
