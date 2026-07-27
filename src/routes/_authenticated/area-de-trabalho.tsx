@@ -236,9 +236,11 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
       ? "Sua área de trabalho pessoal"
       : access.accessMode === "team_readonly"
         ? "Somente leitura · Membro da equipe"
-        : access.accessMode === "technical_readonly"
-          ? "Modo técnico · Somente leitura"
-          : "";
+        : access.accessMode === "technical_admin"
+          ? "Modo técnico · Acesso administrativo"
+          : access.accessMode === "technical_readonly"
+            ? "Modo técnico · Somente leitura"
+            : "";
 
   return (
     <div
@@ -266,8 +268,9 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
                   <span
                     className={cn(
                       "font-mono text-[10px] uppercase tracking-[0.18em]",
-                      access.accessMode === "technical_readonly"
-                        ? "text-warning-foreground"
+                      access.accessMode === "technical_readonly" ||
+                        access.accessMode === "technical_admin"
+                        ? "text-institutional"
                         : "text-muted-foreground",
                     )}
                   >
