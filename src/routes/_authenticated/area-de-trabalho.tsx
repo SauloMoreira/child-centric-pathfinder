@@ -987,8 +987,9 @@ function SortableColumn(props: {
     opacity: sortable.isDragging ? 0.4 : 1,
   };
 
-  const colorToken = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
+  const colorToken: WorkspaceColor = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
 
   const cardIds = useMemo(() => cards.map((c) => `card:${c.cardId}`), [cards]);
