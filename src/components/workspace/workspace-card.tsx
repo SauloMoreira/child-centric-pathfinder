@@ -88,17 +88,19 @@ export function WorkspaceCard({
           "hover:border-institutional/60 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-institutional/50",
         )}
       >
-        {/* Foto/iniciais: quadrada, preenchendo toda a altura disponível do card */}
+        {/* Foto/iniciais: quadrada, preenchendo toda a altura disponível do card.
+            Conteúdo absoluto para não interferir no sizing do container
+            (evita feedback de tamanho intrínseco do <img>). */}
         <div className="relative flex aspect-square shrink-0 self-stretch items-center justify-center overflow-hidden rounded-md bg-muted font-mono text-base font-semibold text-muted-foreground">
           {fotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={fotoUrl}
               alt=""
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
-            <span className="px-1 text-center leading-tight">
+            <span className="absolute inset-0 flex items-center justify-center px-1 text-center leading-tight">
               {initials(data.nome_completo)}
             </span>
           )}
