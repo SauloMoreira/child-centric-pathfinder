@@ -38,6 +38,18 @@ export const teamErrorMessages: Record<string, string> = {
   INVITATION_SEND_FAILED:
     "Não foi possível enviar o e-mail de convite. Tente novamente em instantes.",
   INTERNAL_ERROR: "Ocorreu um erro interno. Tente novamente.",
+  ACCESS_REQUEST_ALREADY_PENDING:
+    "Já existe uma solicitação pendente para este Defensor.",
+  ACCESS_REQUEST_NOT_FOUND: "Solicitação não encontrada.",
+  ACCESS_REQUEST_NOT_PENDING: "Esta solicitação já foi analisada.",
+  ACCESS_REQUEST_CREATED: "Solicitação enviada.",
+  MESSAGE_TOO_LONG: "A mensagem excede o limite de 300 caracteres.",
+  REASON_TOO_LONG: "O motivo excede o limite de 300 caracteres.",
+  POSSIBLE_PERSONAL_OR_CASE_DATA:
+    "A mensagem parece conter dados pessoais ou de caso concreto. Reescreva de forma genérica.",
+  DEFENDER_INACTIVE: "Defensor(a) inativo(a).",
+  CONCURRENT_OPERATION:
+    "Operação já em andamento. Aguarde a conclusão e tente novamente.",
 };
 
 const ERROR_CODE_PATTERN = new RegExp(
