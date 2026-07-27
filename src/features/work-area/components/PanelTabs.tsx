@@ -95,7 +95,7 @@ export function PanelTabs({
   };
 
   return (
-    <div className="flex items-center gap-2 border-b border-border pb-2">
+    <div className="flex items-stretch gap-2 border-b border-border">
       <div className="min-w-0 flex-1 overflow-x-auto">
         {canManage ? (
           <DndContext
@@ -108,7 +108,7 @@ export function PanelTabs({
               items={items}
               strategy={horizontalListSortingStrategy}
             >
-              <div className="flex items-center gap-1">
+              <div className="flex items-stretch gap-1 pr-1">
                 {panels.map((p) => (
                   <SortablePanelTab
                     key={p.id}
@@ -129,7 +129,7 @@ export function PanelTabs({
             </DragOverlay>
           </DndContext>
         ) : (
-          <div className="flex items-center gap-1">
+          <div className="flex items-stretch gap-1 pr-1">
             {panels.map((p) => (
               <PanelTabButton
                 key={p.id}
@@ -143,24 +143,27 @@ export function PanelTabs({
       </div>
 
       {canManage && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1"
-          disabled={panels.length >= PANEL_MAX}
-          onClick={onCreate}
-          title={
-            panels.length >= PANEL_MAX
-              ? `Limite de ${PANEL_MAX} Painéis atingido`
-              : "Criar novo Painel"
-          }
-        >
-          <Plus className="h-3.5 w-3.5" /> Novo Painel
-        </Button>
+        <div className="flex items-center pb-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 shrink-0 gap-1.5 border-dashed"
+            disabled={panels.length >= PANEL_MAX}
+            onClick={onCreate}
+            title={
+              panels.length >= PANEL_MAX
+                ? `Limite de ${PANEL_MAX} Painéis atingido`
+                : "Criar novo Painel"
+            }
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo Painel
+          </Button>
+        </div>
       )}
     </div>
   );
 }
+
 
 function SortablePanelTab({
   panel,
@@ -255,23 +258,39 @@ function PanelTabButton({
   return (
     <div
       className={cn(
-        "group flex shrink-0 items-center gap-1 rounded-t-md border-b-2 px-3 py-1.5 text-sm transition",
+        "group relative flex shrink-0 items-center gap-1.5 rounded-t-md px-3 pb-2 pt-2 text-sm transition-colors",
+        // Active: subtle bg + green underline. Inactive: hover to muted.
         selected
-          ? "border-institutional bg-institutional/5 text-foreground"
-          : "border-transparent text-muted-foreground hover:text-foreground",
-        dragging && "shadow-lg ring-1 ring-institutional",
+          ? "bg-institutional/5 text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t-sm after:bg-institutional after:content-['']"
+          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+        dragging && "shadow-md ring-1 ring-institutional/60",
       )}
     >
       <button
         type="button"
-        className="flex items-center gap-1.5 outline-none"
+        className="flex min-w-0 items-center gap-1.5 outline-none"
         onClick={onClick}
         aria-current={selected ? "page" : undefined}
+        title={panel.name}
       >
-        <Icon className="h-3.5 w-3.5" />
-        <span className="max-w-[10rem] truncate">{panel.name}</span>
+        <Icon
+          className={cn(
+            "h-3.5 w-3.5 shrink-0",
+            selected ? "text-institutional" : "text-muted-foreground",
+          )}
+          aria-hidden
+        />
+        <span
+          className={cn(
+            "max-w-[10rem] truncate",
+            selected && "font-semibold",
+          )}
+        >
+          {panel.name}
+        </span>
       </button>
       {actions}
     </div>
   );
 }
+
