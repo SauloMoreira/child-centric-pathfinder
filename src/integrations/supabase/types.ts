@@ -812,6 +812,10 @@ export type Database = {
         }
         Returns: number
       }
+      listar_area_trabalho_defensor: {
+        Args: { p_defensor_user_id: string }
+        Returns: Json
+      }
       listar_biblioteca: {
         Args: {
           p_apenas_meus?: boolean
@@ -920,7 +924,7 @@ export type Database = {
         }[]
       }
       listar_workspace_completo: {
-        Args: { p_defensor_user_id: string }
+        Args: { p_defensor_user_id: string; p_panel_id?: string }
         Returns: Json
       }
       meu_convite_pendente: { Args: never; Returns: Json }

@@ -20,6 +20,53 @@ export async function ensureWorkArea(input: {
   return mapWorkArea(data as never);
 }
 
+export class WorkAreaNotInitializedError extends Error {
+  code = "WORK_AREA_NOT_INITIALIZED" as const;
+  accessMode: string | null;
+  constructor(accessMode: string | null) {
+    super("WORK_AREA_NOT_INITIALIZED");
+    this.accessMode = accessMode;
+  }
+}
+
+export class WorkAreaForbiddenError extends Error {
+  code = "FORBIDDEN" as const;
+  constructor() {
+    super("FORBIDDEN");
+  }
+}
+
+/**
+ * Leitura pura da Área de Trabalho. Não cria nada.
+ * Retorna `WorkArea` para caller autorizado com Painéis, ou lança
+ * `WorkAreaNotInitializedError` / `WorkAreaForbiddenError`.
+ */
+export async function readWorkArea(input: {
+  defenderUserId: string;
+}): Promise<WorkArea> {
+  const { data, error } = await supabase.rpc(
+    "listar_area_trabalho_defensor" as never,
+    { p_defensor_user_id: input.defenderUserId } as never,
+  );
+  if (error) throw error;
+  const res = data as {
+    ok: boolean;
+    code?: string;
+    access?: { accessMode?: string };
+    defenderUserId?: string;
+    panelCount?: number;
+    activePanelId?: string | null;
+    panels?: unknown[];
+  };
+  if (res?.ok === false) {
+    if (res.code === "WORK_AREA_NOT_INITIALIZED") {
+      throw new WorkAreaNotInitializedError(res.access?.accessMode ?? null);
+    }
+    throw new WorkAreaForbiddenError();
+  }
+  return mapWorkArea(data as never);
+}
+
 // ---------- create ----------
 
 export type CreatePanelInput = {

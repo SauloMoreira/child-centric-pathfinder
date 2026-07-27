@@ -5,33 +5,45 @@ import type {
   PanelAccessMode,
 } from "./types";
 
-type PanelRow = {
+// Aceita rows tanto do RPC de leitura (snake_case) quanto do ensure (camelCase).
+type PanelRowRaw = {
   id: string;
-  nome: string;
-  icone: string | null;
-  orderPosition: number;
-  optimisticVersion: number;
-  updatedAt: string;
+  nome?: string;
+  name?: string;
+  icone?: string | null;
+  icon?: string | null;
+  position?: number;
+  order_position?: number;
+  orderPosition?: number;
+  optimistic_version?: number | string;
+  optimisticVersion?: number | string;
+  archived_at?: string | null;
   archivedAt?: string | null;
 };
 
-type EnsureWorkAreaResponse = {
-  defenderUserId: string;
-  activePanelId: string | null;
-  panelCount: number;
-  panels: PanelRow[];
-  access: { accessMode: PanelAccessMode };
+type WorkAreaRawResponse = {
+  defenderUserId?: string;
+  defensor_user_id?: string;
+  activePanelId?: string | null;
+  panelCount?: number;
+  panels: PanelRowRaw[];
+  access?: { accessMode?: PanelAccessMode };
 };
 
-export function mapPanelRow(defenderUserId: string, row: PanelRow): PanelSummary {
+export function mapPanelRow(
+  defenderUserId: string,
+  row: PanelRowRaw,
+): PanelSummary {
   return {
     id: row.id,
     defenderUserId,
-    name: row.nome,
-    icon: row.icone,
-    position: row.orderPosition,
-    optimisticVersion: Number(row.optimisticVersion ?? 1),
-    archivedAt: row.archivedAt ?? null,
+    name: row.name ?? row.nome ?? "",
+    icon: row.icon ?? row.icone ?? null,
+    position: Number(row.position ?? row.orderPosition ?? row.order_position ?? 0),
+    optimisticVersion: Number(
+      row.optimisticVersion ?? row.optimistic_version ?? 1,
+    ),
+    archivedAt: row.archivedAt ?? row.archived_at ?? null,
   };
 }
 
@@ -51,12 +63,14 @@ function accessFromMode(mode: PanelAccessMode): WorkspaceAccess {
   };
 }
 
-export function mapWorkArea(res: EnsureWorkAreaResponse): WorkArea {
+export function mapWorkArea(res: WorkAreaRawResponse): WorkArea {
+  const defenderUserId =
+    res.defenderUserId ?? res.defensor_user_id ?? "";
   const panels = (res.panels ?? [])
-    .map((p) => mapPanelRow(res.defenderUserId, p))
+    .map((p) => mapPanelRow(defenderUserId, p))
     .sort((a, b) => a.position - b.position);
   return {
-    defenderUserId: res.defenderUserId,
+    defenderUserId,
     activePanelId: res.activePanelId ?? panels[0]?.id ?? null,
     panelCount: res.panelCount ?? panels.length,
     panels,

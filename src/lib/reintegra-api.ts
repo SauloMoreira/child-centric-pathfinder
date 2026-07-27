@@ -238,9 +238,13 @@ export async function ensureDefensorWorkspace(defensorUserId: string): Promise<s
   return data as string;
 }
 
-export async function listarWorkspaceCompleto(defensorUserId: string): Promise<WorkspaceCompleto> {
+export async function listarWorkspaceCompleto(
+  defensorUserId: string,
+  panelId?: string | null,
+): Promise<WorkspaceCompleto> {
   const { data, error } = await supabase.rpc("listar_workspace_completo", {
     p_defensor_user_id: defensorUserId,
+    p_panel_id: panelId ?? null,
   } as never);
   if (error) throw error;
   return data as WorkspaceCompleto;

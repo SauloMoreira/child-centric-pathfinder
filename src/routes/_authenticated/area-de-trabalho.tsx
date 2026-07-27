@@ -8,7 +8,6 @@ import {
   Trash2,
   FileText,
   Scale,
-  Layers,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
@@ -20,7 +19,6 @@ import { useEstadoInstitucional, isDefensor } from "@/hooks/use-estado-instituci
 import {
   adicionarCardWorkspace,
   criarColunaWorkspace,
-  ensureDefensorWorkspace,
   excluirColunaWorkspace,
   isConcurrentChangeError,
   listarBiblioteca,
@@ -32,7 +30,6 @@ import {
   type WorkspaceAccess,
   type WorkspaceCardDto,
   type WorkspaceColumn,
-  type WorkspaceCompleto,
   type WorkspaceMeta,
 } from "@/lib/reintegra-api";
 import { Button } from "@/components/ui/button";
@@ -57,15 +54,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  useWorkArea,
+  useSelectedPanel,
+  type PanelSummary,
+} from "@/features/work-area";
+import { PanelTabs } from "@/features/work-area/components/PanelTabs";
+import { CreatePanelSheet } from "@/features/work-area/components/CreatePanelSheet";
+import { RenamePanelSheet } from "@/features/work-area/components/RenamePanelSheet";
+import { ArchivePanelDialog } from "@/features/work-area/components/ArchivePanelDialog";
+import { panelIconComponent } from "@/features/work-area/components/panel-icon";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
     meta: [
-      { title: "Área de trabalho — Reintegra Infância" },
+      { title: "Área de trabalho — Ágora" },
       {
         name: "description",
         content:
-          "Área de trabalho pessoal do Defensor Público — organize atendimentos e cotas em colunas manuais.",
+          "Área de trabalho pessoal do Defensor Público — organize atendimentos e cotas em Painéis independentes.",
       },
     ],
   }),
@@ -75,8 +82,6 @@ export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
 function AreaDeTrabalhoPage() {
   const { data: estado } = useEstadoInstitucional();
   const defensorId = isDefensor(estado) ? estado?.user_id ?? null : null;
-  // Nesta fase, apenas o próprio Defensor acessa sua Área de Trabalho.
-  // Membros/Admin Técnico usarão um seletor dedicado em turnos futuros.
   const contextDefensorId = defensorId;
 
   if (!estado) {
@@ -96,56 +101,83 @@ function AreaDeTrabalhoPage() {
     );
   }
 
-  return (
-    <WorkspaceBoard
-      defensorId={contextDefensorId}
-      isOwner={defensorId === contextDefensorId}
-    />
-  );
+  return <WorkArea defensorId={contextDefensorId} />;
 }
 
-function WorkspaceBoard({
-  defensorId,
-  isOwner,
-}: {
-  defensorId: string;
-  isOwner: boolean;
-}) {
-  const qc = useQueryClient();
+function WorkArea({ defensorId }: { defensorId: string }) {
+  const workArea = useWorkArea(defensorId);
+  const panels = workArea.data?.panels ?? [];
+  const { selectedId, selectedPanel, select } = useSelectedPanel(
+    defensorId,
+    panels,
+  );
 
-  // Ensure workspace only for owner (defensor de si próprio)
-  const ensureQuery = useQuery({
-    queryKey: ["ws-ensure", defensorId],
-    queryFn: () => ensureDefensorWorkspace(defensorId),
-    enabled: isOwner,
-    staleTime: Infinity,
-  });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<PanelSummary | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<PanelSummary | null>(null);
 
-  const workspaceQuery = useQuery({
-    queryKey: workspaceKeys.byDefender(defensorId),
-    queryFn: () => listarWorkspaceCompleto(defensorId),
-    enabled: !isOwner || !!ensureQuery.data,
-  });
+  const access = workArea.data?.access;
 
-  const data = workspaceQuery.data;
+  if (workArea.isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+        Carregando Área de Trabalho…
+      </div>
+    );
+  }
+
+  if (workArea.forbidden) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-12">
+        <div className="surface-panel p-6">
+          <h1 className="text-lg font-semibold">Sem acesso</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Você não possui vínculo ativo para visualizar esta Área de Trabalho.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (workArea.notInitialized || panels.length === 0 || !access) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-12">
+        <div className="surface-panel p-6">
+          <h1 className="text-lg font-semibold">
+            Área de Trabalho ainda não inicializada
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {workArea.isOwner
+              ? "Estamos preparando sua Área de Trabalho. Recarregue em instantes."
+              : "O Defensor ainda não possui Painéis criados."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const activePanelId = selectedId ?? panels[0]?.id ?? null;
+  const activePanel = selectedPanel ?? panels[0] ?? null;
 
   return (
     <div className="flex h-full min-h-[calc(100vh-2rem)] flex-col px-6 py-6">
-      <header className="mb-4 flex items-start justify-between gap-4">
-        <div>
+      <header className="mb-3 flex items-start justify-between gap-4">
+        <div className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            Reintegra · Área de trabalho
+            Ágora · Área de trabalho
           </p>
           <h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Layers className="h-6 w-6 text-institutional" />
-            {data?.workspace?.nome ?? "Minha Área de Trabalho"}
+            {activePanel && (
+              <PanelHeadingIcon iconName={activePanel.icon} />
+            )}
+            {activePanel?.name ?? "Área de Trabalho"}
           </h1>
-          {data?.access.accessMode === "team_readonly" && (
+          {access.accessMode === "team_readonly" && (
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               Somente leitura · Membro de equipe
             </p>
           )}
-          {data?.access.accessMode === "technical_readonly" && (
+          {access.accessMode === "technical_readonly" && (
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-warning-foreground">
               Modo técnico · Somente leitura
             </p>
@@ -158,31 +190,106 @@ function WorkspaceBoard({
         </Button>
       </header>
 
-      <div className="mt-2 flex-1 min-h-0">
-        {workspaceQuery.isLoading ? (
-          <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
-            Carregando…
-          </div>
-        ) : !data?.workspace ? (
-          <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
-            Nenhuma Área de Trabalho disponível para este Defensor.
-          </div>
-        ) : (
-          <ColumnsBoard
+      <PanelTabs
+        defenderUserId={defensorId}
+        panels={panels}
+        selectedId={activePanelId}
+        onSelect={select}
+        access={access}
+        onCreate={() => setCreateOpen(true)}
+        onRename={(p) => setRenameTarget(p)}
+        onArchive={(p) => setArchiveTarget(p)}
+      />
+
+      <div className="mt-4 flex-1 min-h-0">
+        {activePanelId ? (
+          <PanelBoard
+            key={activePanelId}
             defensorId={defensorId}
-            workspace={data.workspace}
-            access={data.access}
-            columns={data.columns}
-            cards={data.cards}
-            onRefetch={() =>
-              qc.invalidateQueries({ queryKey: workspaceKeys.byDefender(defensorId) })
-            }
+            panelId={activePanelId}
           />
+        ) : (
+          <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+            Selecione um Painel.
+          </div>
         )}
       </div>
+
+      <CreatePanelSheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        defenderUserId={defensorId}
+        currentCount={panels.length}
+        onCreated={(id) => select(id)}
+      />
+      <RenamePanelSheet
+        open={!!renameTarget}
+        onOpenChange={(v) => !v && setRenameTarget(null)}
+        defenderUserId={defensorId}
+        panel={renameTarget}
+      />
+      <ArchivePanelDialog
+        open={!!archiveTarget}
+        onOpenChange={(v) => !v && setArchiveTarget(null)}
+        defenderUserId={defensorId}
+        panel={archiveTarget}
+        onArchived={(nextId) => {
+          if (nextId) select(nextId);
+        }}
+      />
     </div>
   );
 }
+
+function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
+  const Icon = panelIconComponent(iconName);
+  return <Icon className="h-6 w-6 text-institutional" aria-hidden />;
+}
+
+function PanelBoard({
+  defensorId,
+  panelId,
+}: {
+  defensorId: string;
+  panelId: string;
+}) {
+  const qc = useQueryClient();
+  const key = [...workspaceKeys.byDefender(defensorId), panelId] as const;
+
+  const workspaceQuery = useQuery({
+    queryKey: key,
+    queryFn: () => listarWorkspaceCompleto(defensorId, panelId),
+  });
+
+  const data = workspaceQuery.data;
+
+  if (workspaceQuery.isLoading) {
+    return (
+      <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+        Carregando Painel…
+      </div>
+    );
+  }
+  if (!data?.workspace) {
+    return (
+      <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+        Painel indisponível.
+      </div>
+    );
+  }
+
+  return (
+    <ColumnsBoard
+      defensorId={defensorId}
+      workspace={data.workspace}
+      access={data.access}
+      columns={data.columns}
+      cards={data.cards}
+      onRefetch={() => qc.invalidateQueries({ queryKey: key })}
+    />
+  );
+}
+
 
 function ColumnsBoard({
   defensorId,
