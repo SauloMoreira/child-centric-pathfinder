@@ -139,36 +139,56 @@ export async function criarContentItem(params: {
 
 export async function atualizarRascunho(params: {
   item_id: string;
+  expected_version: number;
+  idempotency_key: string;
   titulo: string;
   body_json: unknown;
   body_text: string;
   form_schema?: unknown;
-}): Promise<void> {
-  const { error } = await supabase.rpc("atualizar_rascunho", {
+}): Promise<MutationResult> {
+  const { data, error } = await supabase.rpc("atualizar_rascunho", {
     p_item_id: params.item_id,
+    p_expected_version: params.expected_version,
+    p_idempotency_key: params.idempotency_key,
     p_title: params.titulo,
     p_body_json: params.body_json as never,
     p_body_text: params.body_text,
     p_form_schema: (params.form_schema ?? null) as never,
   } as never);
   if (error) throw error;
+  return data as MutationResult;
 }
 
 export async function publicarVersao(params: {
   item_id: string;
+  expected_version: number;
+  idempotency_key: string;
   visibility: ContentVisibility;
-}): Promise<void> {
-  const { error } = await supabase.rpc("publicar_versao", {
+}): Promise<MutationResult> {
+  const { data, error } = await supabase.rpc("publicar_versao", {
     p_item_id: params.item_id,
+    p_expected_version: params.expected_version,
+    p_idempotency_key: params.idempotency_key,
     p_visibility: params.visibility,
   } as never);
   if (error) throw error;
+  return data as MutationResult;
 }
 
-export async function arquivarItem(item_id: string): Promise<void> {
-  const { error } = await supabase.rpc("arquivar_item", { p_item_id: item_id } as never);
+export async function arquivarItem(params: {
+  item_id: string;
+  expected_version: number;
+  idempotency_key: string;
+}): Promise<MutationResult> {
+  const { data, error } = await supabase.rpc("arquivar_item", {
+    p_item_id: params.item_id,
+    p_expected_version: params.expected_version,
+    p_idempotency_key: params.idempotency_key,
+  } as never);
   if (error) throw error;
+  return data as MutationResult;
 }
+
 
 // -------- ÁREA DE TRABALHO --------
 export async function listarWorkspacesDefensor(defensor_user_id: string, orgao_id: string): Promise<WorkspaceResumo[]> {
