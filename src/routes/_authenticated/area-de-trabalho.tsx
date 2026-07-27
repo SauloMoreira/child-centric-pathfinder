@@ -883,16 +883,17 @@ function AddColumnCard({
 // -----------------------------------------------------------------------------
 // SortableColumn
 // -----------------------------------------------------------------------------
-const COLOR_INDICATOR: Record<string, string> = {
-  neutral: "bg-muted-foreground/40",
-  green: "bg-institutional",
-  blue: "bg-blue-500",
-  amber: "bg-amber-500",
-  burgundy: "bg-red-700",
-  purple: "bg-purple-500",
-  slate: "bg-slate-500",
-  rose: "bg-rose-500",
-};
+const VALID_COL_COLORS = new Set([
+  "neutral",
+  "green",
+  "blue",
+  "amber",
+  "burgundy",
+  "purple",
+  "slate",
+  "rose",
+]);
+
 
 function SortableColumn(props: {
   column: WorkspaceColumn;
