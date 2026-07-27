@@ -28,27 +28,10 @@ export function OperationalOrgSwitcher() {
   const contexto = estado?.contextoAtual ?? null;
   const disponiveisLocal = estado?.orgaosDisponiveis ?? null;
 
-  // Membro/Defensor com 1 vínculo apenas: sem seletor, apenas badge estático.
-  if (!tecnico && disponiveisLocal && disponiveisLocal.length <= 1) {
-    if (!contexto) return null;
-    return (
-      <div className="hidden items-center gap-2 rounded-md border border-border bg-surface-2/60 px-3 py-1.5 text-xs md:flex">
-        <Building2 className="h-3.5 w-3.5 text-institutional" aria-hidden />
-        <span className="max-w-[220px] truncate font-medium">
-          {contexto.nome}
-        </span>
-        {contexto.comarca && (
-          <span className="text-muted-foreground">· {contexto.comarca}</span>
-        )}
-      </div>
-    );
-  }
-
   const items = useMemo(() => {
     if (tecnico) {
       return (orgaosQ.data?.pages ?? []).flatMap((p) => p.items);
     }
-    // Para Defensor: sempre usar orgaosDisponiveis do estado (fonte confiável).
     const base = (disponiveisLocal ?? []).map((o) => ({
       orgaoId: o.orgaoId,
       nome: o.nome,
@@ -78,6 +61,21 @@ export function OperationalOrgSwitcher() {
     });
     setOpen(false);
   }
+
+  // Membro/Defensor com 1 vínculo apenas: sem seletor, apenas badge estático.
+  if (!tecnico && disponiveisLocal && disponiveisLocal.length <= 1) {
+    if (!contexto) return null;
+    return (
+      <div className="hidden items-center gap-2 rounded-md border border-border bg-surface-2/60 px-3 py-1.5 text-xs md:flex">
+        <Building2 className="h-3.5 w-3.5 text-institutional" aria-hidden />
+        <span className="max-w-[220px] truncate font-medium">{contexto.nome}</span>
+        {contexto.comarca && (
+          <span className="text-muted-foreground"> · {contexto.comarca}</span>
+        )}
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex w-full flex-col gap-2">
