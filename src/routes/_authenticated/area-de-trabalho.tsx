@@ -414,7 +414,9 @@ function ColumnsBoard({
   access,
   columns,
   cards,
+  activePanel,
   allPanels,
+  isFetching,
   onRefetch,
 }: {
   defensorId: string;
@@ -422,7 +424,9 @@ function ColumnsBoard({
   access: WorkspaceAccess;
   columns: WorkspaceColumn[];
   cards: WorkspaceCardDto[];
+  activePanel: PanelSummary | null;
   allPanels: PanelSummary[];
+  isFetching: boolean;
   onRefetch: () => void;
 }) {
   const qc = useQueryClient();
