@@ -633,7 +633,6 @@ export type Database = {
           p_idempotency_key?: string
           p_justificativa?: string
           p_matricula?: string
-          p_orgao_execucao_id: string
           p_target_user_id: string
         }
         Returns: Json
@@ -685,9 +684,6 @@ export type Database = {
       }
       aprovar_solicitacao_acesso: {
         Args: {
-          p_criar_novo?: boolean
-          p_novo_orgao?: Json
-          p_orgao_final_id: string
           p_request_id: string
           p_version: number
         }
@@ -956,12 +952,6 @@ export type Database = {
           id: string
           matricula: string
           nome_completo: string
-          orgao_id: string
-          orgao_nome: string
-          proposta_novo_orgao_cidade: string
-          proposta_novo_orgao_comarca: string
-          proposta_novo_orgao_nome: string
-          proposta_novo_orgao_sigla: string
           status: Database["public"]["Enums"]["access_request_status"]
           telefone: string
           user_id: string
@@ -1141,8 +1131,6 @@ export type Database = {
           p_cargo: string
           p_matricula: string
           p_nome_completo: string
-          p_novo_orgao: Json
-          p_orgao_id: string
           p_telefone: string
         }
         Returns: Json

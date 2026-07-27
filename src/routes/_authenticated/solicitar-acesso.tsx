@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -43,7 +43,6 @@ export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
   component: SolicitarAcesso,
 });
 
-const NOVO = "__novo__";
 const CARGO_DEFENSOR = "Defensor Público";
 const CARGO_MEMBRO = "Membro de equipe";
 
@@ -54,9 +53,6 @@ const formSchema = z
       message: "Selecione seu cargo.",
     }),
     matricula: z.string().trim().max(40).optional().or(z.literal("")),
-    orgao_id: z.string().uuid().optional(),
-    novo_nome: z.string().trim().max(200).optional(),
-    novo_comarca: z.string().trim().max(120).optional(),
   })
   .refine((v) => v.cargo !== CARGO_DEFENSOR || (v.matricula && v.matricula.trim().length >= 2), {
     message: "Informe sua matrícula.",
@@ -68,19 +64,6 @@ function SolicitarAcesso() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const orgaosQ = useQuery({
-    queryKey: ["orgaos-execucao"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orgaos_execucao")
-        .select("id,nome,comarca")
-        .order("nome");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const [orgaoSel, setOrgaoSel] = useState<string>("");
   const initialCargo =
     estado?.profile?.cargo === CARGO_MEMBRO
       ? CARGO_MEMBRO
@@ -91,8 +74,6 @@ function SolicitarAcesso() {
     nome_completo: estado?.profile?.nome_completo ?? "",
     matricula: estado?.profile?.matricula ?? "",
     cargo: initialCargo as "" | typeof CARGO_DEFENSOR | typeof CARGO_MEMBRO,
-    novo_nome: "",
-    novo_comarca: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -116,21 +97,9 @@ function SolicitarAcesso() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const orgaoExistente = orgaoSel && orgaoSel !== NOVO ? orgaoSel : undefined;
-    const parsed = formSchema.safeParse({
-      ...form,
-      orgao_id: orgaoExistente,
-    });
+    const parsed = formSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
-      return;
-    }
-    if (!orgaoSel) {
-      toast.error("Selecione seu órgão de execução ou proponha um novo.");
-      return;
-    }
-    if (orgaoSel === NOVO && (!form.novo_nome.trim() || !form.novo_comarca.trim())) {
-      toast.error("Para propor novo órgão, informe nome e comarca.");
       return;
     }
 
@@ -144,14 +113,6 @@ function SolicitarAcesso() {
       p_matricula: matriculaSubmit,
       p_cargo: form.cargo,
       p_telefone: null,
-      p_orgao_id: orgaoExistente ?? null,
-      p_novo_orgao:
-        orgaoSel === NOVO
-          ? {
-              nome: form.novo_nome,
-              comarca: form.novo_comarca,
-            }
-          : null,
       p_aceite_termos: true,
     } as never);
     setSubmitting(false);
@@ -235,8 +196,8 @@ function SolicitarAcesso() {
       </p>
       <h1 className="mt-2 text-2xl font-semibold">Solicitar acesso ao Ágora</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        Informe seus dados funcionais e o órgão de execução. Um Administrador Institucional revisará
-        e aprovará seu acesso operacional.
+        Informe seus dados funcionais. Um Administrador Institucional revisará e aprovará seu acesso
+        operacional.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-8">
@@ -287,61 +248,6 @@ function SolicitarAcesso() {
                   required
                   maxLength={40}
                 />
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="surface-panel p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Órgão de execução
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Escolha seu órgão de execução na DPE-RS. Caso não esteja listado, proponha a inclusão
-            para revisão do Administrador Institucional.
-          </p>
-          <div className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Órgão</Label>
-              <Select value={orgaoSel} onValueChange={setOrgaoSel}>
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={orgaosQ.isLoading ? "Carregando…" : "Selecionar órgão"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {orgaosQ.data?.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.nome} — {o.comarca}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value={NOVO}>Propor novo órgão de execução…</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {orgaoSel === NOVO && (
-              <div className="grid gap-4 rounded-md border border-dashed border-border bg-canvas/50 p-4 sm:grid-cols-2">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="novo-nome">Nome do órgão proposto</Label>
-                  <Input
-                    id="novo-nome"
-                    value={form.novo_nome}
-                    onChange={(e) => setForm((f) => ({ ...f, novo_nome: e.target.value }))}
-                    maxLength={200}
-                    placeholder="1ª Defensoria Pública da Infância e Juventude"
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="novo-comarca">Comarca</Label>
-                  <Input
-                    id="novo-comarca"
-                    value={form.novo_comarca}
-                    onChange={(e) => setForm((f) => ({ ...f, novo_comarca: e.target.value }))}
-                    maxLength={120}
-                    placeholder="Porto Alegre"
-                  />
-                </div>
               </div>
             )}
           </div>

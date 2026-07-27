@@ -14,13 +14,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldAlert, Check, X, Loader2 } from "lucide-react";
 
@@ -38,12 +31,6 @@ type Solicitacao = {
   matricula: string;
   cargo: string;
   telefone: string | null;
-  orgao_id: string | null;
-  orgao_nome: string | null;
-  proposta_novo_orgao_nome: string | null;
-  proposta_novo_orgao_sigla: string | null;
-  proposta_novo_orgao_comarca: string | null;
-  proposta_novo_orgao_cidade: string | null;
   status: "pendente" | "em_analise" | "aprovada" | "rejeitada" | "cancelada";
   version: number;
   correlation_id: string;
@@ -101,18 +88,6 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
     },
   });
 
-  const orgaosQ = useQuery({
-    queryKey: ["orgaos-execucao-admin"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orgaos_execucao")
-        .select("id,nome,comarca")
-        .order("nome");
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const [aprovando, setAprovando] = useState<Solicitacao | null>(null);
   const [rejeitando, setRejeitando] = useState<Solicitacao | null>(null);
 
@@ -164,17 +139,6 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
                   <span className="font-mono">{s.matricula}</span> · {s.cargo}
                   {s.telefone && <> · {s.telefone}</>}
                 </p>
-                <p className="mt-2 text-xs">
-                  <span className="text-muted-foreground">Órgão: </span>
-                  {s.orgao_id ? (
-                    <span className="font-medium">{s.orgao_nome}</span>
-                  ) : (
-                    <span className="rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[11px]">
-                      Proposta de novo órgão: {s.proposta_novo_orgao_nome}
-                      {s.proposta_novo_orgao_comarca && ` — ${s.proposta_novo_orgao_comarca}`}
-                    </span>
-                  )}
-                </p>
 
                 <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Enviada em {new Date(s.created_at).toLocaleString("pt-BR")}
@@ -201,7 +165,6 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
       {aprovando && (
         <DialogAprovar
           solicitacao={aprovando}
-          orgaos={orgaosQ.data ?? []}
           onClose={() => setAprovando(null)}
           onDone={() => {
             setAprovando(null);
@@ -225,33 +188,19 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
 
 function DialogAprovar({
   solicitacao,
-  orgaos,
   onClose,
   onDone,
 }: {
   solicitacao: Solicitacao;
-  orgaos: Array<{ id: string; nome: string; comarca: string }>;
   onClose: () => void;
   onDone: () => void;
 }) {
-  const propostaNovo = !solicitacao.orgao_id;
-  const [criarNovo, setCriarNovo] = useState(propostaNovo);
-  const [orgaoFinal, setOrgaoFinal] = useState<string>(solicitacao.orgao_id ?? "");
-
   const mut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("aprovar_solicitacao_acesso", {
         p_request_id: solicitacao.id,
         p_version: solicitacao.version,
-        p_orgao_final_id: criarNovo ? null : orgaoFinal || null,
-        p_criar_novo: criarNovo,
-        p_novo_orgao: criarNovo
-          ? {
-              nome: solicitacao.proposta_novo_orgao_nome,
-              comarca: solicitacao.proposta_novo_orgao_comarca,
-            }
-          : null,
-      } as never);
+      });
       if (error) throw error;
       return data;
     },
@@ -269,8 +218,8 @@ function DialogAprovar({
         <DialogHeader>
           <DialogTitle>Aprovar solicitação institucional</DialogTitle>
           <DialogDescription>
-            Ao aprovar, o usuário receberá o papel de Defensor Público e vínculo com o órgão
-            escolhido. Ação registrada em auditoria e exigindo MFA.
+            Ao aprovar, o usuário receberá o papel de {solicitacao.cargo}. Ação registrada em
+            auditoria e exigindo MFA.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
@@ -280,62 +229,12 @@ function DialogAprovar({
               <span className="font-mono">{solicitacao.matricula}</span> · {solicitacao.cargo}
             </p>
           </div>
-          {propostaNovo ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Solicitante propôs criação de novo órgão:
-                <br />
-                <span className="font-medium">
-                  {solicitacao.proposta_novo_orgao_sigla} — {solicitacao.proposta_novo_orgao_nome}
-                </span>
-              </p>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="modo"
-                  checked={criarNovo}
-                  onChange={() => setCriarNovo(true)}
-                />
-                Criar novo órgão como proposto
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="modo"
-                  checked={!criarNovo}
-                  onChange={() => setCriarNovo(false)}
-                />
-                Vincular a um órgão existente
-              </label>
-            </div>
-          ) : null}
-
-          {!criarNovo && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Órgão final</p>
-              <Select value={orgaoFinal} onValueChange={setOrgaoFinal}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar órgão" />
-                </SelectTrigger>
-                <SelectContent>
-                  {orgaos.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.nome} — {o.comarca}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => mut.mutate()}
-            disabled={mut.isPending || (!criarNovo && !orgaoFinal)}
-          >
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
             {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             Confirmar aprovação
           </Button>

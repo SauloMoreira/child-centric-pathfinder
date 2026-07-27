@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
@@ -18,7 +18,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { OrgaoCombobox, type OrgaoOption } from "@/components/orgao-combobox";
 import { MfaChallengeDialog } from "@/components/mfa-challenge-dialog";
 import { traduzirErroAtribuicao } from "@/lib/user-role-errors";
 import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
@@ -46,7 +45,6 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
   const { data: estado } = useEstadoInstitucional();
   const isAdminTecnico = !!estado?.roles.includes("admin_tecnico");
 
-  const [orgaoId, setOrgaoId] = useState<string | null>(null);
   const [matricula, setMatricula] = useState("");
   const [justificativa, setJustificativa] = useState("");
   const [confirm, setConfirm] = useState(false);
@@ -59,21 +57,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
   // MFA não é exigido nesta fase — mantido apenas como sinalização informativa se necessário no futuro.
   const aal2Requerido = false;
 
-  const orgaosQ = useQuery({
-    queryKey: ["orgaos-execucao-lista"],
-    enabled: open,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orgaos_execucao")
-        .select("id,nome,comarca")
-        .order("nome");
-      if (error) throw error;
-      return (data ?? []) as OrgaoOption[];
-    },
-  });
-
   const reset = () => {
-    setOrgaoId(null);
     setMatricula("");
     setJustificativa("");
     setConfirm(false);
@@ -81,11 +65,10 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (): Promise<{ code?: string } | null> => {
-      if (!target || !orgaoId) throw new Error("Dados incompletos");
+      if (!target) throw new Error("Dados incompletos");
       const idempotencyKey = crypto.randomUUID();
       const { data, error } = await supabase.rpc("admin_assign_defensor_role", {
         p_target_user_id: target.user_id,
-        p_orgao_execucao_id: orgaoId,
         p_matricula: matriculaAtual || undefined,
         p_justificativa: requerJustificativa ? justificativa.trim() : undefined,
         p_idempotency_key: idempotencyKey,
@@ -102,7 +85,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
         });
       } else if (code === "DEFENDER_ROLE_ALREADY_ASSIGNED") {
         toast.info("Atribuição já registrada", {
-          description: "Este usuário já é Defensor Público neste órgão.",
+          description: "Este usuário já é Defensor Público.",
         });
       } else {
         toast.success("Papel de Defensor Público atribuído com sucesso.");
@@ -126,17 +109,11 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
 
   const podeSubmeter =
     !!target &&
-    !!orgaoId &&
     matriculaValida &&
     justificativaValida &&
     confirm &&
     !aal2Requerido &&
     !mutation.isPending;
-
-  const previewOrgao = useMemo(
-    () => orgaosQ.data?.find((o) => o.id === orgaoId) ?? null,
-    [orgaosQ.data, orgaoId],
-  );
 
   return (
     <>
@@ -151,8 +128,8 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
           <DialogHeader>
             <DialogTitle>Definir usuário como Defensor Público</DialogTitle>
             <DialogDescription>
-              A atribuição concederá acesso ao ecossistema de informações do órgão de execução
-              selecionado.
+              A atribuição concederá o papel de Defensor Público, com acesso à própria Área de
+              Trabalho e à gestão de sua equipe.
             </DialogDescription>
           </DialogHeader>
 
@@ -206,23 +183,6 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
           )}
 
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="orgao">Órgão de execução *</Label>
-              <OrgaoCombobox
-                id="orgao"
-                value={orgaoId}
-                onChange={setOrgaoId}
-                options={orgaosQ.data ?? []}
-                loading={orgaosQ.isLoading}
-              />
-              {previewOrgao && (
-                <p className="text-xs text-muted-foreground">
-                  Vínculo será criado como Defensor Público em{" "}
-                  <span className="text-foreground">{previewOrgao.nome}</span>.
-                </p>
-              )}
-            </div>
-
             {(!target?.matricula || target.matricula === "N/D") && (
               <div className="space-y-1.5">
                 <Label htmlFor="matricula">Matrícula institucional *</Label>
@@ -262,10 +222,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
                 id="confirm"
                 className="mt-0.5"
               />
-              <span>
-                Confirmo que este usuário está autorizado a atuar como Defensor Público no órgão
-                selecionado.
-              </span>
+              <span>Confirmo que este usuário está autorizado a atuar como Defensor Público.</span>
             </label>
           </div>
 

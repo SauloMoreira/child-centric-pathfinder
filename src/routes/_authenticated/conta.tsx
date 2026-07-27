@@ -67,16 +67,6 @@ function MinhaConta() {
   );
 }
 
-type AutoAttachResult =
-  | {
-      ok: true;
-      code: "DEFENDER_SELF_ATTACHED";
-      created: boolean;
-      contextoAtual: { orgaoId: string; nome: string };
-      version: number;
-    }
-  | { ok: false; code: string };
-
 function AlterarSenhaForm() {
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");

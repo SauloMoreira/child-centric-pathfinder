@@ -1,22 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type OrgaoDisponivel = {
-  orgaoId: string;
-  membershipId: string | null;
-  nome: string;
-  comarca: string | null;
-  dataInicio: string | null;
-  selecionado: boolean;
-};
-
-export type ContextoOrgao = {
-  orgaoId: string;
-  nome: string;
-  comarca: string | null;
-  comarcas: Array<{ id: string; nome: string; principal: boolean }>;
-};
-
 export type EstadoInstitucional = {
   user_id: string;
   papel: "admin_tecnico" | "admin_institucional" | "defensor_publico" | "membro_equipe" | null;
@@ -33,14 +17,6 @@ export type EstadoInstitucional = {
   roles: Array<"admin_tecnico" | "admin_institucional" | "defensor_publico" | "membro_equipe">;
   aal2: boolean;
   acessoGlobal: boolean;
-  contextoAtual: ContextoOrgao | null;
-  contextVersion: number | null;
-  orgaosDisponiveis: OrgaoDisponivel[] | null;
-  /** @deprecated Use contextoAtual */
-  orgao_ativo: { id: string; nome: string; comarca: string | null } | null;
-  /** @deprecated */
-  membership: { id: string; dataInicio: string; status: "ativo" | "encerrado" } | null;
-  comarcas: Array<{ id: string; nome: string; principal: boolean }>;
   solicitacao_aberta: {
     id: string;
     status: "pendente" | "em_analise";
