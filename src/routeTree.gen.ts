@@ -19,10 +19,12 @@ import { Route as AuthenticatedSolicitarAcessoRouteImport } from './routes/_auth
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedMinhaEquipeRouteImport } from './routes/_authenticated/minha-equipe'
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
+import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
 import { Route as AuthenticatedAreaDeTrabalhoRouteImport } from './routes/_authenticated/area-de-trabalho'
 import { Route as AuthenticatedAlterarOrgaoRouteImport } from './routes/_authenticated/alterar-orgao'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as AuthenticatedBibliotecaItemIdRouteImport } from './routes/_authenticated/biblioteca.$itemId'
 import { Route as AuthenticatedAdminSolicitacoesRouteImport } from './routes/_authenticated/admin/solicitacoes'
 import { Route as AuthenticatedAdminOrgaosRouteImport } from './routes/_authenticated/admin/orgaos'
 import { Route as AuthenticatedAdminTecnicoVinculosRouteImport } from './routes/_authenticated/admin-tecnico/vinculos'
@@ -90,6 +92,11 @@ const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
   path: '/conta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBibliotecaRoute = AuthenticatedBibliotecaRouteImport.update({
+  id: '/biblioteca',
+  path: '/biblioteca',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAreaDeTrabalhoRoute =
   AuthenticatedAreaDeTrabalhoRouteImport.update({
     id: '/area-de-trabalho',
@@ -113,6 +120,12 @@ const Char91DotmcpChar93ListToolsRoute =
     id: '/.mcp/list-tools',
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedBibliotecaItemIdRoute =
+  AuthenticatedBibliotecaItemIdRouteImport.update({
+    id: '/$itemId',
+    path: '/$itemId',
+    getParentRoute: () => AuthenticatedBibliotecaRoute,
   } as any)
 const AuthenticatedAdminSolicitacoesRoute =
   AuthenticatedAdminSolicitacoesRouteImport.update({
@@ -214,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
   '/area-de-trabalho': typeof AuthenticatedAreaDeTrabalhoRoute
+  '/biblioteca': typeof AuthenticatedBibliotecaRouteWithChildren
   '/conta': typeof AuthenticatedContaRoute
   '/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/painel': typeof AuthenticatedPainelRoute
@@ -233,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/admin-tecnico/vinculos': typeof AuthenticatedAdminTecnicoVinculosRoute
   '/admin/orgaos': typeof AuthenticatedAdminOrgaosRoute
   '/admin/solicitacoes': typeof AuthenticatedAdminSolicitacoesRoute
+  '/biblioteca/$itemId': typeof AuthenticatedBibliotecaItemIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -244,6 +259,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
   '/area-de-trabalho': typeof AuthenticatedAreaDeTrabalhoRoute
+  '/biblioteca': typeof AuthenticatedBibliotecaRouteWithChildren
   '/conta': typeof AuthenticatedContaRoute
   '/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/painel': typeof AuthenticatedPainelRoute
@@ -263,6 +279,7 @@ export interface FileRoutesByTo {
   '/admin-tecnico/vinculos': typeof AuthenticatedAdminTecnicoVinculosRoute
   '/admin/orgaos': typeof AuthenticatedAdminOrgaosRoute
   '/admin/solicitacoes': typeof AuthenticatedAdminSolicitacoesRoute
+  '/biblioteca/$itemId': typeof AuthenticatedBibliotecaItemIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -276,6 +293,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/alterar-orgao': typeof AuthenticatedAlterarOrgaoRoute
   '/_authenticated/area-de-trabalho': typeof AuthenticatedAreaDeTrabalhoRoute
+  '/_authenticated/biblioteca': typeof AuthenticatedBibliotecaRouteWithChildren
   '/_authenticated/conta': typeof AuthenticatedContaRoute
   '/_authenticated/minha-equipe': typeof AuthenticatedMinhaEquipeRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
@@ -295,6 +313,7 @@ export interface FileRoutesById {
   '/_authenticated/admin-tecnico/vinculos': typeof AuthenticatedAdminTecnicoVinculosRoute
   '/_authenticated/admin/orgaos': typeof AuthenticatedAdminOrgaosRoute
   '/_authenticated/admin/solicitacoes': typeof AuthenticatedAdminSolicitacoesRoute
+  '/_authenticated/biblioteca/$itemId': typeof AuthenticatedBibliotecaItemIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -308,6 +327,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/alterar-orgao'
     | '/area-de-trabalho'
+    | '/biblioteca'
     | '/conta'
     | '/minha-equipe'
     | '/painel'
@@ -327,6 +347,7 @@ export interface FileRouteTypes {
     | '/admin-tecnico/vinculos'
     | '/admin/orgaos'
     | '/admin/solicitacoes'
+    | '/biblioteca/$itemId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -338,6 +359,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/alterar-orgao'
     | '/area-de-trabalho'
+    | '/biblioteca'
     | '/conta'
     | '/minha-equipe'
     | '/painel'
@@ -357,6 +379,7 @@ export interface FileRouteTypes {
     | '/admin-tecnico/vinculos'
     | '/admin/orgaos'
     | '/admin/solicitacoes'
+    | '/biblioteca/$itemId'
   id:
     | '__root__'
     | '/'
@@ -369,6 +392,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/alterar-orgao'
     | '/_authenticated/area-de-trabalho'
+    | '/_authenticated/biblioteca'
     | '/_authenticated/conta'
     | '/_authenticated/minha-equipe'
     | '/_authenticated/painel'
@@ -388,6 +412,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin-tecnico/vinculos'
     | '/_authenticated/admin/orgaos'
     | '/_authenticated/admin/solicitacoes'
+    | '/_authenticated/biblioteca/$itemId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -475,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/biblioteca': {
+      id: '/_authenticated/biblioteca'
+      path: '/biblioteca'
+      fullPath: '/biblioteca'
+      preLoaderRoute: typeof AuthenticatedBibliotecaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/area-de-trabalho': {
       id: '/_authenticated/area-de-trabalho'
       path: '/area-de-trabalho'
@@ -502,6 +534,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/.mcp/list-tools'
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/biblioteca/$itemId': {
+      id: '/_authenticated/biblioteca/$itemId'
+      path: '/$itemId'
+      fullPath: '/biblioteca/$itemId'
+      preLoaderRoute: typeof AuthenticatedBibliotecaItemIdRouteImport
+      parentRoute: typeof AuthenticatedBibliotecaRoute
     }
     '/_authenticated/admin/solicitacoes': {
       id: '/_authenticated/admin/solicitacoes'
@@ -611,9 +650,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedBibliotecaRouteChildren {
+  AuthenticatedBibliotecaItemIdRoute: typeof AuthenticatedBibliotecaItemIdRoute
+}
+
+const AuthenticatedBibliotecaRouteChildren: AuthenticatedBibliotecaRouteChildren =
+  {
+    AuthenticatedBibliotecaItemIdRoute: AuthenticatedBibliotecaItemIdRoute,
+  }
+
+const AuthenticatedBibliotecaRouteWithChildren =
+  AuthenticatedBibliotecaRoute._addFileChildren(
+    AuthenticatedBibliotecaRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlterarOrgaoRoute: typeof AuthenticatedAlterarOrgaoRoute
   AuthenticatedAreaDeTrabalhoRoute: typeof AuthenticatedAreaDeTrabalhoRoute
+  AuthenticatedBibliotecaRoute: typeof AuthenticatedBibliotecaRouteWithChildren
   AuthenticatedContaRoute: typeof AuthenticatedContaRoute
   AuthenticatedMinhaEquipeRoute: typeof AuthenticatedMinhaEquipeRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
@@ -636,6 +690,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlterarOrgaoRoute: AuthenticatedAlterarOrgaoRoute,
   AuthenticatedAreaDeTrabalhoRoute: AuthenticatedAreaDeTrabalhoRoute,
+  AuthenticatedBibliotecaRoute: AuthenticatedBibliotecaRouteWithChildren,
   AuthenticatedContaRoute: AuthenticatedContaRoute,
   AuthenticatedMinhaEquipeRoute: AuthenticatedMinhaEquipeRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
