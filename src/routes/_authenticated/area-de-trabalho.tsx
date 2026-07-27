@@ -179,6 +179,23 @@ function WorkArea({ defensorId }: { defensorId: string }) {
       </div>
     );
   }
+  if (workArea.isError && !workArea.notInitialized) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-12">
+        <div className="surface-panel p-6">
+          <h1 className="text-lg font-semibold">Não foi possível carregar a Área de Trabalho</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Atualize a página ou tente novamente em instantes.
+          </p>
+          <div className="mt-4">
+            <Button size="sm" variant="outline" onClick={() => workArea.refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (workArea.notInitialized || panels.length === 0 || !access) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-12">
