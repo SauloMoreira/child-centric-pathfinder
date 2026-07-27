@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
+  BookOpen,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
         label: "Trabalho",
         items: [
           { to: "/area-de-trabalho", label: "Área de trabalho", icon: LayoutDashboard, visible: true },
+          { to: "/biblioteca", label: "Biblioteca", icon: BookOpen, visible: true },
           {
             to: "/minha-equipe",
             label: "Minha equipe",

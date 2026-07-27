@@ -1183,6 +1183,7 @@ export type Database = {
         }
         Returns: Json
       }
+      arquivar_item: { Args: { p_item_id: string }; Returns: undefined }
       atualizar_anotacoes_assistido: {
         Args: { p_assistido_id: string; p_observacoes: string }
         Returns: Json
@@ -1213,6 +1214,16 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      atualizar_rascunho: {
+        Args: {
+          p_body_json: Json
+          p_body_text: string
+          p_form_schema?: Json
+          p_item_id: string
+          p_title: string
+        }
+        Returns: string
       }
       atualizar_workspace_meta: {
         Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
@@ -1273,6 +1284,15 @@ export type Database = {
       }
       criar_coluna_workspace: {
         Args: { p_cor?: string; p_nome: string; p_workspace_id: string }
+        Returns: string
+      }
+      criar_content_item: {
+        Args: {
+          p_category_id?: string
+          p_kind: Database["public"]["Enums"]["content_kind"]
+          p_title: string
+          p_visibility?: Database["public"]["Enums"]["content_visibility"]
+        }
         Returns: string
       }
       criar_convite_equipe: {
@@ -1523,6 +1543,13 @@ export type Database = {
       promover_admin_tecnico: {
         Args: { p_justificativa: string; p_target_user_id: string }
         Returns: Json
+      }
+      publicar_versao: {
+        Args: {
+          p_item_id: string
+          p_visibility: Database["public"]["Enums"]["content_visibility"]
+        }
+        Returns: undefined
       }
       reativar_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
