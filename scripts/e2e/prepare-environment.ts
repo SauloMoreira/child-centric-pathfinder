@@ -20,7 +20,10 @@ function loadEnv(): Record<string, string> {
     const eq = line.indexOf("=");
     if (eq < 0) continue;
     const k = line.slice(0, eq).trim();
-    const v = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+    const v = line
+      .slice(eq + 1)
+      .trim()
+      .replace(/^["']|["']$/g, "");
     if (!(k in out)) out[k] = v;
   }
   return out;
@@ -34,11 +37,10 @@ function abort(code: string, msg: string): never {
 }
 
 // 1. validação básica
-const validate = spawnSync(
-  process.execPath,
-  ["scripts/e2e/validate-environment.ts"],
-  { stdio: "inherit", env: { ...process.env, ...env } },
-);
+const validate = spawnSync(process.execPath, ["scripts/e2e/validate-environment.ts"], {
+  stdio: "inherit",
+  env: { ...process.env, ...env },
+});
 if (validate.status !== 0) {
   abort("E2E_ENV_INVALID", "validate-environment falhou.");
 }
@@ -80,15 +82,12 @@ const pgOptions = [
 
 function runPsql(file: string, label: string): void {
   console.log(`[prepare-environment] aplicando ${label}…`);
-  const result = spawnSync(
-    "psql",
-    ["-v", "ON_ERROR_STOP=1", "-f", file, dbUrl],
-    {
-      stdio: "inherit",
-      env: { ...process.env, PGOPTIONS: pgOptions },
-    },
-  );
-  if (result.status !== 0) abort(`E2E_${label.toUpperCase()}_FAILED`, `${label} retornou ${result.status}`);
+  const result = spawnSync("psql", ["-v", "ON_ERROR_STOP=1", "-f", file, dbUrl], {
+    stdio: "inherit",
+    env: { ...process.env, PGOPTIONS: pgOptions },
+  });
+  if (result.status !== 0)
+    abort(`E2E_${label.toUpperCase()}_FAILED`, `${label} retornou ${result.status}`);
 }
 
 runPsql("scripts/e2e/cleanup-work-area.sql", "cleanup");

@@ -1,6 +1,11 @@
 import { test, expect } from "./fixtures";
 import { gotoWorkArea } from "./helpers/auth";
-import { newPanelButton, panelActionsButton, panelNameInput, submitCreatePanel } from "./helpers/selectors";
+import {
+  newPanelButton,
+  panelActionsButton,
+  panelNameInput,
+  submitCreatePanel,
+} from "./helpers/selectors";
 
 /**
  * Prova o limite de 8 Painéis ativos. Cria os Painéis auxiliares no início
@@ -32,13 +37,12 @@ test.describe("Owner · Limite de 8 Painéis", () => {
     const tabs = page.locator('[aria-current="page"], [role="button"][aria-current]');
     // Verificação genérica via botão de criação desabilitado é a assertiva canônica:
     await expect(newPanelButton(page)).toBeDisabled();
-    await expect(newPanelButton(page)).toHaveAttribute(
-      "title",
-      /limite de 8 painéis atingido/i,
-    );
+    await expect(newPanelButton(page)).toHaveAttribute("title", /limite de 8 painéis atingido/i);
 
     // Tentar clicar não dispara mutation nem cria 9º
-    await newPanelButton(page).click({ force: true, trial: true }).catch(() => {});
+    await newPanelButton(page)
+      .click({ force: true, trial: true })
+      .catch(() => {});
     await page.reload();
     await expect(newPanelButton(page)).toBeDisabled();
 

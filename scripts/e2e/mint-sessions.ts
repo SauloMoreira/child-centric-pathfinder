@@ -30,7 +30,10 @@ function loadEnv(): Record<string, string> {
     const eq = line.indexOf("=");
     if (eq < 0) continue;
     const k = line.slice(0, eq).trim();
-    const v = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+    const v = line
+      .slice(eq + 1)
+      .trim()
+      .replace(/^["']|["']$/g, "");
     if (!(k in out)) out[k] = v;
   }
   return out;
@@ -145,9 +148,7 @@ async function mint(profile: Profile): Promise<void> {
       );
     });
     await otpLocator.fill(await totp(cfg.totpSecret));
-    await page
-      .getByRole("button", { name: /verificar|confirmar|entrar/i })
-      .click();
+    await page.getByRole("button", { name: /verificar|confirmar|entrar/i }).click();
 
     // Aguarda transição para rota autenticada.
     await page.waitForURL((url) => !url.pathname.startsWith("/auth"), {

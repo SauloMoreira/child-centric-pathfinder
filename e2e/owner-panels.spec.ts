@@ -15,12 +15,8 @@ test.describe("Owner · Painéis", () => {
   });
 
   test("carrega Área de Trabalho e o Painel Principal seedado", async ({ page }) => {
-    await expect(
-      page.getByRole("button", { name: PANEL_NAMES.principal }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: PANEL_NAMES.urgencias }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: PANEL_NAMES.principal })).toBeVisible();
+    await expect(page.getByRole("button", { name: PANEL_NAMES.urgencias })).toBeVisible();
 
     // Indicação acessível de aba selecionada
     const selected = page.locator('[aria-current="page"]').first();
@@ -66,9 +62,7 @@ test.describe("Owner · Painéis", () => {
     await newPanelButton(page).click();
     await panelNameInput(page).fill(PANEL_NAMES.principal);
     await submitCreatePanel(page).click();
-    await expect(
-      page.getByText(/já existe|nome.*existe/i),
-    ).toBeVisible();
+    await expect(page.getByText(/já existe|nome.*existe/i)).toBeVisible();
   });
 
   test("renomeia Painel e persiste", async ({ page }) => {
@@ -99,8 +93,6 @@ test.describe("Owner · Painéis", () => {
     await panelActionsButton(page, PANEL_NAMES.principal).click();
     await page.getByRole("menuitem", { name: /arquivar/i }).click();
     await page.getByRole("button", { name: /arquivar$/i }).click();
-    await expect(
-      page.getByText(/colunas ou cards|não pode ser arquivado/i),
-    ).toBeVisible();
+    await expect(page.getByText(/colunas ou cards|não pode ser arquivado/i)).toBeVisible();
   });
 });
