@@ -415,6 +415,147 @@ export type Database = {
         }
         Relationships: []
       }
+      content_categories: {
+        Row: {
+          cor: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          nome: string
+          nome_normalizado: string
+          order_position: number
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          nome: string
+          nome_normalizado: string
+          order_position?: number
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["content_kind"]
+          nome?: string
+          nome_normalizado?: string
+          order_position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_items: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          current_version_id: string | null
+          id: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          orgao_id: string | null
+          owner_user_id: string
+          status: Database["public"]["Enums"]["content_status"]
+          updated_at: string
+          visibility: Database["public"]["Enums"]["content_visibility"]
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          current_version_id?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          orgao_id?: string | null
+          owner_user_id: string
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["content_visibility"]
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          current_version_id?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["content_kind"]
+          orgao_id?: string | null
+          owner_user_id?: string
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["content_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_current_version_fk"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "content_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_orgao_id_fkey"
+            columns: ["orgao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_versions: {
+        Row: {
+          body_json: Json
+          body_text: string
+          created_at: string
+          created_by: string
+          form_schema: Json | null
+          id: string
+          item_id: string
+          title: string
+          version_number: number
+        }
+        Insert: {
+          body_json: Json
+          body_text?: string
+          created_at?: string
+          created_by: string
+          form_schema?: Json | null
+          id?: string
+          item_id: string
+          title: string
+          version_number: number
+        }
+        Update: {
+          body_json?: Json
+          body_text?: string
+          created_at?: string
+          created_by?: string
+          form_schema?: Json | null
+          id?: string
+          item_id?: string
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_versions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orgao_comarcas: {
         Row: {
           comarca_id: string
@@ -1157,6 +1298,9 @@ export type Database = {
         | "membro_equipe"
       assistido_categoria_enum: "crianca_adolescente" | "adulto"
       audit_result: "sucesso" | "falha" | "negado"
+      content_kind: "atendimento" | "cota"
+      content_status: "rascunho" | "publicado" | "arquivado"
+      content_visibility: "privado" | "orgao" | "institucional"
       parentesco_enum:
         | "mae"
         | "pai"
@@ -1351,6 +1495,9 @@ export const Constants = {
       ],
       assistido_categoria_enum: ["crianca_adolescente", "adulto"],
       audit_result: ["sucesso", "falha", "negado"],
+      content_kind: ["atendimento", "cota"],
+      content_status: ["rascunho", "publicado", "arquivado"],
+      content_visibility: ["privado", "orgao", "institucional"],
       parentesco_enum: [
         "mae",
         "pai",
