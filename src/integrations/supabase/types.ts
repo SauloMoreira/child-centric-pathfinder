@@ -373,6 +373,54 @@ export type Database = {
           },
         ]
       }
+      member_defensor_access_requests: {
+        Row: {
+          correlation_id: string
+          created_at: string
+          decision_reason: string | null
+          defensor_user_id: string
+          id: string
+          idempotency_key: string | null
+          member_user_id: string
+          message: string | null
+          optimistic_version: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          correlation_id?: string
+          created_at?: string
+          decision_reason?: string | null
+          defensor_user_id: string
+          id?: string
+          idempotency_key?: string | null
+          member_user_id: string
+          message?: string | null
+          optimistic_version?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          correlation_id?: string
+          created_at?: string
+          decision_reason?: string | null
+          defensor_user_id?: string
+          id?: string
+          idempotency_key?: string | null
+          member_user_id?: string
+          message?: string | null
+          optimistic_version?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_defensor_bonds: {
         Row: {
           created_at: string
@@ -645,6 +693,14 @@ export type Database = {
         }
         Returns: Json
       }
+      aprovar_solicitacao_acesso_defensor: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key?: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       arquivar_item: {
         Args: {
           p_expected_version: number
@@ -698,6 +754,10 @@ export type Database = {
       }
       bloquear_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
+        Returns: Json
+      }
+      buscar_defensores_para_solicitacao: {
+        Args: { p_termo?: string }
         Returns: Json
       }
       buscar_orgaos_execucao: {
@@ -879,6 +939,7 @@ export type Database = {
         Args: { p_defensor_user_id?: string }
         Returns: Json
       }
+      listar_minhas_solicitacoes_defensor: { Args: never; Returns: Json }
       listar_orgaos_acessiveis: {
         Args: { p_cursor?: string; p_limit?: number; p_termo?: string }
         Returns: Json
@@ -907,6 +968,7 @@ export type Database = {
           version: number
         }[]
       }
+      listar_solicitacoes_defensor_pendentes: { Args: never; Returns: Json }
       listar_versoes_item: {
         Args: { p_item_id: string }
         Returns: {
@@ -975,6 +1037,15 @@ export type Database = {
       }
       reativar_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
+        Returns: Json
+      }
+      recusar_solicitacao_acesso_defensor: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key?: string
+          p_reason?: string
+          p_request_id: string
+        }
         Returns: Json
       }
       reenviar_convite_equipe: {
@@ -1056,6 +1127,14 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      solicitar_acesso_defensor: {
+        Args: {
+          p_defensor_user_id: string
+          p_idempotency_key?: string
+          p_message?: string
+        }
+        Returns: Json
+      }
       submeter_solicitacao_acesso: {
         Args: {
           p_aceite_termos: boolean
