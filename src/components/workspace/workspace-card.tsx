@@ -10,7 +10,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-function useAssistidoFotoUrl(fotoUrl: string | null | undefined, fotoPath: string | null | undefined) {
+function useAssistidoFotoUrl(
+  fotoUrl: string | null | undefined,
+  fotoPath: string | null | undefined,
+) {
   const [url, setUrl] = useState<string | null>(fotoUrl ?? null);
   useEffect(() => {
     if (fotoUrl) {
@@ -24,7 +27,9 @@ function useAssistidoFotoUrl(fotoUrl: string | null | undefined, fotoPath: strin
     let cancelled = false;
     supabase.storage
       .from("assistidos-fotos")
-      .createSignedUrl(fotoPath, 60 * 60)
+      .createSignedUrl(fotoPath, 60 * 60, {
+        transform: { width: 192, height: 192, resize: "cover", quality: 75 },
+      })
       .then(({ data }) => {
         if (!cancelled && data?.signedUrl) setUrl(data.signedUrl);
       });
