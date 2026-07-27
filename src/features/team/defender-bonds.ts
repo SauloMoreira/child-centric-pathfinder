@@ -45,7 +45,7 @@ export type DefenderBond = {
 export type DefenderTeam = {
   ok: true;
   defenderUserId: string;
-  accessMode: "owner" | "technical_readonly";
+  accessMode: "owner" | "technical_admin" | "technical_readonly";
   canLinkMembers: boolean;
   canEndBonds: boolean;
   members: DefenderBond[];
