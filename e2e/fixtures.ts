@@ -13,7 +13,7 @@ type Fixtures = {
  */
 export const test = base.extend<Fixtures>({
   axe: async ({ page }, use) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    
     await use(async (selector) => {
       const builder = new AxeBuilder({ page });
       if (selector) builder.include(selector);
