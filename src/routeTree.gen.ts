@@ -17,6 +17,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedAlterarOrgaoRouteImport } from './routes/_authenticated/alterar-orgao'
 import { Route as AuthenticatedAreaDeTrabalhoRouteImport } from './routes/_authenticated/area-de-trabalho'
 import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
@@ -31,10 +32,12 @@ import { Route as AuthenticatedAdminTecnicoAdministradoresRouteImport } from './
 import { Route as AuthenticatedAdminTecnicoAuditoriaRouteImport } from './routes/_authenticated/admin-tecnico/auditoria'
 import { Route as AuthenticatedAdminTecnicoConfiguracoesRouteImport } from './routes/_authenticated/admin-tecnico/configuracoes'
 import { Route as AuthenticatedAdminTecnicoDiagnosticosRouteImport } from './routes/_authenticated/admin-tecnico/diagnosticos'
+import { Route as AuthenticatedAdminTecnicoOrgaosRouteImport } from './routes/_authenticated/admin-tecnico/orgaos'
 import { Route as AuthenticatedAdminTecnicoPainelRouteImport } from './routes/_authenticated/admin-tecnico/painel'
 import { Route as AuthenticatedAdminTecnicoSegurancaRouteImport } from './routes/_authenticated/admin-tecnico/seguranca'
 import { Route as AuthenticatedAdminTecnicoUsuariosRouteImport } from './routes/_authenticated/admin-tecnico/usuarios'
 import { Route as AuthenticatedAdminTecnicoVinculosRouteImport } from './routes/_authenticated/admin-tecnico/vinculos'
+import { Route as AuthenticatedAdminOrgaosRouteImport } from './routes/_authenticated/admin/orgaos'
 import { Route as AuthenticatedAdminSolicitacoesRouteImport } from './routes/_authenticated/admin/solicitacoes'
 import { Route as AuthenticatedBibliotecaItemIdRouteImport } from './routes/_authenticated/biblioteca.$itemId'
 
@@ -78,6 +81,12 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
     id: '/.well-known/oauth-protected-resource',
     path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAlterarOrgaoRoute =
+  AuthenticatedAlterarOrgaoRouteImport.update({
+    id: '/alterar-orgao',
+    path: '/alterar-orgao',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAreaDeTrabalhoRoute =
   AuthenticatedAreaDeTrabalhoRouteImport.update({
@@ -159,6 +168,12 @@ const AuthenticatedAdminTecnicoDiagnosticosRoute =
     path: '/admin-tecnico/diagnosticos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminTecnicoOrgaosRoute =
+  AuthenticatedAdminTecnicoOrgaosRouteImport.update({
+    id: '/admin-tecnico/orgaos',
+    path: '/admin-tecnico/orgaos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminTecnicoPainelRoute =
   AuthenticatedAdminTecnicoPainelRouteImport.update({
     id: '/admin-tecnico/painel',
@@ -181,6 +196,12 @@ const AuthenticatedAdminTecnicoVinculosRoute =
   AuthenticatedAdminTecnicoVinculosRouteImport.update({
     id: '/admin-tecnico/vinculos',
     path: '/admin-tecnico/vinculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminOrgaosRoute =
+  AuthenticatedAdminOrgaosRouteImport.update({
+    id: '/admin/orgaos',
+    path: '/admin/orgaos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminSolicitacoesRoute =
@@ -447,6 +468,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/alterar-orgao': {
+      id: '/_authenticated/alterar-orgao'
+      path: '/alterar-orgao'
+      fullPath: '/alterar-orgao'
+      preLoaderRoute: typeof AuthenticatedAlterarOrgaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/area-de-trabalho': {
       id: '/_authenticated/area-de-trabalho'
       path: '/area-de-trabalho'
@@ -545,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTecnicoDiagnosticosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin-tecnico/orgaos': {
+      id: '/_authenticated/admin-tecnico/orgaos'
+      path: '/admin-tecnico/orgaos'
+      fullPath: '/admin-tecnico/orgaos'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoOrgaosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin-tecnico/painel': {
       id: '/_authenticated/admin-tecnico/painel'
       path: '/admin-tecnico/painel'
@@ -571,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-tecnico/vinculos'
       fullPath: '/admin-tecnico/vinculos'
       preLoaderRoute: typeof AuthenticatedAdminTecnicoVinculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/orgaos': {
+      id: '/_authenticated/admin/orgaos'
+      path: '/admin/orgaos'
+      fullPath: '/admin/orgaos'
+      preLoaderRoute: typeof AuthenticatedAdminOrgaosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/solicitacoes': {

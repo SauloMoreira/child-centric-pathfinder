@@ -201,19 +201,19 @@ export type Database = {
       defensor_context: {
         Row: {
           defensor_user_id: string
-          orgao_id: string
+          orgao_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           defensor_user_id: string
-          orgao_id: string
+          orgao_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           defensor_user_id?: string
-          orgao_id?: string
+          orgao_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -431,7 +431,7 @@ export type Database = {
           id: string
           member_user_id: string
           optimistic_version: number
-          orgao_id: string
+          orgao_id: string | null
           status: Database["public"]["Enums"]["member_defensor_bond_status"]
           updated_at: string
         }
@@ -444,7 +444,7 @@ export type Database = {
           id?: string
           member_user_id: string
           optimistic_version?: number
-          orgao_id: string
+          orgao_id?: string | null
           status?: Database["public"]["Enums"]["member_defensor_bond_status"]
           updated_at?: string
         }
@@ -457,7 +457,7 @@ export type Database = {
           id?: string
           member_user_id?: string
           optimistic_version?: number
-          orgao_id?: string
+          orgao_id?: string | null
           status?: Database["public"]["Enums"]["member_defensor_bond_status"]
           updated_at?: string
         }
