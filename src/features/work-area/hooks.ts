@@ -14,8 +14,11 @@ import {
   archivePanel,
   createPanel,
   ensureWorkArea,
+  readWorkArea,
   renamePanel,
   reorderPanels,
+  WorkAreaForbiddenError,
+  WorkAreaNotInitializedError,
   type CreatePanelInput,
   type RenamePanelInput,
   type ReorderPanelsInput,
@@ -29,12 +32,17 @@ function uuid(): string {
   return crypto.randomUUID();
 }
 
+export type UseWorkAreaResult = {
+  isOwner: boolean;
+  viewerId: string | null;
+  notInitialized: boolean;
+  forbidden: boolean;
+};
+
 /**
  * Carrega a Área de Trabalho do Defensor.
- * - Se o solicitante for o próprio Defensor: chama ensure_defensor_work_area (idempotente).
- * - Caso contrário: leitura somente (RLS + backend definirão access.accessMode).
- *   Nesta versão, a leitura por membro/técnico entra no Turno 3.C; aqui retorna
- *   WORK_AREA_NOT_INITIALIZED se o backend não expuser dados.
+ * - Owner: tenta leitura; se WORK_AREA_NOT_INITIALIZED, chama ensure e refaz a leitura.
+ * - Membro/Admin Técnico: leitura pura. Se não inicializada, expõe estado vazio orientativo.
  */
 export function useWorkArea(defenderUserId: string | null | undefined) {
   const { data: estado } = useEstadoInstitucional();
@@ -45,17 +53,41 @@ export function useWorkArea(defenderUserId: string | null | undefined) {
     queryKey: defenderUserId
       ? workAreaKeys.panels(defenderUserId)
       : ["work-area", "unknown"],
-    enabled: !!defenderUserId && isDefensor(estado) && isOwner,
-    queryFn: async (): Promise<WorkArea> =>
-      ensureWorkArea({ defenderUserId: defenderUserId! }),
+    enabled: !!defenderUserId,
+    queryFn: async (): Promise<WorkArea> => {
+      try {
+        return await readWorkArea({ defenderUserId: defenderUserId! });
+      } catch (err) {
+        if (err instanceof WorkAreaNotInitializedError && isOwner) {
+          await ensureWorkArea({ defenderUserId: defenderUserId! });
+          return await readWorkArea({ defenderUserId: defenderUserId! });
+        }
+        throw err;
+      }
+    },
+    retry: (failureCount, err) => {
+      if (
+        err instanceof WorkAreaNotInitializedError ||
+        err instanceof WorkAreaForbiddenError
+      ) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     staleTime: 15_000,
   });
+
+  const notInitialized =
+    query.error instanceof WorkAreaNotInitializedError;
+  const forbidden = query.error instanceof WorkAreaForbiddenError;
 
   return {
     ...query,
     isOwner,
     viewerId,
-  };
+    notInitialized,
+    forbidden,
+  } satisfies UseWorkAreaResult & typeof query;
 }
 
 // -------- create --------
