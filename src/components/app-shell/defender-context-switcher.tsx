@@ -206,6 +206,7 @@ export function DefenderContextSwitcher({ collapsed }: Props) {
           </PopoverContent>
         </Popover>
       )}
+      <RequestDefenderAccessSheet open={requestOpen} onOpenChange={setRequestOpen} />
     </div>
   );
 }
