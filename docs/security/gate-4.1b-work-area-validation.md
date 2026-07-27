@@ -1,6 +1,6 @@
 # Sub-gate 4.1.b — Área de Trabalho e Painéis (validação)
 
-**Status parcial:** 🟡 Bloco A concluído — B/C/D pendentes.
+**Status parcial:** 🟡 Bloco A + Bloco B.1 concluídos — B.2/C/D pendentes.
 **Data:** 2026-07-27
 **Escopo:** Autorização, integridade e cleanup do domínio de Painéis do Defensor
 (tabelas `public.defensor_workspaces`, `public.defensor_workspace_columns`,
