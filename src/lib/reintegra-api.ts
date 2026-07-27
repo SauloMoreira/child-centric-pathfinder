@@ -4,6 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 export type ContentKind = "atendimento" | "cota";
 export type ContentStatus = "rascunho" | "publicado" | "arquivado";
 export type ContentVisibility = "privado" | "orgao" | "institucional";
+export type WorkspaceColor =
+  | "neutral"
+  | "green"
+  | "blue"
+  | "amber"
+  | "burgundy"
+  | "purple"
+  | "slate"
+  | "rose";
 
 export type BibliotecaItem = {
   id: string;
@@ -48,42 +57,6 @@ export type MutationResult = {
   version_number?: number;
   optimistic_version: number;
 };
-
-
-export type WorkspaceResumo = {
-  id: string;
-  nome: string;
-  icone: string | null;
-  order_position: number;
-  total_colunas: number;
-  total_cards: number;
-  updated_at: string;
-};
-
-export type ColunaResumo = {
-  id: string;
-  nome: string;
-  cor: string | null;
-  order_position: number;
-  total_cards: number;
-};
-
-export type CardResumo = {
-  id: string;
-  item_id: string;
-  kind: ContentKind;
-  titulo: string;
-  categoria: string | null;
-  status: ContentStatus;
-  note: string | null;
-  order_position: number;
-  updated_at: string;
-};
-
-function throwIf<T>(res: { data: T | null; error: unknown }) {
-  if (res.error) throw res.error;
-  return res.data as T;
-}
 
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
@@ -189,113 +162,228 @@ export async function arquivarItem(params: {
   return data as MutationResult;
 }
 
+// ==========================================================================
+// ÁREA DE TRABALHO — workspace único por Defensor
+// ==========================================================================
 
-// -------- ÁREA DE TRABALHO --------
-export async function listarWorkspacesDefensor(defensor_user_id: string, orgao_id: string): Promise<WorkspaceResumo[]> {
-  const { data, error } = await supabase.rpc("listar_workspaces_defensor", {
-    p_defensor_user_id: defensor_user_id,
-    p_orgao_id: orgao_id,
-  } as never);
-  if (error) throw error;
-  return (data ?? []) as WorkspaceResumo[];
+export type WorkspaceAccess = {
+  accessMode: "owner" | "team_readonly" | "technical_readonly" | "none";
+  canEditWorkspace: boolean;
+  canManageColumns: boolean;
+  canMoveCards: boolean;
+  canAddItems: boolean;
+};
+
+export type WorkspaceMeta = {
+  id: string;
+  defensorUserId: string;
+  nome: string;
+  icone: string | null;
+  optimisticVersion: number;
+  updatedAt: string;
+};
+
+export type WorkspaceColumn = {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  corToken: WorkspaceColor;
+  corCustom: string | null;
+  orderPosition: number;
+};
+
+export type WorkspaceCardDto = {
+  cardId: string;
+  workspaceId: string;
+  columnId: string;
+  itemId: string;
+  kind: ContentKind;
+  placement: "owned" | "imported";
+  title: string;
+  description: string | null;
+  categoryNames: string[];
+  ownerDisplayName: string;
+  status: ContentStatus;
+  publishedVersionNumber: number | null;
+  updatedAt: string;
+  archivedByAuthor: boolean;
+  orderPosition: number;
+  canOpen: boolean;
+  canEdit: boolean;
+  canUse: boolean;
+};
+
+export type WorkspaceCompleto = {
+  workspace: WorkspaceMeta | null;
+  access: WorkspaceAccess;
+  columns: WorkspaceColumn[];
+  cards: WorkspaceCardDto[];
+};
+
+export const workspaceKeys = {
+  byDefender: (defenderUserId: string) =>
+    ["ws", "byDefender", defenderUserId] as const,
+};
+
+function uuid(): string {
+  return crypto.randomUUID();
 }
 
-export async function criarWorkspaceDefensor(params: {
-  defensor_user_id: string;
-  orgao_id: string;
+export async function ensureDefensorWorkspace(defensorUserId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("ensure_defensor_workspace", {
+    p_defensor_user_id: defensorUserId,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return data as string;
+}
+
+export async function listarWorkspaceCompleto(defensorUserId: string): Promise<WorkspaceCompleto> {
+  const { data, error } = await supabase.rpc("listar_workspace_completo", {
+    p_defensor_user_id: defensorUserId,
+  } as never);
+  if (error) throw error;
+  return data as WorkspaceCompleto;
+}
+
+export async function atualizarWorkspaceDefensor(params: {
+  workspaceId: string;
+  expectedWorkspaceVersion: number;
   nome: string;
-  icone?: string;
-}): Promise<string> {
-  const { data, error } = await supabase.rpc("criar_workspace_defensor", {
-    p_defensor_user_id: params.defensor_user_id,
-    p_orgao_id: params.orgao_id,
+  icone?: string | null;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("atualizar_workspace_defensor", {
+    p_workspace_id: params.workspaceId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
     p_nome: params.nome,
     p_icone: params.icone ?? null,
   } as never);
   if (error) throw error;
-  return data as string;
+  return Number(data);
 }
 
-export async function renomearWorkspaceDefensor(id: string, nome: string, icone?: string): Promise<void> {
-  const { error } = await supabase.rpc("renomear_workspace_defensor", {
-    p_workspace_id: id,
-    p_nome: nome,
-    p_icone: icone ?? null,
-  } as never);
-  if (error) throw error;
-}
-
-export async function excluirWorkspaceDefensor(id: string): Promise<void> {
-  const { error } = await supabase.rpc("excluir_workspace_defensor", { p_workspace_id: id } as never);
-  if (error) throw error;
-}
-
-export async function listarColunasWorkspace(workspace_id: string): Promise<ColunaResumo[]> {
-  const { data, error } = await supabase.rpc("listar_colunas_workspace", {
-    p_workspace_id: workspace_id,
-  } as never);
-  if (error) throw error;
-  return (data ?? []) as ColunaResumo[];
-}
-
-export async function criarColunaWorkspace(workspace_id: string, nome: string, cor?: string): Promise<string> {
+export async function criarColunaWorkspace(params: {
+  workspaceId: string;
+  expectedWorkspaceVersion: number;
+  nome: string;
+  descricao?: string;
+  corToken?: WorkspaceColor;
+  corCustom?: string | null;
+}): Promise<{ column_id: string; workspace_version: number }> {
   const { data, error } = await supabase.rpc("criar_coluna_workspace", {
-    p_workspace_id: workspace_id,
-    p_nome: nome,
-    p_cor: cor ?? null,
+    p_workspace_id: params.workspaceId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+    p_nome: params.nome,
+    p_descricao: params.descricao ?? null,
+    p_cor_token: params.corToken ?? "neutral",
+    p_cor_custom: params.corCustom ?? null,
   } as never);
   if (error) throw error;
-  return data as string;
+  return data as { column_id: string; workspace_version: number };
 }
 
-export async function atualizarColunaWorkspace(column_id: string, nome: string, cor?: string): Promise<void> {
-  const { error } = await supabase.rpc("atualizar_coluna_workspace", {
-    p_column_id: column_id,
-    p_nome: nome,
-    p_cor: cor ?? null,
+export async function atualizarColunaWorkspace(params: {
+  columnId: string;
+  expectedWorkspaceVersion: number;
+  nome: string;
+  descricao?: string;
+  corToken?: WorkspaceColor;
+  corCustom?: string | null;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("atualizar_coluna_workspace", {
+    p_column_id: params.columnId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+    p_nome: params.nome,
+    p_descricao: params.descricao ?? null,
+    p_cor_token: params.corToken ?? "neutral",
+    p_cor_custom: params.corCustom ?? null,
   } as never);
   if (error) throw error;
+  return Number(data);
 }
 
-export async function excluirColunaWorkspace(column_id: string): Promise<void> {
-  const { error } = await supabase.rpc("excluir_coluna_workspace", { p_column_id: column_id } as never);
+export async function moverColunaWorkspace(params: {
+  columnId: string;
+  direction: "left" | "right";
+  expectedWorkspaceVersion: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("mover_coluna_workspace", {
+    p_column_id: params.columnId,
+    p_direction: params.direction,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+  } as never);
   if (error) throw error;
+  return Number(data);
 }
 
-export async function listarCardsColuna(column_id: string): Promise<CardResumo[]> {
-  const { data, error } = await supabase.rpc("listar_cards_coluna", { p_column_id: column_id } as never);
+export async function excluirColunaWorkspace(params: {
+  columnId: string;
+  destinationColumnId: string | null;
+  expectedWorkspaceVersion: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("excluir_coluna_workspace", {
+    p_column_id: params.columnId,
+    p_destination_column_id: params.destinationColumnId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+  } as never);
   if (error) throw error;
-  return (data ?? []) as CardResumo[];
+  return Number(data);
 }
 
-export async function adicionarCardWorkspace(column_id: string, item_id: string, note?: string): Promise<string> {
+export async function adicionarCardWorkspace(params: {
+  columnId: string;
+  itemId: string;
+  expectedWorkspaceVersion: number;
+}): Promise<{ card_id: string; workspace_version: number }> {
   const { data, error } = await supabase.rpc("adicionar_card_workspace", {
-    p_column_id: column_id,
-    p_item_id: item_id,
-    p_note: note ?? null,
+    p_column_id: params.columnId,
+    p_item_id: params.itemId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
   } as never);
   if (error) throw error;
-  return data as string;
+  return data as { card_id: string; workspace_version: number };
 }
 
-export async function atualizarCardWorkspace(card_id: string, note: string | null): Promise<void> {
-  const { error } = await supabase.rpc("atualizar_card_workspace", {
-    p_card_id: card_id,
-    p_note: note,
+export async function moverCardWorkspace(params: {
+  cardId: string;
+  targetColumnId: string;
+  newPosition: number;
+  expectedWorkspaceVersion: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("mover_card_workspace", {
+    p_card_id: params.cardId,
+    p_target_column_id: params.targetColumnId,
+    p_new_position: params.newPosition,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
   } as never);
   if (error) throw error;
+  return Number(data);
 }
 
-export async function removerCardWorkspace(card_id: string): Promise<void> {
-  const { error } = await supabase.rpc("remover_card_workspace", { p_card_id: card_id } as never);
-  if (error) throw error;
-}
-
-export async function moverCardWorkspace(card_id: string, target_column_id: string, new_position: number): Promise<void> {
-  const { error } = await supabase.rpc("mover_card_workspace", {
-    p_card_id: card_id,
-    p_target_column_id: target_column_id,
-    p_new_position: new_position,
+export async function removerCardWorkspace(params: {
+  cardId: string;
+  expectedWorkspaceVersion: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("remover_card_workspace", {
+    p_card_id: params.cardId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
   } as never);
   if (error) throw error;
+  return Number(data);
+}
+
+/**
+ * Erros de domínio conhecidos, todos vindos como `message` do PostgrestError.
+ */
+export function isConcurrentChangeError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /CONCURRENT_CHANGE/i.test(msg);
 }
