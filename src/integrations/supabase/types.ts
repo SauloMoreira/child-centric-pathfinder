@@ -1033,10 +1033,20 @@ export type Database = {
         }
         Returns: Json
       }
-      reordenar_colunas_workspace: {
-        Args: { p_column_ids: string[]; p_workspace_id: string }
-        Returns: undefined
-      }
+      reordenar_colunas_workspace:
+        | {
+            Args: { p_column_ids: string[]; p_workspace_id: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_expected_workspace_version: number
+              p_idempotency_key: string
+              p_ordered_column_ids: string[]
+              p_workspace_id: string
+            }
+            Returns: number
+          }
       reordenar_paineis_defensor: {
         Args: {
           p_defensor_user_id: string
