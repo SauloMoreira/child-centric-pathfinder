@@ -1065,6 +1065,10 @@ function SortableColumn(props: {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" /> Editar coluna
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
                 <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
               </DropdownMenuItem>
