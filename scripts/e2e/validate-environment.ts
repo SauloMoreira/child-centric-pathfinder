@@ -99,8 +99,7 @@ function main(): void {
     detail: dbProd ? "URL parece de produção — recusado" : "ok",
   });
 
-  const hasServiceRole =
-    !!env.SUPABASE_SERVICE_ROLE_KEY || !!env.E2E_SUPABASE_SERVICE_ROLE_KEY;
+  const hasServiceRole = !!env.SUPABASE_SERVICE_ROLE_KEY || !!env.E2E_SUPABASE_SERVICE_ROLE_KEY;
   checks.push({
     name: "sem service role no .env.e2e.local",
     ok: !hasServiceRole,
@@ -120,8 +119,7 @@ function main(): void {
     gitignore.includes(".playwright/.auth/") ||
     gitignore.includes(".playwright/");
   const reportIgnored =
-    existsSync("playwright-report/.gitignore") ||
-    gitignore.includes("playwright-report/");
+    existsSync("playwright-report/.gitignore") || gitignore.includes("playwright-report/");
   const resultsIgnored =
     existsSync("test-results/.gitignore") || gitignore.includes("test-results/");
   const ignoredOk = envIgnored && authIgnored && reportIgnored && resultsIgnored;
@@ -135,9 +133,7 @@ function main(): void {
   for (const c of checks) {
     const mark = c.ok ? "✓" : "✗";
     if (!c.ok) failed += 1;
-    console.log(
-      `${mark}  ${c.name.padEnd(maxName)}  ${c.detail ?? (c.ok ? "ok" : "FALHOU")}`,
-    );
+    console.log(`${mark}  ${c.name.padEnd(maxName)}  ${c.detail ?? (c.ok ? "ok" : "FALHOU")}`);
   }
 
   if (failed > 0) {
