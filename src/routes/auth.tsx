@@ -119,7 +119,7 @@ function AuthPage() {
         <main className="flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-md">
             <Tabs
-              value={modo}
+              value={modo ?? "entrar"}
               onValueChange={(v) =>
                 navigate({
                   to: "/auth",
