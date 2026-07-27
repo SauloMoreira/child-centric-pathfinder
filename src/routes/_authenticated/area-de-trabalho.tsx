@@ -19,6 +19,8 @@ import {
   RefreshCw,
   User,
   Layers,
+  Pencil,
+  Check,
 } from "lucide-react";
 
 import {
@@ -45,6 +47,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEstadoInstitucional, isDefensor } from "@/hooks/use-estado-institucional";
 import {
   adicionarCardWorkspace,
+  atualizarColunaWorkspace,
   criarColunaWorkspace,
   excluirColunaWorkspace,
   isConcurrentChangeError,
@@ -57,6 +60,7 @@ import {
   workspaceKeys,
   type WorkspaceAccess,
   type WorkspaceCardDto,
+  type WorkspaceColor,
   type WorkspaceColumn,
   type WorkspaceMeta,
 } from "@/lib/reintegra-api";
@@ -72,6 +76,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -517,6 +530,29 @@ function ColumnsBoard({
     onError: handleMutationError,
   });
 
+  const editarCol = useMutation({
+    mutationFn: (v: {
+      columnId: string;
+      nome: string;
+      descricao: string | null;
+      corToken: WorkspaceColor;
+    }) =>
+      atualizarColunaWorkspace({
+        columnId: v.columnId,
+        expectedWorkspaceVersion: workspace.optimisticVersion,
+        nome: v.nome,
+        descricao: v.descricao ?? undefined,
+        corToken: v.corToken,
+        corCustom: null,
+      }),
+    onSuccess: () => {
+      toast.success("Coluna atualizada");
+      announce("Coluna atualizada");
+      onRefetch();
+    },
+    onError: handleMutationError,
+  });
+
   const removerCard = useMutation({
     mutationFn: (cardId: string) =>
       removerCardWorkspace({
@@ -737,6 +773,7 @@ function ColumnsBoard({
                   access={access}
                   workspace={workspace}
                   onMoveCol={(dir) => moverCol.mutate({ columnId: c.id, direction: dir })}
+                  onEditCol={(v) => editarCol.mutate({ columnId: c.id, ...v })}
                   onDeleteCol={(destinationColumnId) =>
                     excluirCol.mutate({ columnId: c.id, destinationColumnId })
                   }
@@ -883,7 +920,7 @@ function AddColumnCard({
 // -----------------------------------------------------------------------------
 // SortableColumn
 // -----------------------------------------------------------------------------
-const VALID_COL_COLORS = new Set([
+const VALID_COL_COLORS = new Set<WorkspaceColor>([
   "neutral",
   "green",
   "blue",
@@ -893,6 +930,17 @@ const VALID_COL_COLORS = new Set([
   "slate",
   "rose",
 ]);
+
+const COLUMN_COLOR_OPTIONS: { token: WorkspaceColor; label: string }[] = [
+  { token: "neutral", label: "Neutro" },
+  { token: "green", label: "Verde" },
+  { token: "blue", label: "Azul" },
+  { token: "purple", label: "Lilás" },
+  { token: "rose", label: "Rosa" },
+  { token: "amber", label: "Âmbar" },
+  { token: "burgundy", label: "Bordô" },
+  { token: "slate", label: "Cinza" },
+];
 
 
 function SortableColumn(props: {
@@ -904,6 +952,7 @@ function SortableColumn(props: {
   access: WorkspaceAccess;
   workspace: WorkspaceMeta;
   onMoveCol: (dir: "left" | "right") => void;
+  onEditCol: (v: { nome: string; descricao: string | null; corToken: WorkspaceColor }) => void;
   onDeleteCol: (destinationColumnId: string | null) => void;
   onRemoveCard: (cardId: string) => void;
   onMoveCard: (cardId: string, targetColumnId: string, newPosition: number) => void;
@@ -919,6 +968,7 @@ function SortableColumn(props: {
     access,
     workspace,
     onMoveCol,
+    onEditCol,
     onDeleteCol,
     onRemoveCard,
     onMoveCard,
@@ -937,8 +987,9 @@ function SortableColumn(props: {
     opacity: sortable.isDragging ? 0.4 : 1,
   };
 
-  const colorToken = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
+  const colorToken: WorkspaceColor = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
 
   const cardIds = useMemo(() => cards.map((c) => `card:${c.cardId}`), [cards]);
@@ -1014,6 +1065,10 @@ function SortableColumn(props: {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" /> Editar coluna
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
                 <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
               </DropdownMenuItem>
@@ -1098,7 +1153,189 @@ function SortableColumn(props: {
           }}
         />
       )}
+
+      <EditColumnSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        column={column}
+        onSubmit={(v) => {
+          onEditCol(v);
+          setEditOpen(false);
+        }}
+      />
     </div>
+  );
+}
+
+function EditColumnSheet(props: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  column: WorkspaceColumn;
+  onSubmit: (v: { nome: string; descricao: string | null; corToken: WorkspaceColor }) => void;
+}) {
+  const { open, onOpenChange, column, onSubmit } = props;
+  const initialToken: WorkspaceColor = VALID_COL_COLORS.has(column.corToken)
+    ? column.corToken
+    : "neutral";
+  const [nome, setNome] = useState(column.nome);
+  const [descricao, setDescricao] = useState(column.descricao ?? "");
+  const [corToken, setCorToken] = useState<WorkspaceColor>(initialToken);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setNome(column.nome);
+      setDescricao(column.descricao ?? "");
+      setCorToken(initialToken);
+      setErro(null);
+    }
+  }, [open, column.id, column.nome, column.descricao, initialToken]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = nome.trim();
+    if (trimmed.length < 1 || trimmed.length > 60) {
+      setErro("O nome deve ter entre 1 e 60 caracteres.");
+      return;
+    }
+    if (descricao.length > 160) {
+      setErro("A descrição deve ter no máximo 160 caracteres.");
+      return;
+    }
+    onSubmit({
+      nome: trimmed,
+      descricao: descricao.trim() ? descricao.trim() : null,
+      corToken,
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-md">
+        <form onSubmit={handleSubmit} className="flex h-full flex-col">
+          <SheetHeader>
+            <SheetTitle>Editar coluna</SheetTitle>
+            <SheetDescription>
+              Ajuste o nome, a descrição e a cor institucional desta coluna.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
+            <div className="space-y-2">
+              <Label htmlFor="edit-col-nome">Nome</Label>
+              <Input
+                id="edit-col-nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                maxLength={60}
+                autoFocus
+                required
+              />
+              <p className="text-[11px] text-muted-foreground">{nome.trim().length}/60</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-col-desc">Descrição (opcional)</Label>
+              <Textarea
+                id="edit-col-desc"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                maxLength={160}
+                rows={3}
+              />
+              <p className="text-[11px] text-muted-foreground">{descricao.length}/160</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cor da coluna</Label>
+              <div
+                role="radiogroup"
+                aria-label="Cor institucional da coluna"
+                className="grid grid-cols-4 gap-2"
+              >
+                {COLUMN_COLOR_OPTIONS.map((opt) => {
+                  const selected = opt.token === corToken;
+                  return (
+                    <button
+                      key={opt.token}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setCorToken(opt.token)}
+                      data-col-color={opt.token}
+                      className={cn(
+                        "group relative flex flex-col items-center gap-1.5 rounded-md border p-2 text-[11px] font-medium transition",
+                        selected
+                          ? "border-institutional ring-2 ring-institutional/40"
+                          : "border-border hover:border-institutional/40",
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className="flex h-8 w-full items-center justify-center rounded"
+                        style={{ backgroundColor: "var(--col-accent-soft)" }}
+                      >
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: "var(--col-accent)" }}
+                        />
+                        {selected && (
+                          <Check className="ml-1 h-3.5 w-3.5 text-institutional" aria-hidden />
+                        )}
+                      </span>
+                      <span className="text-foreground">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Pré-visualização</Label>
+              <div
+                data-col-color={corToken}
+                className="kanban-column relative overflow-hidden rounded-md border border-border"
+              >
+                <span
+                  aria-hidden
+                  className="absolute inset-y-0 left-0 w-[3px]"
+                  style={{ backgroundColor: "var(--col-accent)" }}
+                />
+                <div
+                  className="border-b border-border pl-4 pr-2 py-2.5"
+                  style={{ backgroundColor: "var(--col-accent-soft)" }}
+                >
+                  <h4
+                    className="truncate text-sm font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--col-accent-strong)" }}
+                  >
+                    {nome.trim() || "Nome da coluna"}
+                  </h4>
+                  {descricao.trim() && (
+                    <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                      {descricao}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {erro && (
+              <p role="alert" className="text-sm text-destructive">
+                {erro}
+              </p>
+            )}
+          </div>
+
+          <SheetFooter className="mt-4 flex-row justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Salvar alterações</Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }
 
