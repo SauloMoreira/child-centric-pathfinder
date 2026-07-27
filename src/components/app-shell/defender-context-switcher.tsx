@@ -98,7 +98,7 @@ export function DefenderContextSwitcher({ collapsed }: Props) {
           className="mb-2 gap-1.5 border-institutional/50 bg-institutional/10 font-mono text-[9px] uppercase tracking-[0.16em] text-institutional"
         >
           <ShieldAlert className="h-3 w-3" aria-hidden />
-          Modo técnico · somente leitura
+          Modo técnico · acesso administrativo
         </Badge>
       )}
 

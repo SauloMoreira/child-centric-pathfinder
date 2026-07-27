@@ -169,7 +169,7 @@ export async function arquivarItem(params: {
 // ==========================================================================
 
 export type WorkspaceAccess = {
-  accessMode: "owner" | "team_readonly" | "technical_readonly" | "none";
+  accessMode: "owner" | "team_readonly" | "technical_readonly" | "technical_admin" | "none";
   canEditWorkspace: boolean;
   canManageColumns: boolean;
   canMoveCards: boolean;

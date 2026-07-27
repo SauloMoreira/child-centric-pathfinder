@@ -7,6 +7,7 @@ export type PanelAccessMode =
   | "owner"
   | "team_readonly"
   | "technical_readonly"
+  | "technical_admin"
   | "none";
 
 export type WorkspaceAccess = {
