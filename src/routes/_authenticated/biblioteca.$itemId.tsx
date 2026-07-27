@@ -39,6 +39,20 @@ export const Route = createFileRoute("/_authenticated/biblioteca/$itemId")({
   component: ItemEditor,
 });
 
+function mensagemErro(e: unknown, fallback: string): string {
+  const msg = e instanceof Error ? e.message : String(e ?? "");
+  if (msg.includes("CONCURRENT_CHANGE"))
+    return "O modelo foi alterado em outra aba. Recarregue para continuar.";
+  if (msg.includes("CONTENT_ARCHIVED"))
+    return "Este modelo está arquivado e não pode ser alterado.";
+  if (msg.includes("NOT_OWNER"))
+    return "Você não é o proprietário deste modelo.";
+  if (msg.includes("CONTENT_NOT_FOUND"))
+    return "Modelo não encontrado.";
+  return msg || fallback;
+}
+
+
 function ItemEditor() {
   const { itemId } = Route.useParams();
   const navigate = useNavigate();
