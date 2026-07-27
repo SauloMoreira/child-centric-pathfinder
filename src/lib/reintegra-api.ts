@@ -324,6 +324,21 @@ export async function moverColunaWorkspace(params: {
   return Number(data);
 }
 
+export async function reordenarColunasWorkspace(params: {
+  workspaceId: string;
+  orderedColumnIds: string[];
+  expectedWorkspaceVersion: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("reordenar_colunas_workspace", {
+    p_workspace_id: params.workspaceId,
+    p_ordered_column_ids: params.orderedColumnIds,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return Number(data);
+}
+
 export async function excluirColunaWorkspace(params: {
   columnId: string;
   destinationColumnId: string | null;
