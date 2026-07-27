@@ -43,6 +43,7 @@ import {
   type DefenderBond,
 } from "@/features/team/defender-bonds";
 import { LinkMemberSheet } from "@/features/team/components/link-member-sheet";
+import { PendingAccessRequestsSection } from "@/features/team/components/pending-access-requests-section";
 
 export const Route = createFileRoute("/_authenticated/minha-equipe")({
   head: () => ({
@@ -266,6 +267,8 @@ function MinhaEquipePage() {
 
 
 
+
+      <PendingAccessRequestsSection enabled={defensor && ativo} />
 
       <DefenderBondsSection
         estado={estado}

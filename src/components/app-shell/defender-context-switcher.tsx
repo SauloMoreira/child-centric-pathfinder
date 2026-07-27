@@ -15,6 +15,7 @@ import {
   useSelectDefenderContext,
   type AvailableDefender,
 } from "@/features/team/defender-bonds";
+import { RequestDefenderAccessSheet } from "@/features/team/components/request-defender-access-sheet";
 import { friendlyTeamError } from "@/lib/team-errors";
 
 type Props = {
@@ -29,6 +30,7 @@ type Props = {
  */
 export function DefenderContextSwitcher({ collapsed }: Props) {
   const [open, setOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [termo, setTermo] = useState("");
   const q = useAvailableDefenders();
   const selecionar = useSelectDefenderContext();
@@ -103,9 +105,19 @@ export function DefenderContextSwitcher({ collapsed }: Props) {
       )}
 
       {emptyMember ? (
-        <p className="rounded-md border border-dashed border-sidebar-border/70 bg-sidebar-accent/20 px-2 py-2 text-[11px] text-sidebar-muted">
-          Aguardando vínculo com um Defensor Público.
-        </p>
+        <div className="space-y-2">
+          <p className="rounded-md border border-dashed border-sidebar-border/70 bg-sidebar-accent/20 px-2 py-2 text-[11px] text-sidebar-muted">
+            Aguardando vínculo com um Defensor Público.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-full border-sidebar-border bg-sidebar-accent/30 text-[11px] text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            onClick={() => setRequestOpen(true)}
+          >
+            Solicitar acesso
+          </Button>
+        </div>
       ) : (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -194,6 +206,7 @@ export function DefenderContextSwitcher({ collapsed }: Props) {
           </PopoverContent>
         </Popover>
       )}
+      <RequestDefenderAccessSheet open={requestOpen} onOpenChange={setRequestOpen} />
     </div>
   );
 }
