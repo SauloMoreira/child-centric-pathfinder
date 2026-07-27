@@ -126,7 +126,7 @@ function AreaDeTrabalhoPage() {
       </div>
     );
   }
-  return <WorkArea defensorId={defensorId} />;
+  return <WorkArea defensorId={defensorId} contextoNome={estado.profile?.nome_completo ?? "Defensor(a) Público(a)"} />;
 }
 
 // -----------------------------------------------------------------------------
@@ -155,7 +155,7 @@ function useAnnouncer() {
 // -----------------------------------------------------------------------------
 // Root WorkArea
 // -----------------------------------------------------------------------------
-function WorkArea({ defensorId }: { defensorId: string }) {
+function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNome: string }) {
   const workArea = useWorkArea(defensorId);
   const panels = workArea.data?.panels ?? [];
   const { selectedId, selectedPanel, select } = useSelectedPanel(defensorId, panels);
