@@ -696,16 +696,6 @@ export type Database = {
         }
         Returns: Json
       }
-      atualizar_workspace_defensor: {
-        Args: {
-          p_expected_workspace_version: number
-          p_icone?: string
-          p_idempotency_key: string
-          p_nome: string
-          p_workspace_id: string
-        }
-        Returns: number
-      }
       bloquear_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
@@ -798,10 +788,6 @@ export type Database = {
       ensure_defensor_work_area: {
         Args: { p_defensor_user_id: string; p_idempotency_key?: string }
         Returns: Json
-      }
-      ensure_defensor_workspace: {
-        Args: { p_defensor_user_id: string; p_idempotency_key?: string }
-        Returns: string
       }
       excluir_coluna_workspace: {
         Args: {
@@ -923,10 +909,7 @@ export type Database = {
           version_number: number
         }[]
       }
-      listar_workspace_completo: {
-        Args: { p_defensor_user_id: string; p_panel_id?: string }
-        Returns: Json
-      }
+      listar_workspace_completo: { Args: { p_panel_id: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
       meu_estado_institucional: { Args: never; Returns: Json }
       mover_card_workspace: {
@@ -1033,20 +1016,15 @@ export type Database = {
         }
         Returns: Json
       }
-      reordenar_colunas_workspace:
-        | {
-            Args: { p_column_ids: string[]; p_workspace_id: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_expected_workspace_version: number
-              p_idempotency_key: string
-              p_ordered_column_ids: string[]
-              p_workspace_id: string
-            }
-            Returns: number
-          }
+      reordenar_colunas_workspace: {
+        Args: {
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+          p_ordered_column_ids: string[]
+          p_workspace_id: string
+        }
+        Returns: number
+      }
       reordenar_paineis_defensor: {
         Args: {
           p_defensor_user_id: string
