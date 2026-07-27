@@ -12,6 +12,7 @@ type PanelRowRaw = {
   name?: string;
   icone?: string | null;
   icon?: string | null;
+  position?: number;
   order_position?: number;
   orderPosition?: number;
   optimistic_version?: number | string;
