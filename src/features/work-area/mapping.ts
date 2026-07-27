@@ -49,16 +49,18 @@ export function mapPanelRow(
 
 function accessFromMode(mode: PanelAccessMode): WorkspaceAccess {
   const isOwner = mode === "owner";
+  const isTechnicalAdmin = mode === "technical_admin";
+  const canEdit = isOwner || isTechnicalAdmin;
   const isReadonly =
     mode === "team_readonly" || mode === "technical_readonly";
-  const canView = isOwner || isReadonly;
+  const canView = canEdit || isReadonly;
   return {
     canView,
-    canEditWorkspace: isOwner,
-    canManagePanels: isOwner,
-    canManageColumns: isOwner,
-    canMoveCards: isOwner,
-    canAddItems: isOwner,
+    canEditWorkspace: canEdit,
+    canManagePanels: canEdit,
+    canManageColumns: canEdit,
+    canMoveCards: canEdit,
+    canAddItems: canEdit,
     accessMode: mode,
   };
 }
