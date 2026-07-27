@@ -937,7 +937,7 @@ function SortableColumn(props: {
     opacity: sortable.isDragging ? 0.4 : 1,
   };
 
-  const indicator = COLOR_INDICATOR[column.corToken] ?? COLOR_INDICATOR.neutral;
+  const colorToken = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
 
@@ -950,117 +950,141 @@ function SortableColumn(props: {
   });
 
   return (
-    <div ref={sortable.setNodeRef} style={style} className="w-72 shrink-0">
-      <div className="surface-panel flex h-full max-h-[calc(100vh-13rem)] flex-col p-3">
-        <header className="mb-2 flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              {access.canManageColumns && (
-                <button
-                  type="button"
-                  className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
-                  aria-label={`Arrastar coluna ${column.nome}`}
-                  {...sortable.attributes}
-                  {...sortable.listeners}
-                >
-                  <GripVertical className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <span
-                className={cn("h-2 w-2 shrink-0 rounded-full", indicator)}
-                style={column.corCustom ? { backgroundColor: column.corCustom } : undefined}
-                aria-hidden
-              />
-              <h3 className="truncate text-sm font-semibold">{column.nome}</h3>
-              <span className="font-mono text-[10px] text-muted-foreground">{cards.length}</span>
-            </div>
-            {column.descricao && (
-              <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-                {column.descricao}
-              </p>
-            )}
-          </div>
-          {access.canManageColumns && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="p-1 text-muted-foreground hover:text-foreground"
-                  aria-label="Ações da coluna"
-                >
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
-                  <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={index === totalColumns - 1}
-                  onClick={() => onMoveCol("right")}
-                >
-                  <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  disabled={totalColumns <= 1}
-                  onClick={() => setConfirmDelete(true)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Excluir coluna
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </header>
+    <div
+      ref={sortable.setNodeRef}
+      style={style}
+      data-col-color={colorToken}
+      className="kanban-column relative flex h-full min-h-0 flex-col overflow-hidden"
+    >
+      {/* faixa lateral colorida */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{
+          backgroundColor: column.corCustom ?? "var(--col-accent)",
+        }}
+      />
 
-        <div
-          ref={setDropRef}
-          className={cn(
-            "flex-1 space-y-2 overflow-y-auto rounded pr-1 transition",
-            isOver && "bg-institutional/5 ring-1 ring-institutional/30",
-          )}
-        >
-          <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-            {cards.map((card, ci) => (
-              <SortableCard
-                key={card.cardId}
-                card={card}
-                access={access}
-                index={ci}
-                columnCount={cards.length}
-                otherColumns={otherColumns}
-                onRemove={() => onRemoveCard(card.cardId)}
-                onMoveUp={() =>
-                  onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))
-                }
-                onMoveDown={() =>
-                  onMoveCard(card.cardId, column.id, Math.min(cards.length - 1, ci + 1))
-                }
-                onMoveToColumn={(targetId) =>
-                  onMoveCard(card.cardId, targetId, Number.MAX_SAFE_INTEGER)
-                }
-                onCopyToPanel={() => onCopyToPanel(card)}
-              />
-            ))}
-          </SortableContext>
-          {cards.length === 0 && (
-            <p className="py-6 text-center text-xs text-muted-foreground">
-              Nenhum atendimento ou cota nesta coluna.
+      {/* cabeçalho colorido */}
+      <header
+        className="flex shrink-0 items-start justify-between gap-2 border-b border-border pl-4 pr-2 py-2.5"
+        style={{ backgroundColor: "var(--col-accent-soft)" }}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {access.canManageColumns && (
+              <button
+                type="button"
+                className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
+                aria-label={`Arrastar coluna ${column.nome}`}
+                {...sortable.attributes}
+                {...sortable.listeners}
+              >
+                <GripVertical className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <h3
+              className="truncate text-sm font-semibold uppercase tracking-wide"
+              style={{ color: "var(--col-accent-strong)" }}
+            >
+              {column.nome}
+            </h3>
+            <span
+              className="ml-auto inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 font-mono text-[10px] font-semibold text-surface"
+              style={{ backgroundColor: "var(--col-accent)" }}
+              aria-label={`${cards.length} cards`}
+            >
+              {cards.length}
+            </span>
+          </div>
+          {column.descricao && (
+            <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+              {column.descricao}
             </p>
           )}
         </div>
+        {access.canManageColumns && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="rounded p-1 text-muted-foreground hover:bg-surface/60 hover:text-foreground"
+                aria-label="Ações da coluna"
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
+                <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={index === totalColumns - 1}
+                onClick={() => onMoveCol("right")}
+              >
+                <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive"
+                disabled={totalColumns <= 1}
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir coluna
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </header>
 
-        {access.canAddItems && (
-          <div className="mt-2">
-            <AddCardDialog
-              columnId={column.id}
-              workspace={workspace}
-              existingItemIds={cards.map((c) => c.itemId)}
-              onAdded={onAdded}
+      {/* corpo com rolagem interna */}
+      <div
+        ref={setDropRef}
+        className={cn(
+          "kanban-scroll flex-1 min-h-0 space-y-2 overflow-y-auto pl-4 pr-2 py-2.5 transition",
+          isOver && "bg-institutional/[0.04] ring-1 ring-inset ring-institutional/30",
+        )}
+      >
+        <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
+          {cards.map((card, ci) => (
+            <SortableCard
+              key={card.cardId}
+              card={card}
+              access={access}
+              index={ci}
+              columnCount={cards.length}
+              otherColumns={otherColumns}
+              onRemove={() => onRemoveCard(card.cardId)}
+              onMoveUp={() =>
+                onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))
+              }
+              onMoveDown={() =>
+                onMoveCard(card.cardId, column.id, Math.min(cards.length - 1, ci + 1))
+              }
+              onMoveToColumn={(targetId) =>
+                onMoveCard(card.cardId, targetId, Number.MAX_SAFE_INTEGER)
+              }
+              onCopyToPanel={() => onCopyToPanel(card)}
             />
+          ))}
+        </SortableContext>
+        {cards.length === 0 && (
+          <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-border/70 text-center text-[11px] text-muted-foreground">
+            Arraste ou adicione um card
           </div>
         )}
       </div>
+
+      {/* rodapé pegajoso — adicionar card */}
+      {access.canAddItems && (
+        <footer className="shrink-0 border-t border-border bg-surface/70 pl-4 pr-2 py-2">
+          <AddCardDialog
+            columnId={column.id}
+            workspace={workspace}
+            existingItemIds={cards.map((c) => c.itemId)}
+            onAdded={onAdded}
+          />
+        </footer>
+      )}
 
       {confirmDelete && (
         <DeleteColumnDialog
@@ -1077,6 +1101,7 @@ function SortableColumn(props: {
     </div>
   );
 }
+
 
 function ColumnDragPreview({ name }: { name: string }) {
   return (
