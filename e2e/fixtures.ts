@@ -12,7 +12,6 @@ type Fixtures = {
  * relatório do Playwright explícito.
  */
 export const test = base.extend<Fixtures>({
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   axe: async ({ page }, use) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(async (selector) => {
