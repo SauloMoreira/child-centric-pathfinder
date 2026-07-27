@@ -773,6 +773,7 @@ function ColumnsBoard({
                   access={access}
                   workspace={workspace}
                   onMoveCol={(dir) => moverCol.mutate({ columnId: c.id, direction: dir })}
+                  onEditCol={(v) => editarCol.mutate({ columnId: c.id, ...v })}
                   onDeleteCol={(destinationColumnId) =>
                     excluirCol.mutate({ columnId: c.id, destinationColumnId })
                   }
