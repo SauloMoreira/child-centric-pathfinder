@@ -29,8 +29,7 @@ function oauthApi(): OAuthApi {
 export const Route = createFileRoute("/.lovable/oauth/consent")({
   ssr: false,
   validateSearch: (s: Record<string, unknown>) => ({
-    authorization_id:
-      typeof s.authorization_id === "string" ? s.authorization_id : "",
+    authorization_id: typeof s.authorization_id === "string" ? s.authorization_id : "",
   }),
   beforeLoad: async ({ search, location }) => {
     if (!search.authorization_id) throw new Error("Requisição sem authorization_id.");
@@ -41,9 +40,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     }
   },
   loader: async ({ location }) => {
-    const authorizationId = new URLSearchParams(location.search).get(
-      "authorization_id",
-    )!;
+    const authorizationId = new URLSearchParams(location.search).get("authorization_id")!;
     const { data, error } = await oauthApi().getAuthorizationDetails(authorizationId);
     if (error) throw error;
     const immediate = data?.redirect_url ?? data?.redirect_to;
@@ -93,21 +90,18 @@ function Consent() {
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6">
       <div className="rounded-lg border border-border bg-card p-8">
         <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-          DPE-RS · Reintegra Infância
+          DPE-RS · Ágora
         </p>
-        <h1 className="mt-4 text-xl font-semibold">
-          Conectar {cliente} à sua conta institucional
-        </h1>
+        <h1 className="mt-4 text-xl font-semibold">Conectar {cliente} à sua conta institucional</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Ao aprovar, {cliente} poderá usar as ferramentas do Reintegra agindo
-          como você, respeitando seus papéis, vínculos e políticas de acesso.
-          Toda ação continuará registrada em auditoria.
+          Ao aprovar, {cliente} poderá usar as ferramentas do Ágora agindo como você, respeitando
+          seus papéis, vínculos e políticas de acesso. Toda ação continuará registrada em auditoria.
         </p>
         <div className="mt-5 flex items-start gap-3 rounded-md border border-border/70 p-4 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-4 w-4" aria-hidden />
           <p>
-            Aprove apenas clientes reconhecidos institucionalmente. Você pode
-            revogar o acesso a qualquer momento.
+            Aprove apenas clientes reconhecidos institucionalmente. Você pode revogar o acesso a
+            qualquer momento.
           </p>
         </div>
         {erro && (

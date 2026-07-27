@@ -15,18 +15,12 @@ import { OrgaoCombobox, type OrgaoOption } from "@/components/orgao-combobox";
 
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({
-    meta: [
-      { title: "Minha conta — Reintegra Infância" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Minha conta — Ágora" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: MinhaConta,
 });
 
-const passwordSchema = z
-  .string()
-  .min(10, "A senha deve ter no mínimo 10 caracteres.")
-  .max(128);
+const passwordSchema = z.string().min(10, "A senha deve ter no mínimo 10 caracteres.").max(128);
 
 function MinhaConta() {
   const { data: estado, refetch } = useEstadoInstitucional();
@@ -63,9 +57,7 @@ function MinhaConta() {
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-0.5 h-5 w-5 text-institutional" aria-hidden />
           <div className="flex-1">
-            <h2 className="text-base font-semibold">
-              Autenticação em dois fatores (MFA)
-            </h2>
+            <h2 className="text-base font-semibold">Autenticação em dois fatores (MFA)</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {isAdmin
                 ? "Obrigatório para o Administrador Institucional. Necessária para aprovar ou rejeitar solicitações de acesso."
@@ -118,12 +110,11 @@ function VinculosSection() {
   const autovincular = useMutation({
     mutationFn: async (orgaoId: string): Promise<AutoAttachResult> => {
       const idempotencyKey =
-        (globalThis.crypto as Crypto | undefined)?.randomUUID?.() ??
-        crypto.randomUUID();
-      const { data, error } = await supabase.rpc(
-        "defensor_autovincular_orgao",
-        { p_orgao_id: orgaoId, p_idempotency_key: idempotencyKey },
-      );
+        (globalThis.crypto as Crypto | undefined)?.randomUUID?.() ?? crypto.randomUUID();
+      const { data, error } = await supabase.rpc("defensor_autovincular_orgao", {
+        p_orgao_id: orgaoId,
+        p_idempotency_key: idempotencyKey,
+      });
       if (error) throw error;
       return data as unknown as AutoAttachResult;
     },
@@ -193,16 +184,16 @@ function VinculosSection() {
         <div className="flex-1">
           <h2 className="text-base font-semibold">Órgão de execução</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            A disposição da área de trabalho será alterada para aquela vinculada
-            ao órgão de execução.
+            A disposição da área de trabalho será alterada para aquela vinculada ao órgão de
+            execução.
           </p>
         </div>
       </div>
 
       {tecnico && (
         <div className="mt-4 rounded-md border border-institutional/30 bg-institutional/5 p-3 text-xs text-institutional">
-          Você possui <strong>acesso técnico global</strong>. Utilize o seletor
-          da barra lateral para escolher o órgão em uso nas telas operacionais.
+          Você possui <strong>acesso técnico global</strong>. Utilize o seletor da barra lateral
+          para escolher o órgão em uso nas telas operacionais.
         </div>
       )}
 
@@ -222,9 +213,8 @@ function VinculosSection() {
             />
             {orgaoEscolhido && !jaVinculado && (
               <p className="text-[11px] text-muted-foreground">
-                Um novo vínculo do tipo <strong>defensor</strong> será criado
-                automaticamente para este órgão. Os vínculos anteriores
-                permanecem ativos.
+                Um novo vínculo do tipo <strong>defensor</strong> será criado automaticamente para
+                este órgão. Os vínculos anteriores permanecem ativos.
               </p>
             )}
           </div>
@@ -233,9 +223,7 @@ function VinculosSection() {
             onClick={handleUsarOrgao}
             disabled={!orgaoEscolhido || !!jaEmUso || trocando}
           >
-            {trocando && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-            )}
+            {trocando && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             {jaEmUso ? "Em uso" : "Usar este órgão"}
           </Button>
         </div>
@@ -243,8 +231,8 @@ function VinculosSection() {
 
       {!tecnico && !podeAutoVincular && disponiveis.length === 0 && (
         <p className="mt-4 rounded-md border border-border bg-canvas/40 p-4 text-sm text-muted-foreground">
-          Nenhum órgão de execução está vinculado à sua conta. Contate a
-          administração institucional para receber vínculo.
+          Nenhum órgão de execução está vinculado à sua conta. Contate a administração institucional
+          para receber vínculo.
         </p>
       )}
 
@@ -257,10 +245,7 @@ function VinculosSection() {
             {disponiveis.map((o) => {
               const atual = o.orgaoId === contexto?.orgaoId;
               return (
-                <li
-                  key={o.orgaoId}
-                  className="flex items-center justify-between gap-3 p-4"
-                >
+                <li key={o.orgaoId} className="flex items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-medium">{o.nome}</p>
@@ -275,14 +260,11 @@ function VinculosSection() {
                       )}
                     </div>
                     {o.comarca && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Comarca: {o.comarca}
-                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Comarca: {o.comarca}</p>
                     )}
                     {o.dataInicio && (
                       <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                        Vinculado em{" "}
-                        {new Date(o.dataInicio).toLocaleDateString("pt-BR")}
+                        Vinculado em {new Date(o.dataInicio).toLocaleDateString("pt-BR")}
                       </p>
                     )}
                   </div>
@@ -298,10 +280,7 @@ function VinculosSection() {
                     }
                   >
                     {selecionar.isPending && (
-                      <Loader2
-                        className="mr-2 h-3.5 w-3.5 animate-spin"
-                        aria-hidden
-                      />
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden />
                     )}
                     {atual ? "Selecionado" : "Usar este órgão"}
                   </Button>
@@ -314,8 +293,6 @@ function VinculosSection() {
     </section>
   );
 }
-
-
 
 function AlterarSenhaForm() {
   const [pw, setPw] = useState("");
@@ -513,9 +490,8 @@ function MfaSetup({ onChange }: { onChange: () => void }) {
                   MFA configurado · Estado: {f.status}
                 </p>
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  Um fator verificado não eleva a sessão automaticamente. Ao
-                  entrar, informe o código do aplicativo para elevar a sessão
-                  ao nível AAL2.
+                  Um fator verificado não eleva a sessão automaticamente. Ao entrar, informe o
+                  código do aplicativo para elevar a sessão ao nível AAL2.
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => remover(f.id)} disabled={loading}>

@@ -104,10 +104,7 @@ export function PanelTabs({
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
           >
-            <SortableContext
-              items={items}
-              strategy={horizontalListSortingStrategy}
-            >
+            <SortableContext items={items} strategy={horizontalListSortingStrategy}>
               <div className="flex items-stretch gap-1 pr-1">
                 {panels.map((p) => (
                   <SortablePanelTab
@@ -123,9 +120,7 @@ export function PanelTabs({
               </div>
             </SortableContext>
             <DragOverlay>
-              {activePanel ? (
-                <PanelTabButton panel={activePanel} selected dragging />
-              ) : null}
+              {activePanel ? <PanelTabButton panel={activePanel} selected dragging /> : null}
             </DragOverlay>
           </DndContext>
         ) : (
@@ -164,7 +159,6 @@ export function PanelTabs({
   );
 }
 
-
 function SortablePanelTab({
   panel,
   selected,
@@ -180,14 +174,9 @@ function SortablePanelTab({
   onRename: () => void;
   onArchive: () => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: panel.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: panel.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -226,10 +215,7 @@ function SortablePanelTab({
                   <Pencil className="mr-2 h-4 w-4" /> Renomear
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={onArchive}
-                >
+                <DropdownMenuItem className="text-destructive" onClick={onArchive}>
                   <Trash2 className="mr-2 h-4 w-4" /> Arquivar
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -280,12 +266,7 @@ function PanelTabButton({
           )}
           aria-hidden
         />
-        <span
-          className={cn(
-            "max-w-[10rem] truncate",
-            selected && "font-semibold",
-          )}
-        >
+        <span className={cn("max-w-[10rem] truncate", selected && "font-semibold")}>
           {panel.name}
         </span>
       </button>
@@ -293,4 +274,3 @@ function PanelTabButton({
     </div>
   );
 }
-

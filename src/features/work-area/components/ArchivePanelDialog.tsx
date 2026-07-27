@@ -9,11 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  panelErrorFromUnknown,
-  useArchivePanel,
-  type PanelSummary,
-} from "@/features/work-area";
+import { panelErrorFromUnknown, useArchivePanel, type PanelSummary } from "@/features/work-area";
 
 export function ArchivePanelDialog({
   open,
@@ -51,9 +47,8 @@ export function ArchivePanelDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Arquivar Painel “{panel?.name}”?</AlertDialogTitle>
           <AlertDialogDescription>
-            Painéis com colunas ou cards não podem ser arquivados. Esvazie o
-            Painel antes de arquivar. O último Painel ativo não pode ser
-            arquivado.
+            Painéis com colunas ou cards não podem ser arquivados. Esvazie o Painel antes de
+            arquivar. O último Painel ativo não pode ser arquivado.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

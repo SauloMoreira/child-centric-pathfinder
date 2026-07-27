@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/redefinir-senha")({
   head: () => ({
     meta: [
-      { title: "Redefinir senha — Reintegra Infância" },
+      { title: "Redefinir senha — Ágora" },
       { name: "description", content: "Defina uma nova senha institucional." },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -67,12 +67,12 @@ function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-6 py-12">
       <div className="w-full max-w-md">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-          DPE-RS · Reintegra Infância
+          DPE-RS · Ágora
         </p>
         <h1 className="mt-3 text-2xl font-semibold">Redefinir senha</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Escolha uma nova senha institucional. Senhas presentes em vazamentos
-          conhecidos são recusadas automaticamente.
+          Escolha uma nova senha institucional. Senhas presentes em vazamentos conhecidos são
+          recusadas automaticamente.
         </p>
 
         {!ready ? (

@@ -42,19 +42,20 @@ function AcessoGlobal() {
     },
   });
 
-
   const mut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("registrar_acesso_orgao_externo" as never, {
-        p_orgao_id: orgao,
-        p_modulo: modulo,
-        p_finalidade: finalidade || null,
-      } as never);
+      const { error } = await supabase.rpc(
+        "registrar_acesso_orgao_externo" as never,
+        {
+          p_orgao_id: orgao,
+          p_modulo: modulo,
+          p_finalidade: finalidade || null,
+        } as never,
+      );
       if (error) throw error;
     },
     onSuccess: () => toast.success("Acesso técnico registrado em auditoria."),
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao registrar."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao registrar."),
   });
 
   return (
@@ -79,7 +80,6 @@ function AcessoGlobal() {
                   </SelectItem>
                 ))}
               </SelectContent>
-
             </Select>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -100,10 +100,7 @@ function AcessoGlobal() {
               />
             </div>
           </div>
-          <Button
-            onClick={() => mut.mutate()}
-            disabled={!orgao || mut.isPending}
-          >
+          <Button onClick={() => mut.mutate()} disabled={!orgao || mut.isPending}>
             {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             Registrar consulta a órgão externo
           </Button>

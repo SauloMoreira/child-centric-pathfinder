@@ -14,11 +14,10 @@ import { friendlyTeamError } from "@/lib/team-errors";
 export const Route = createFileRoute("/ativar-convite")({
   head: () => ({
     meta: [
-      { title: "Ativar convite — Reintegra" },
+      { title: "Ativar convite — Ágora" },
       {
         name: "description",
-        content:
-          "Defina sua senha institucional e conclua o ingresso em sua equipe.",
+        content: "Defina sua senha institucional e conclua o ingresso em sua equipe.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -116,7 +115,7 @@ function AtivarConvitePage() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="h-4 w-4" aria-hidden />
           <span className="font-mono uppercase tracking-[0.18em] text-[10px]">
-            Reintegra — Ativação de conta
+            Ágora — Ativação de conta
           </span>
         </div>
 
@@ -131,8 +130,8 @@ function AtivarConvitePage() {
             <CardHeader>
               <CardTitle>Nenhum convite pendente</CardTitle>
               <CardDescription>
-                Não encontramos um convite ativo para este e-mail. Solicite ao
-                Defensor responsável um novo envio.
+                Não encontramos um convite ativo para este e-mail. Solicite ao Defensor responsável
+                um novo envio.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -141,8 +140,8 @@ function AtivarConvitePage() {
             <CardHeader>
               <CardTitle>Convite expirado</CardTitle>
               <CardDescription>
-                Este convite não é mais válido. Solicite reenvio ao Defensor
-                responsável pela sua equipe.
+                Este convite não é mais válido. Solicite reenvio ao Defensor responsável pela sua
+                equipe.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -151,8 +150,7 @@ function AtivarConvitePage() {
             <CardHeader>
               <CardTitle>Bem-vindo(a), {convite.nome_completo}</CardTitle>
               <CardDescription>
-                Você foi convidado(a) para integrar a equipe de{" "}
-                <b>{convite.orgao.nome}</b>
+                Você foi convidado(a) para integrar a equipe de <b>{convite.orgao.nome}</b>
                 {convite.orgao.comarca ? ` · ${convite.orgao.comarca}` : ""}.
               </CardDescription>
             </CardHeader>
@@ -169,9 +167,7 @@ function AtivarConvitePage() {
                       onChange={(e) => setSenha(e.target.value)}
                       minLength={10}
                     />
-                    <p className="text-[11px] text-muted-foreground">
-                      Mínimo de 10 caracteres.
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">Mínimo de 10 caracteres.</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="senha2">Confirme a senha</Label>
@@ -185,17 +181,14 @@ function AtivarConvitePage() {
                     />
                   </div>
                   <Button type="submit" disabled={salvandoSenha} className="w-full">
-                    {salvandoSenha && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                    {salvandoSenha && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Definir senha
                   </Button>
                 </form>
               ) : (
                 <>
                   <div className="flex items-center gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success-foreground">
-                    <CheckCircle2 className="h-4 w-4" aria-hidden /> Senha
-                    definida
+                    <CheckCircle2 className="h-4 w-4" aria-hidden /> Senha definida
                   </div>
 
                   <div className="flex items-start gap-2">
@@ -208,9 +201,8 @@ function AtivarConvitePage() {
                       htmlFor="aceite"
                       className="text-xs leading-relaxed text-muted-foreground"
                     >
-                      Declaro que li e aceito os termos institucionais de uso do
-                      sistema Reintegra e o dever de sigilo funcional sobre os
-                      dados acessados.
+                      Declaro que li e aceito os termos institucionais de uso do sistema Ágora e o
+                      dever de sigilo funcional sobre os dados acessados.
                     </Label>
                   </div>
 
@@ -219,9 +211,7 @@ function AtivarConvitePage() {
                     disabled={!aceite || complete.isPending}
                     onClick={ativar}
                   >
-                    {complete.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                    {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Concluir ativação
                   </Button>
                 </>

@@ -19,10 +19,11 @@ export default defineTool({
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async ({ nome, comarca, idempotency_key }, ctx) => {
     if (!ctx.isAuthenticated()) return naoAutenticado();
-    const { data, error } = await supabaseForUser(ctx).rpc(
-      "admin_create_orgao_execucao",
-      { p_nome: nome, p_comarca: comarca, p_idempotency_key: idempotency_key },
-    );
+    const { data, error } = await supabaseForUser(ctx).rpc("admin_create_orgao_execucao", {
+      p_nome: nome,
+      p_comarca: comarca,
+      p_idempotency_key: idempotency_key,
+    });
     if (error) return erro(error.message);
     return { ...texto(data), structuredContent: { resultado: data } };
   },

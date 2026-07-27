@@ -47,11 +47,13 @@ import { cn } from "@/lib/utils";
 
 function iniciais(nome: string | null | undefined) {
   const src = (nome ?? "US").trim();
-  return src
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase())
-    .join("") || "US";
+  return (
+    src
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase())
+      .join("") || "US"
+  );
 }
 
 function labelFuncao(v: string | null | undefined, outra?: string | null) {
@@ -61,9 +63,7 @@ function labelFuncao(v: string | null | undefined, outra?: string | null) {
 }
 
 export function MemberCard({ m }: { m: TeamMember }) {
-  const [confirm, setConfirm] = useState<null | "block" | "reactivate" | "end">(
-    null,
-  );
+  const [confirm, setConfirm] = useState<null | "block" | "reactivate" | "end">(null);
   const [motivo, setMotivo] = useState("");
   const block = useBlockMember();
   const reactivate = useReactivateMember();
@@ -106,9 +106,7 @@ export function MemberCard({ m }: { m: TeamMember }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-sm font-medium">
-              {m.nome_completo ?? "Sem nome"}
-            </p>
+            <p className="truncate text-sm font-medium">{m.nome_completo ?? "Sem nome"}</p>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -168,17 +166,13 @@ export function MemberCard({ m }: { m: TeamMember }) {
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">
             <Clock className="mr-1 inline h-3 w-3" aria-hidden />
-            Vínculo em{" "}
-            {format(new Date(m.vinculado_em), "dd/MM/yyyy", { locale: ptBR })} ·
-            Último acesso {ultimoAcesso}
+            Vínculo em {format(new Date(m.vinculado_em), "dd/MM/yyyy", { locale: ptBR })} · Último
+            acesso {ultimoAcesso}
           </p>
         </div>
       </div>
 
-      <AlertDialog
-        open={confirm !== null}
-        onOpenChange={(o) => !o && setConfirm(null)}
-      >
+      <AlertDialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -282,10 +276,7 @@ export function InvitationCard({ inv }: { inv: TeamInvitation }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={handleResend}
-                  disabled={resend.isPending}
-                >
+                <DropdownMenuItem onSelect={handleResend} disabled={resend.isPending}>
                   <RefreshCw className="mr-2 h-4 w-4" /> Reenviar convite
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -305,10 +296,7 @@ export function InvitationCard({ inv }: { inv: TeamInvitation }) {
             <Badge variant="outline" className="text-[10px]">
               {labelFuncao(inv.funcao_interna, inv.outra_funcao)}
             </Badge>
-            <Badge
-              variant={expirado ? "destructive" : "secondary"}
-              className="text-[10px]"
-            >
+            <Badge variant={expirado ? "destructive" : "secondary"} className="text-[10px]">
               {label}
             </Badge>
             {inv.resend_count > 0 && (
@@ -346,8 +334,8 @@ export function InvitationCard({ inv }: { inv: TeamInvitation }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar convite</AlertDialogTitle>
             <AlertDialogDescription>
-              O link enviado deixará de ativar o vínculo. O registro permanecerá
-              no histórico institucional.
+              O link enviado deixará de ativar o vínculo. O registro permanecerá no histórico
+              institucional.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-1.5">
@@ -415,9 +403,7 @@ export function KanbanColumn({
             {title}
           </p>
         </div>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
-          {count}
-        </span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">{count}</span>
       </header>
       <div className="flex-1 space-y-2 overflow-y-auto p-2">
         {count === 0 ? (
@@ -443,10 +429,7 @@ export function EmptyState({
 }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center py-16 text-center">
-      <div
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-muted"
-        aria-hidden
-      >
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted" aria-hidden>
         <UserPlus className="h-5 w-5 text-muted-foreground" />
       </div>
       <h3 className="mt-4 text-base font-medium">{title}</h3>

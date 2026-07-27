@@ -19,33 +19,18 @@ export type ContextoOrgao = {
 
 export type EstadoInstitucional = {
   user_id: string;
-  papel:
-    | "admin_tecnico"
-    | "admin_institucional"
-    | "defensor_publico"
-    | "membro_equipe"
-    | null;
+  papel: "admin_tecnico" | "admin_institucional" | "defensor_publico" | "membro_equipe" | null;
   profile: {
     nome_completo: string | null;
     matricula: string | null;
     cargo: string | null;
     telefone: string | null;
-    status:
-      | "aguardando_dados"
-      | "aguardando_aprovacao"
-      | "ativo"
-      | "suspenso"
-      | "inativo";
+    status: "aguardando_dados" | "aguardando_aprovacao" | "ativo" | "suspenso" | "inativo";
     ativo: boolean;
     created_at: string;
     updated_at: string;
   } | null;
-  roles: Array<
-    | "admin_tecnico"
-    | "admin_institucional"
-    | "defensor_publico"
-    | "membro_equipe"
-  >;
+  roles: Array<"admin_tecnico" | "admin_institucional" | "defensor_publico" | "membro_equipe">;
   aal2: boolean;
   acessoGlobal: boolean;
   contextoAtual: ContextoOrgao | null;
@@ -82,8 +67,7 @@ export function isAdminTecnico(estado?: EstadoInstitucional) {
 }
 export function isAdmin(estado?: EstadoInstitucional) {
   return (
-    !!estado?.roles?.includes("admin_institucional") ||
-    !!estado?.roles?.includes("admin_tecnico")
+    !!estado?.roles?.includes("admin_institucional") || !!estado?.roles?.includes("admin_tecnico")
   );
 }
 export function isAdminInstitucionalStrict(estado?: EstadoInstitucional) {

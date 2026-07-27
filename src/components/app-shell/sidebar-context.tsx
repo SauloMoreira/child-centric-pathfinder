@@ -76,17 +76,13 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   // Atalho Ctrl/Cmd + B (somente desktop; ignora inputs/edições).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      const isToggle = (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey &&
-        (e.key === "b" || e.key === "B");
+      const isToggle =
+        (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "b" || e.key === "B");
       if (!isToggle) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      if (
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        target?.isContentEditable
-      ) return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable)
+        return;
       if (window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches) return;
       e.preventDefault();
       toggleCollapsed();

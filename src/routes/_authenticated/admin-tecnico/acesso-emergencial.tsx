@@ -45,15 +45,17 @@ function AcessoEmergencial() {
     },
   });
 
-
   const mut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("registrar_break_glass" as never, {
-        p_orgao_id: orgao || null,
-        p_justificativa: motivo,
-        p_chamado: chamado,
-        p_prazo_minutos: prazo,
-      } as never);
+      const { data, error } = await supabase.rpc(
+        "registrar_break_glass" as never,
+        {
+          p_orgao_id: orgao || null,
+          p_justificativa: motivo,
+          p_chamado: chamado,
+          p_prazo_minutos: prazo,
+        } as never,
+      );
       if (error) throw error;
       return data as { correlation_id: string; expira_em: string };
     },
@@ -79,10 +81,9 @@ function AcessoEmergencial() {
         <div className="flex items-start gap-2">
           <Siren className="mt-0.5 h-4 w-4 text-institutional" aria-hidden />
           <p className="text-xs text-muted-foreground">
-            O acesso emergencial <strong>não</strong> utiliza service_role no
-            frontend. Ele apenas registra em auditoria a justificativa e o
-            prazo declarados pelo Administrador Técnico e emite alerta no
-            painel administrativo.
+            O acesso emergencial <strong>não</strong> utiliza service_role no frontend. Ele apenas
+            registra em auditoria a justificativa e o prazo declarados pelo Administrador Técnico e
+            emite alerta no painel administrativo.
           </p>
         </div>
         <div className="mt-4 space-y-3 text-sm">
@@ -101,7 +102,6 @@ function AcessoEmergencial() {
                   </SelectItem>
                 ))}
               </SelectContent>
-
             </Select>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -128,11 +128,7 @@ function AcessoEmergencial() {
             <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               Justificativa (mínimo 20 caracteres)
             </label>
-            <Textarea
-              rows={4}
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-            />
+            <Textarea rows={4} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           </div>
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
             <input

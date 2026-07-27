@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  Printer,
-  Save,
-  Share2,
-  Archive,
-  CheckCircle2,
-} from "lucide-react";
+import { ArrowLeft, Printer, Save, Share2, Archive, CheckCircle2 } from "lucide-react";
 import {
   arquivarItem,
   atualizarRascunho,
@@ -32,7 +25,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/biblioteca/$itemId")({
   head: () => ({
     meta: [
-      { title: "Editar modelo — Reintegra Infância" },
+      { title: "Editar modelo — Ágora" },
       { name: "description", content: "Edição de modelo institucional da biblioteca." },
     ],
   }),
@@ -45,13 +38,10 @@ function mensagemErro(e: unknown, fallback: string): string {
     return "O modelo foi alterado em outra aba. Recarregue para continuar.";
   if (msg.includes("CONTENT_ARCHIVED"))
     return "Este modelo está arquivado e não pode ser alterado.";
-  if (msg.includes("NOT_OWNER"))
-    return "Você não é o proprietário deste modelo.";
-  if (msg.includes("CONTENT_NOT_FOUND"))
-    return "Modelo não encontrado.";
+  if (msg.includes("NOT_OWNER")) return "Você não é o proprietário deste modelo.";
+  if (msg.includes("CONTENT_NOT_FOUND")) return "Modelo não encontrado.";
   return msg || fallback;
 }
-
 
 function ItemEditor() {
   const { itemId } = Route.useParams();
@@ -97,8 +87,7 @@ function ItemEditor() {
       qc.invalidateQueries({ queryKey: ["biblioteca-item", itemId] });
       qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
     },
-    onError: (e: unknown) =>
-      toast.error(mensagemErro(e, "Falha ao salvar")),
+    onError: (e: unknown) => toast.error(mensagemErro(e, "Falha ao salvar")),
   });
 
   const publicar = useMutation({
@@ -114,8 +103,7 @@ function ItemEditor() {
       qc.invalidateQueries({ queryKey: ["biblioteca-item", itemId] });
       qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
     },
-    onError: (e: unknown) =>
-      toast.error(mensagemErro(e, "Falha ao publicar")),
+    onError: (e: unknown) => toast.error(mensagemErro(e, "Falha ao publicar")),
   });
 
   const arquivar = useMutation({
@@ -129,15 +117,10 @@ function ItemEditor() {
       toast.success("Modelo arquivado");
       navigate({ to: "/biblioteca" });
     },
-    onError: (e: unknown) =>
-      toast.error(mensagemErro(e, "Falha ao arquivar")),
+    onError: (e: unknown) => toast.error(mensagemErro(e, "Falha ao arquivar")),
   });
 
-
-  const kindLabel = useMemo(
-    () => (item?.kind === "cota" ? "Cota" : "Atendimento"),
-    [item?.kind],
-  );
+  const kindLabel = useMemo(() => (item?.kind === "cota" ? "Cota" : "Atendimento"), [item?.kind]);
 
   if (itemQuery.isLoading) {
     return <p className="p-8 text-sm text-muted-foreground">Carregando…</p>;
@@ -147,7 +130,9 @@ function ItemEditor() {
       <div className="p-8">
         <p className="text-sm text-muted-foreground">Modelo não encontrado.</p>
         <Button asChild variant="ghost" className="mt-4">
-          <Link to="/biblioteca"><ArrowLeft className="h-4 w-4 mr-2" /> Voltar</Link>
+          <Link to="/biblioteca">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+          </Link>
         </Button>
       </div>
     );
@@ -199,7 +184,9 @@ function ItemEditor() {
 
         <div className="mt-4 grid gap-4">
           <div>
-            <Label htmlFor="titulo" className="print:hidden">Título</Label>
+            <Label htmlFor="titulo" className="print:hidden">
+              Título
+            </Label>
             <Input
               id="titulo"
               value={titulo}
@@ -209,7 +196,9 @@ function ItemEditor() {
           </div>
 
           <div>
-            <Label htmlFor="texto" className="print:hidden">Conteúdo</Label>
+            <Label htmlFor="texto" className="print:hidden">
+              Conteúdo
+            </Label>
             <Textarea
               id="texto"
               value={texto}
@@ -223,8 +212,13 @@ function ItemEditor() {
           <div className="flex items-end gap-3 print:hidden">
             <div className="flex-1 max-w-xs">
               <Label>Visibilidade ao publicar</Label>
-              <Select value={visibility} onValueChange={(v) => setVisibility(v as ContentVisibility)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as ContentVisibility)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="privado">Privado (só eu)</SelectItem>
                   <SelectItem value="orgao">Órgão atual</SelectItem>
@@ -241,12 +235,10 @@ function ItemEditor() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground print:hidden">
-        Modelos institucionais devem permanecer genéricos: nunca inclua nomes,
-        CPFs, endereços, números de processo ou qualquer dado pessoal ou de
-        caso concreto. Respostas preenchidas durante o uso permanecem apenas
-        no navegador e não são enviadas ao Orienta DPE.
+        Modelos institucionais devem permanecer genéricos: nunca inclua nomes, CPFs, endereços,
+        números de processo ou qualquer dado pessoal ou de caso concreto. Respostas preenchidas
+        durante o uso permanecem apenas no navegador e não são enviadas ao Orienta DPE.
       </p>
-
     </div>
   );
 }

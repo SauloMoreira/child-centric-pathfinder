@@ -26,10 +26,13 @@ function AdminsTecnico() {
 
   const mut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("promover_admin_tecnico" as never, {
-        p_target_user_id: alvo,
-        p_justificativa: motivo,
-      } as never);
+      const { error } = await supabase.rpc(
+        "promover_admin_tecnico" as never,
+        {
+          p_target_user_id: alvo,
+          p_justificativa: motivo,
+        } as never,
+      );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -38,8 +41,7 @@ function AdminsTecnico() {
       setMotivo("");
       setConfirma(false);
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha na promoção."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha na promoção."),
   });
 
   return (
@@ -53,8 +55,8 @@ function AdminsTecnico() {
           Promover Administrador Técnico
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Informe o identificador (user_id) do usuário alvo e a justificativa
-          institucional. Auto-promoção é bloqueada no banco.
+          Informe o identificador (user_id) do usuário alvo e a justificativa institucional.
+          Auto-promoção é bloqueada no banco.
         </p>
         <div className="mt-4 space-y-3">
           <div className="space-y-1">
@@ -85,23 +87,16 @@ function AdminsTecnico() {
               checked={confirma}
               onChange={(e) => setConfirma(e.target.checked)}
             />
-            Confirmo, sob responsabilidade funcional, que esta promoção é
-            legítima e será registrada em auditoria.
+            Confirmo, sob responsabilidade funcional, que esta promoção é legítima e será registrada
+            em auditoria.
           </label>
         </div>
         <div className="mt-4">
           <Button
             onClick={() => mut.mutate()}
-            disabled={
-              mut.isPending ||
-              !confirma ||
-              alvo.length < 32 ||
-              motivo.trim().length < 20
-            }
+            disabled={mut.isPending || !confirma || alvo.length < 32 || motivo.trim().length < 20}
           >
-            {mut.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-            )}
+            {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             Confirmar promoção
           </Button>
         </div>

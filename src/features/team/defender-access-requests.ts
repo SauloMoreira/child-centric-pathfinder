@@ -1,11 +1,6 @@
 // Domínio: solicitações de acesso Membro → Defensor Público.
 // O membro não cria vínculo diretamente: solicita, e o Defensor aprova/recusa.
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { defenderBondsKeys } from "@/features/team/defender-bonds";
 
@@ -41,8 +36,7 @@ export type MyPendingRequest = {
 // ---------- Query keys ----------
 
 export const accessRequestKeys = {
-  defenderCandidates: (termo: string) =>
-    ["access-requests", "defender-candidates", termo] as const,
+  defenderCandidates: (termo: string) => ["access-requests", "defender-candidates", termo] as const,
   pendingForDefender: ["access-requests", "pending-for-defender"] as const,
   minePending: ["access-requests", "mine-pending"] as const,
 };
@@ -71,9 +65,7 @@ export function usePendingRequestsForDefender(
   return useQuery<PendingRequestForDefender[]>({
     queryKey: accessRequestKeys.pendingForDefender,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "listar_solicitacoes_defensor_pendentes" as never,
-      );
+      const { data, error } = await supabase.rpc("listar_solicitacoes_defensor_pendentes" as never);
       if (error) throw error;
       return (data as { ok: true; items: PendingRequestForDefender[] }).items;
     },
@@ -86,9 +78,7 @@ export function useMyPendingRequests() {
   return useQuery<MyPendingRequest[]>({
     queryKey: accessRequestKeys.minePending,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "listar_minhas_solicitacoes_defensor" as never,
-      );
+      const { data, error } = await supabase.rpc("listar_minhas_solicitacoes_defensor" as never);
       if (error) throw error;
       return (data as { ok: true; items: MyPendingRequest[] }).items;
     },

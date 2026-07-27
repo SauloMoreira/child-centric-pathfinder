@@ -13,9 +13,7 @@ export function FormSection({
     <section className="space-y-3">
       <header>
         <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-        {description && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
       </header>
       <div className="space-y-3">{children}</div>
     </section>

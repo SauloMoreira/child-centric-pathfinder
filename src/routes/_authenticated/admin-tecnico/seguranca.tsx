@@ -20,8 +20,8 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/seguranca")(
             Autenticação
           </p>
           <p className="mt-2 text-sm">
-            Provedor único: e-mail/senha. MFA (TOTP) obrigatório para
-            administradores. Confirmação de identidade em ações críticas.
+            Provedor único: e-mail/senha. MFA (TOTP) obrigatório para administradores. Confirmação
+            de identidade em ações críticas.
           </p>
         </div>
         <div className="surface-panel p-4">
@@ -29,9 +29,8 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/seguranca")(
             Sessões
           </p>
           <p className="mt-2 text-sm">
-            Sessões anteriores são encerradas na alteração de senha. Bloqueio
-            automático após tentativas suspeitas. Nenhum token é armazenado
-            fora do gerenciador do Cloud.
+            Sessões anteriores são encerradas na alteração de senha. Bloqueio automático após
+            tentativas suspeitas. Nenhum token é armazenado fora do gerenciador do Cloud.
           </p>
         </div>
         <div className="surface-panel p-4">
@@ -39,8 +38,8 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/seguranca")(
             RLS
           </p>
           <p className="mt-2 text-sm">
-            Acesso global do Administrador Técnico é concedido por policies
-            explícitas — RLS nunca é desabilitado.
+            Acesso global do Administrador Técnico é concedido por policies explícitas — RLS nunca é
+            desabilitado.
           </p>
         </div>
         <div className="surface-panel p-4">
@@ -48,8 +47,8 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/seguranca")(
             Segredos
           </p>
           <p className="mt-2 text-sm">
-            service_role permanece exclusivamente no servidor. Nenhuma chave
-            aparece no bundle do navegador.
+            service_role permanece exclusivamente no servidor. Nenhuma chave aparece no bundle do
+            navegador.
           </p>
         </div>
       </div>

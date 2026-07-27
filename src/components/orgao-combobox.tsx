@@ -48,17 +48,12 @@ export function OrgaoCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const selected = useMemo(
-    () => options.find((o) => o.id === value) ?? null,
-    [options, value],
-  );
+  const selected = useMemo(() => options.find((o) => o.id === value) ?? null, [options, value]);
 
   const filtered = useMemo(() => {
     const q = norm(query);
     if (!q) return options;
-    return options.filter(
-      (o) => norm(o.nome).includes(q) || norm(o.comarca ?? "").includes(q),
-    );
+    return options.filter((o) => norm(o.nome).includes(q) || norm(o.comarca ?? "").includes(q));
   }, [options, query]);
 
   return (
@@ -80,9 +75,7 @@ export function OrgaoCombobox({
             <span className="flex flex-col items-start text-left">
               <span className="text-sm">{selected.nome}</span>
               {selected.comarca && (
-                <span className="text-xs text-muted-foreground">
-                  Comarca: {selected.comarca}
-                </span>
+                <span className="text-xs text-muted-foreground">Comarca: {selected.comarca}</span>
               )}
             </span>
           ) : (
@@ -97,11 +90,7 @@ export function OrgaoCombobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={placeholder}
-            value={query}
-            onValueChange={setQuery}
-          />
+          <CommandInput placeholder={placeholder} value={query} onValueChange={setQuery} />
           <CommandList>
             {loading && (
               <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
@@ -125,17 +114,12 @@ export function OrgaoCombobox({
                     }}
                   >
                     <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === o.id ? "opacity-100" : "opacity-0",
-                      )}
+                      className={cn("mr-2 h-4 w-4", value === o.id ? "opacity-100" : "opacity-0")}
                     />
                     <div className="flex flex-col">
                       <span>{o.nome}</span>
                       {o.comarca && (
-                        <span className="text-xs text-muted-foreground">
-                          Comarca: {o.comarca}
-                        </span>
+                        <span className="text-xs text-muted-foreground">Comarca: {o.comarca}</span>
                       )}
                     </div>
                   </CommandItem>

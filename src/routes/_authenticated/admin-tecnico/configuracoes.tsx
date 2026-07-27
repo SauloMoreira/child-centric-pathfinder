@@ -15,9 +15,8 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/configuracoe
       requireAal2
     >
       <div className="surface-panel p-6 text-sm text-muted-foreground">
-        Interface de configurações e catálogos entrará na Fase 2. As tabelas
-        de suporte serão criadas por migrations versionadas e alteradas
-        exclusivamente por RPC administrativa.
+        Interface de configurações e catálogos entrará na Fase 2. As tabelas de suporte serão
+        criadas por migrations versionadas e alteradas exclusivamente por RPC administrativa.
       </div>
     </TecnicoPage>
   ),

@@ -9,7 +9,7 @@ import { ShieldAlert, Building2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/admin/orgaos")({
   head: () => ({
     meta: [
-      { title: "Órgãos de execução — Reintegra Infância" },
+      { title: "Órgãos de execução — Ágora" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -32,7 +32,12 @@ function OrgaosAdmin() {
     enabled: isAdmin(estado),
   });
 
-  if (le) return <div className="p-8"><Skeleton className="h-8 w-64" /></div>;
+  if (le)
+    return (
+      <div className="p-8">
+        <Skeleton className="h-8 w-64" />
+      </div>
+    );
   if (!isAdmin(estado)) {
     return (
       <div className="mx-auto max-w-xl p-8">
@@ -63,15 +68,17 @@ function OrgaosAdmin() {
           </p>
           <h1 className="mt-2 text-2xl font-semibold">Órgãos de execução</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Unidades cadastradas da DPE-RS. Novos órgãos são criados pela
-            Administração Técnica ou durante a aprovação de solicitações.
+            Unidades cadastradas da DPE-RS. Novos órgãos são criados pela Administração Técnica ou
+            durante a aprovação de solicitações.
           </p>
         </div>
       </header>
 
       <div className="mt-6 surface-panel overflow-hidden">
         {orgaosQ.isLoading ? (
-          <div className="p-6"><Skeleton className="h-6 w-full" /></div>
+          <div className="p-6">
+            <Skeleton className="h-6 w-full" />
+          </div>
         ) : orgaosQ.data && orgaosQ.data.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
             <Building2 className="h-8 w-8 text-muted-foreground" aria-hidden />

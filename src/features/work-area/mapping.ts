@@ -1,9 +1,4 @@
-import type {
-  PanelSummary,
-  WorkArea,
-  WorkspaceAccess,
-  PanelAccessMode,
-} from "./types";
+import type { PanelSummary, WorkArea, WorkspaceAccess, PanelAccessMode } from "./types";
 
 // Aceita rows tanto do RPC de leitura (snake_case) quanto do ensure (camelCase).
 type PanelRowRaw = {
@@ -30,19 +25,14 @@ type WorkAreaRawResponse = {
   access?: { accessMode?: PanelAccessMode };
 };
 
-export function mapPanelRow(
-  defenderUserId: string,
-  row: PanelRowRaw,
-): PanelSummary {
+export function mapPanelRow(defenderUserId: string, row: PanelRowRaw): PanelSummary {
   return {
     id: row.id,
     defenderUserId,
     name: row.name ?? row.nome ?? "",
     icon: row.icon ?? row.icone ?? null,
     position: Number(row.position ?? row.orderPosition ?? row.order_position ?? 0),
-    optimisticVersion: Number(
-      row.optimisticVersion ?? row.optimistic_version ?? 1,
-    ),
+    optimisticVersion: Number(row.optimisticVersion ?? row.optimistic_version ?? 1),
     archivedAt: row.archivedAt ?? row.archived_at ?? null,
   };
 }
@@ -51,8 +41,7 @@ function accessFromMode(mode: PanelAccessMode): WorkspaceAccess {
   const isOwner = mode === "owner";
   const isTechnicalAdmin = mode === "technical_admin";
   const canEdit = isOwner || isTechnicalAdmin;
-  const isReadonly =
-    mode === "team_readonly" || mode === "technical_readonly";
+  const isReadonly = mode === "team_readonly" || mode === "technical_readonly";
   const canView = canEdit || isReadonly;
   return {
     canView,
@@ -66,8 +55,7 @@ function accessFromMode(mode: PanelAccessMode): WorkspaceAccess {
 }
 
 export function mapWorkArea(res: WorkAreaRawResponse): WorkArea {
-  const defenderUserId =
-    res.defenderUserId ?? res.defensor_user_id ?? "";
+  const defenderUserId = res.defenderUserId ?? res.defensor_user_id ?? "";
   const panels = (res.panels ?? [])
     .map((p) => mapPanelRow(defenderUserId, p))
     .sort((a, b) => a.position - b.position);

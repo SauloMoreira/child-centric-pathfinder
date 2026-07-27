@@ -20,12 +20,7 @@ export const createTeamMemberSchema = z
       .min(5, "Informe o nome completo.")
       .max(200, "O nome deve possuir no máximo 200 caracteres.")
       .transform((v) => v.replace(/\s+/g, " ")),
-    email: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .email("Informe um e-mail válido.")
-      .max(320),
+    email: z.string().trim().toLowerCase().email("Informe um e-mail válido.").max(320),
     matricula: z
       .string()
       .trim()

@@ -17,10 +17,10 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, limite }, ctx) => {
     if (!ctx.isAuthenticated()) return naoAutenticado();
-    const { data, error } = await supabaseForUser(ctx).rpc(
-      "listar_solicitacoes_acesso",
-      { p_status: status, p_limit: limite ?? 50 },
-    );
+    const { data, error } = await supabaseForUser(ctx).rpc("listar_solicitacoes_acesso", {
+      p_status: status,
+      p_limit: limite ?? 50,
+    });
     if (error) return erro(error.message);
     return {
       ...texto(data ?? []),

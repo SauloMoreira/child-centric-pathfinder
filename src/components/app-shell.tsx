@@ -26,12 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
@@ -47,7 +42,6 @@ import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarState } from "@/components/app-shell/sidebar-context";
 import { OperationalOrgSwitcher } from "@/components/app-shell/operational-org-switcher";
 import { DefenderContextSwitcher } from "@/components/app-shell/defender-context-switcher";
-
 
 type NavItem = {
   to: string;
@@ -92,7 +86,12 @@ function AppShellInner({ children }: { children: ReactNode }) {
         id: "operacional",
         label: "Trabalho",
         items: [
-          { to: "/area-de-trabalho", label: "Área de trabalho", icon: LayoutDashboard, visible: true },
+          {
+            to: "/area-de-trabalho",
+            label: "Área de trabalho",
+            icon: LayoutDashboard,
+            visible: true,
+          },
           { to: "/biblioteca", label: "Biblioteca", icon: BookOpen, visible: true },
           {
             to: "/minha-equipe",
@@ -132,17 +131,52 @@ function AppShellInner({ children }: { children: ReactNode }) {
         label: "Administração Técnica",
         variant: "tecnica",
         items: [
-          { to: "/admin-tecnico/painel", label: "Central técnica", icon: Terminal, visible: tecnico },
+          {
+            to: "/admin-tecnico/painel",
+            label: "Central técnica",
+            icon: Terminal,
+            visible: tecnico,
+          },
           { to: "/admin-tecnico/usuarios", label: "Usuários", icon: Users, visible: tecnico },
-          { to: "/admin-tecnico/administradores", label: "Administradores", icon: UsersRound, visible: tecnico },
+          {
+            to: "/admin-tecnico/administradores",
+            label: "Administradores",
+            icon: UsersRound,
+            visible: tecnico,
+          },
           { to: "/admin-tecnico/orgaos", label: "Órgãos", icon: Building2, visible: tecnico },
           { to: "/admin-tecnico/vinculos", label: "Vínculos", icon: Link2, visible: tecnico },
           { to: "/admin-tecnico/seguranca", label: "Segurança", icon: Lock, visible: tecnico },
-          { to: "/admin-tecnico/auditoria", label: "Auditoria", icon: ScrollText, visible: tecnico },
-          { to: "/admin-tecnico/configuracoes", label: "Configurações", icon: Sliders, visible: tecnico },
-          { to: "/admin-tecnico/diagnosticos", label: "Diagnósticos", icon: Activity, visible: tecnico },
-          { to: "/admin-tecnico/acesso-global", label: "Acesso global", icon: Globe2, visible: tecnico },
-          { to: "/admin-tecnico/acesso-emergencial", label: "Acesso emergencial", icon: Siren, visible: tecnico },
+          {
+            to: "/admin-tecnico/auditoria",
+            label: "Auditoria",
+            icon: ScrollText,
+            visible: tecnico,
+          },
+          {
+            to: "/admin-tecnico/configuracoes",
+            label: "Configurações",
+            icon: Sliders,
+            visible: tecnico,
+          },
+          {
+            to: "/admin-tecnico/diagnosticos",
+            label: "Diagnósticos",
+            icon: Activity,
+            visible: tecnico,
+          },
+          {
+            to: "/admin-tecnico/acesso-global",
+            label: "Acesso global",
+            icon: Globe2,
+            visible: tecnico,
+          },
+          {
+            to: "/admin-tecnico/acesso-emergencial",
+            label: "Acesso emergencial",
+            icon: Siren,
+            visible: tecnico,
+          },
         ],
       },
     ],
@@ -162,9 +196,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", search: {}, replace: true });
   }
 
-  const nome =
-    estado?.profile?.nome_completo ??
-    (estado?.user_id ? "Usuário institucional" : "");
+  const nome = estado?.profile?.nome_completo ?? (estado?.user_id ? "Usuário institucional" : "");
   const initials = (nome || "US")
     .split(" ")
     .filter(Boolean)
@@ -191,11 +223,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
   );
 
   const sidebarOrgBlock = (
-    <SidebarOrgBlock
-      collapsed={collapsed && !isMobile}
-      estado={estado}
-      tecnico={tecnico}
-    />
+    <SidebarOrgBlock collapsed={collapsed && !isMobile} estado={estado} tecnico={tecnico} />
   );
 
   const sidebarUserBlock = (
@@ -204,7 +232,9 @@ function AppShellInner({ children }: { children: ReactNode }) {
       nome={nome}
       initials={initials}
       papel={papel}
-      comarca={estado?.orgao_ativo?.comarca ?? (tecnico ? "acesso técnico global" : "sem vínculo ativo")}
+      comarca={
+        estado?.orgao_ativo?.comarca ?? (tecnico ? "acesso técnico global" : "sem vínculo ativo")
+      }
       onSignOut={handleSignOut}
     />
   );
@@ -226,9 +256,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
           side="left"
           className="w-72 border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
         >
-          <DialogPrimitive.Title className="sr-only">
-            Navegação principal
-          </DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">Navegação principal</DialogPrimitive.Title>
 
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
@@ -239,7 +267,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
           </div>
         </SheetContent>
       </Sheet>
-
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-12 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden lg:px-8">
@@ -280,8 +307,8 @@ function SidebarOrgBlock({
   tecnico: boolean;
 }) {
   const { toggleCollapsed } = useSidebarState();
-  const nomeOrgao = estado?.orgao_ativo?.nome
-    ?? (tecnico ? "Acesso técnico global" : "Sem vínculo ativo");
+  const nomeOrgao =
+    estado?.orgao_ativo?.nome ?? (tecnico ? "Acesso técnico global" : "Sem vínculo ativo");
 
   if (collapsed) {
     return (
@@ -320,7 +347,6 @@ function SidebarOrgBlock({
   );
 }
 
-
 function DesktopSidebar({ children }: { children: ReactNode }) {
   const { collapsed } = useSidebarState();
   return (
@@ -340,8 +366,7 @@ function DesktopSidebar({ children }: { children: ReactNode }) {
 
 function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobile?: boolean }) {
   const { toggleCollapsed } = useSidebarState();
-  const isMac =
-    typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const shortcut = isMac ? "⌘B" : "Ctrl+B";
   const tooltip = collapsed ? "Expandir menu lateral" : "Recolher menu lateral";
   return (
@@ -354,7 +379,7 @@ function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobi
       <Link
         to="/area-de-trabalho"
         className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}
-        aria-label="Reintegra Infância"
+        aria-label="Ágora"
       >
         <span
           aria-hidden
@@ -414,10 +439,7 @@ function SidebarNav({
   return (
     <nav
       id="sidebar-nav"
-      className={cn(
-        "flex-1 overflow-y-auto",
-        collapsed ? "space-y-2 p-2" : "space-y-4 p-3",
-      )}
+      className={cn("flex-1 overflow-y-auto", collapsed ? "space-y-2 p-2" : "space-y-4 p-3")}
     >
       {groups.map((group, groupIdx) => {
         const visibleItems = group.items.filter((n) => n.visible);
@@ -586,11 +608,7 @@ function SidebarUserBlock({
   );
 }
 
-function StatusChip({
-  estado,
-}: {
-  estado: ReturnType<typeof useEstadoInstitucional>["data"];
-}) {
+function StatusChip({ estado }: { estado: ReturnType<typeof useEstadoInstitucional>["data"] }) {
   const status = estado?.profile?.status ?? "aguardando_dados";
   const label: Record<string, string> = {
     aguardando_dados: "Aguardando dados funcionais",

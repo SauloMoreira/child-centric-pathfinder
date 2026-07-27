@@ -39,23 +39,13 @@ function DiagnosticosTecnico() {
   );
 }
 
-function Card({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string | number;
-  mono?: boolean;
-}) {
+function Card({ label, value, mono }: { label: string; value: string | number; mono?: boolean }) {
   return (
     <div className="surface-panel p-4">
       <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </p>
-      <p className={`mt-2 text-xl ${mono ? "font-mono" : "font-semibold"}`}>
-        {value}
-      </p>
+      <p className={`mt-2 text-xl ${mono ? "font-mono" : "font-semibold"}`}>{value}</p>
     </div>
   );
 }

@@ -13,13 +13,13 @@
     "server": {
       "name": "reintegra-infancia-mcp",
       "version": "0.1.0",
-      "title": "Reintegra Infância — DPE-RS"
+      "title": "Ágora — DPE-RS"
     },
     "tools": [
       {
         "name": "meu_estado_institucional",
         "title": "Meu estado institucional",
-        "description": "Retorna o perfil, papéis e vínculos institucionais do usuário conectado no Reintegra.",
+        "description": "Retorna o perfil, papéis e vínculos institucionais do usuário conectado no Ágora.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

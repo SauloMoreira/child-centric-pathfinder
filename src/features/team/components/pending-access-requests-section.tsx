@@ -176,11 +176,7 @@ export function PendingAccessRequestsSection({ enabled }: { enabled: boolean }) 
             >
               Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={reject.isPending}
-            >
+            <Button variant="destructive" onClick={handleReject} disabled={reject.isPending}>
               {reject.isPending && (
                 <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden />
               )}
