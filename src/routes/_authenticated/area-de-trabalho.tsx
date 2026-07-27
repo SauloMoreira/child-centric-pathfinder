@@ -920,7 +920,7 @@ function AddColumnCard({
 // -----------------------------------------------------------------------------
 // SortableColumn
 // -----------------------------------------------------------------------------
-const VALID_COL_COLORS = new Set([
+const VALID_COL_COLORS = new Set<WorkspaceColor>([
   "neutral",
   "green",
   "blue",
@@ -930,6 +930,17 @@ const VALID_COL_COLORS = new Set([
   "slate",
   "rose",
 ]);
+
+const COLUMN_COLOR_OPTIONS: { token: WorkspaceColor; label: string }[] = [
+  { token: "neutral", label: "Neutro" },
+  { token: "green", label: "Verde" },
+  { token: "blue", label: "Azul" },
+  { token: "purple", label: "Lilás" },
+  { token: "rose", label: "Rosa" },
+  { token: "amber", label: "Âmbar" },
+  { token: "burgundy", label: "Bordô" },
+  { token: "slate", label: "Cinza" },
+];
 
 
 function SortableColumn(props: {
@@ -941,6 +952,7 @@ function SortableColumn(props: {
   access: WorkspaceAccess;
   workspace: WorkspaceMeta;
   onMoveCol: (dir: "left" | "right") => void;
+  onEditCol: (v: { nome: string; descricao: string | null; corToken: WorkspaceColor }) => void;
   onDeleteCol: (destinationColumnId: string | null) => void;
   onRemoveCard: (cardId: string) => void;
   onMoveCard: (cardId: string, targetColumnId: string, newPosition: number) => void;
@@ -956,6 +968,7 @@ function SortableColumn(props: {
     access,
     workspace,
     onMoveCol,
+    onEditCol,
     onDeleteCol,
     onRemoveCard,
     onMoveCard,
