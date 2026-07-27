@@ -1,9 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Search, LayoutGrid, List } from "lucide-react";
+import { Plus, Search, LayoutGrid, List, UserPlus, ShieldAlert, XCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   useTeamMembers,
   useTeamInvitations,
@@ -24,6 +36,13 @@ import {
   EmptyState,
 } from "@/components/team-kanban";
 import { friendlyTeamError } from "@/lib/team-errors";
+import {
+  useCurrentDefenderContext,
+  useDefenderTeam,
+  useEndBond,
+  type DefenderBond,
+} from "@/features/team/defender-bonds";
+import { LinkMemberSheet } from "@/features/team/components/link-member-sheet";
 
 export const Route = createFileRoute("/_authenticated/minha-equipe")({
   head: () => ({
@@ -46,6 +65,7 @@ function MinhaEquipePage() {
   const tecnico = isAdminTecnico(estado);
   const ativo = isAtivo(estado);
   const [add, setAdd] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
   const [busca, setBusca] = useState("");
   const [view, setView] = useState<"kanban" | "list">("kanban");
 
@@ -147,6 +167,11 @@ function MinhaEquipePage() {
                 <List className="h-4 w-4" />
               </Button>
             </div>
+            {defensor && ativo && (
+              <Button variant="outline" onClick={() => setLinkOpen(true)}>
+                <UserPlus className="mr-1 h-4 w-4" /> Vincular membro
+              </Button>
+            )}
             {canManage && (
               <Button onClick={() => setAdd(true)}>
                 <Plus className="mr-1 h-4 w-4" /> Adicionar membro
@@ -240,6 +265,221 @@ function MinhaEquipePage() {
       )}
 
       <AddTeamMemberSheet open={add} onOpenChange={setAdd} />
+    </div>
+  );
+}
+
+      <DefenderBondsSection
+        estado={estado}
+        defensor={defensor}
+        tecnico={tecnico}
+        onOpenLink={() => setLinkOpen(true)}
+      />
+
+      <AddTeamMemberSheet open={add} onOpenChange={setAdd} />
+      {defensor && estado?.user_id && (
+        <LinkMemberSheet
+          open={linkOpen}
+          onOpenChange={setLinkOpen}
+          defenderUserId={estado.user_id}
+        />
+      )}
+    </div>
+  );
+}
+
+// -------- Vínculos Membro ↔ Defensor --------
+
+function DefenderBondsSection({
+  estado,
+  defensor,
+  tecnico,
+  onOpenLink,
+}: {
+  estado: ReturnType<typeof useEstadoInstitucional>["data"];
+  defensor: boolean;
+  tecnico: boolean;
+  onOpenLink: () => void;
+}) {
+  const ctx = useCurrentDefenderContext();
+  const targetDefenderId = defensor
+    ? estado?.user_id ?? null
+    : ctx.current?.defenderUserId ?? null;
+
+  const team = useDefenderTeam(targetDefenderId);
+  const endBond = useEndBond(targetDefenderId);
+  const [bondToEnd, setBondToEnd] = useState<DefenderBond | null>(null);
+
+  if (!defensor && !tecnico) return null;
+
+  const canLink = team.data?.canLinkMembers ?? false;
+  const canEnd = team.data?.canEndBonds ?? false;
+  const members = team.data?.members ?? [];
+  const ativos = members.filter((m) => m.status === "ativo");
+  const encerrados = members.filter((m) => m.status === "encerrado");
+
+  async function confirmEnd() {
+    if (!bondToEnd) return;
+    try {
+      await endBond.mutateAsync({
+        bondId: bondToEnd.bondId,
+        expectedVersion: bondToEnd.optimisticVersion,
+      });
+      toast.success(`Vínculo de ${bondToEnd.displayName} encerrado.`);
+      setBondToEnd(null);
+    } catch (err) {
+      toast.error(friendlyTeamError(err, "Não foi possível encerrar o vínculo."));
+    }
+  }
+
+  return (
+    <section className="border-t border-border bg-surface/40 px-4 py-6 lg:px-8">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+            Vínculos com Defensor
+          </p>
+          <h2 className="text-base font-semibold">
+            {defensor ? "Membros vinculados a você" : "Equipe do Defensor selecionado"}
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {defensor
+              ? "Membros com acesso somente leitura à sua Área de Trabalho."
+              : tecnico && ctx.current
+                ? `Visualizando equipe de ${ctx.current.displayName} em modo técnico (somente leitura).`
+                : "Selecione um Defensor no seletor lateral para visualizar sua equipe."}
+          </p>
+        </div>
+        {canLink && (
+          <Button variant="outline" size="sm" onClick={onOpenLink}>
+            <UserPlus className="mr-1 h-4 w-4" /> Vincular membro
+          </Button>
+        )}
+      </div>
+
+      {tecnico && !defensor && (
+        <Badge
+          variant="outline"
+          className="mb-3 gap-1.5 border-institutional/50 bg-institutional/10 font-mono text-[10px] uppercase tracking-[0.16em] text-institutional"
+        >
+          <ShieldAlert className="h-3 w-3" aria-hidden /> Modo técnico · somente leitura
+        </Badge>
+      )}
+
+      {!targetDefenderId ? (
+        <EmptyState
+          title="Nenhum Defensor selecionado"
+          description="Use o seletor lateral 'Contexto técnico' para escolher um Defensor."
+        />
+      ) : team.isLoading ? (
+        <Skeleton className="h-24 w-full" />
+      ) : team.error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          {friendlyTeamError(team.error, "Não foi possível carregar os vínculos.")}
+        </div>
+      ) : members.length === 0 ? (
+        <EmptyState
+          title="Sem vínculos"
+          description={
+            defensor
+              ? "Vincule um membro para conceder acesso somente leitura à sua Área de Trabalho."
+              : "Este Defensor ainda não vinculou membros à equipe."
+          }
+        />
+      ) : (
+        <div className="grid gap-2">
+          {ativos.map((b) => (
+            <BondRow
+              key={b.bondId}
+              bond={b}
+              canEnd={canEnd}
+              disabled={endBond.isPending}
+              onEnd={() => setBondToEnd(b)}
+            />
+          ))}
+          {encerrados.length > 0 && (
+            <>
+              <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Histórico encerrado
+              </p>
+              {encerrados.map((b) => (
+                <BondRow key={b.bondId} bond={b} canEnd={false} disabled />
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      <AlertDialog open={!!bondToEnd} onOpenChange={(o) => !o && setBondToEnd(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar vínculo</AlertDialogTitle>
+            <AlertDialogDescription>
+              O acesso de <strong>{bondToEnd?.displayName}</strong> à sua Área de Trabalho será
+              revogado imediatamente. O histórico é preservado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={endBond.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmEnd}
+              disabled={endBond.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {endBond.isPending && (
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden />
+              )}
+              Encerrar vínculo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
+  );
+}
+
+function BondRow({
+  bond,
+  canEnd,
+  disabled,
+  onEnd,
+}: {
+  bond: DefenderBond;
+  canEnd: boolean;
+  disabled: boolean;
+  onEnd?: () => void;
+}) {
+  const encerrado = bond.status === "encerrado";
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{bond.displayName}</p>
+        <p className="truncate text-xs text-muted-foreground">{bond.email}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant="outline"
+          className={
+            encerrado
+              ? "border-muted-foreground/40 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground"
+              : "border-success/40 bg-success/10 text-[10px] font-mono uppercase tracking-[0.14em] text-success"
+          }
+        >
+          {encerrado ? "Encerrado" : "Ativo"}
+        </Badge>
+        {canEnd && !encerrado && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onEnd}
+            disabled={disabled}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            aria-label={`Encerrar vínculo de ${bond.displayName}`}
+          >
+            <XCircle className="mr-1 h-3.5 w-3.5" /> Encerrar
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

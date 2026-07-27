@@ -46,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarState } from "@/components/app-shell/sidebar-context";
 import { OperationalOrgSwitcher } from "@/components/app-shell/operational-org-switcher";
+import { DefenderContextSwitcher } from "@/components/app-shell/defender-context-switcher";
 
 
 type NavItem = {
@@ -214,6 +215,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <DesktopSidebar>
         <SidebarHeader collapsed={collapsed} />
         {sidebarOrgBlock}
+        <DefenderContextSwitcher collapsed={collapsed && !isMobile} />
         {sidebarNav}
         {sidebarUserBlock}
       </DesktopSidebar>
@@ -231,6 +233,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
             {sidebarOrgBlock}
+            <DefenderContextSwitcher collapsed={false} />
             {sidebarNav}
             {sidebarUserBlock}
           </div>
