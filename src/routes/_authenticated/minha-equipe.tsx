@@ -188,13 +188,21 @@ function MinhaEquipePage() {
         </div>
       </div>
 
-      {err && (
-        <div className="mx-4 mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive lg:mx-8">
-          {friendlyTeamError(err, "Não foi possível carregar a equipe.")}
+      {err ? (
+        <div className="mx-4 mt-4 flex flex-col items-start gap-3 rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive lg:mx-8">
+          <p>{friendlyTeamError(err, "Não foi possível carregar a equipe.")}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void members.refetch();
+              void invites.refetch();
+            }}
+          >
+            Tentar novamente
+          </Button>
         </div>
-      )}
-
-      {isLoading ? (
+      ) : isLoading ? (
         <div className="flex gap-3 overflow-x-auto p-4 lg:p-8">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-96 w-[300px] shrink-0" />
@@ -212,6 +220,7 @@ function MinhaEquipePage() {
             )
           }
         />
+
       ) : view === "kanban" ? (
         <div className="flex flex-1 gap-3 overflow-x-auto p-4 lg:p-6">
           <KanbanColumn
