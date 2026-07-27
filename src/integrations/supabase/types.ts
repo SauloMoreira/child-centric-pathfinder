@@ -556,6 +556,206 @@ export type Database = {
           },
         ]
       }
+      defensor_context: {
+        Row: {
+          defensor_user_id: string
+          orgao_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          defensor_user_id: string
+          orgao_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          defensor_user_id?: string
+          orgao_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defensor_context_orgao_id_fkey"
+            columns: ["orgao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      defensor_workspace_cards: {
+        Row: {
+          column_id: string
+          created_at: string
+          id: string
+          item_id: string
+          note: string | null
+          order_position: number
+          updated_at: string
+        }
+        Insert: {
+          column_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          note?: string | null
+          order_position?: number
+          updated_at?: string
+        }
+        Update: {
+          column_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          note?: string | null
+          order_position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defensor_workspace_cards_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "defensor_workspace_columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defensor_workspace_cards_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      defensor_workspace_columns: {
+        Row: {
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          order_position: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          order_position?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          order_position?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defensor_workspace_columns_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "defensor_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      defensor_workspaces: {
+        Row: {
+          created_at: string
+          defensor_user_id: string
+          icone: string | null
+          id: string
+          nome: string
+          order_position: number
+          orgao_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          defensor_user_id: string
+          icone?: string | null
+          id?: string
+          nome: string
+          order_position?: number
+          orgao_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          defensor_user_id?: string
+          icone?: string | null
+          id?: string
+          nome?: string
+          order_position?: number
+          orgao_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defensor_workspaces_orgao_id_fkey"
+            columns: ["orgao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_defensor_bonds: {
+        Row: {
+          created_at: string
+          created_by: string
+          defensor_user_id: string
+          ended_at: string | null
+          ended_by: string | null
+          id: string
+          member_user_id: string
+          orgao_id: string
+          status: Database["public"]["Enums"]["member_defensor_bond_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          defensor_user_id: string
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          member_user_id: string
+          orgao_id: string
+          status?: Database["public"]["Enums"]["member_defensor_bond_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          defensor_user_id?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          member_user_id?: string
+          orgao_id?: string
+          status?: Database["public"]["Enums"]["member_defensor_bond_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_defensor_bonds_orgao_id_fkey"
+            columns: ["orgao_id"]
+            isOneToOne: false
+            referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orgao_comarcas: {
         Row: {
           comarca_id: string
@@ -1301,6 +1501,7 @@ export type Database = {
       content_kind: "atendimento" | "cota"
       content_status: "rascunho" | "publicado" | "arquivado"
       content_visibility: "privado" | "orgao" | "institucional"
+      member_defensor_bond_status: "ativo" | "encerrado"
       parentesco_enum:
         | "mae"
         | "pai"
@@ -1498,6 +1699,7 @@ export const Constants = {
       content_kind: ["atendimento", "cota"],
       content_status: ["rascunho", "publicado", "arquivado"],
       content_visibility: ["privado", "orgao", "institucional"],
+      member_defensor_bond_status: ["ativo", "encerrado"],
       parentesco_enum: [
         "mae",
         "pai",
