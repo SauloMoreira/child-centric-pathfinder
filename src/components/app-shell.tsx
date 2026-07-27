@@ -363,7 +363,7 @@ function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobi
             <span className="block font-mono text-[9px] uppercase tracking-[0.24em] text-sidebar-muted">
               DPE-RS
             </span>
-            <span className="block truncate text-sm font-semibold">Reintegra Infância</span>
+            <span className="block truncate text-sm font-semibold">Ágora</span>
           </span>
         )}
       </Link>
