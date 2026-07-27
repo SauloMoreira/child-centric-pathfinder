@@ -360,6 +360,7 @@ export type Database = {
           ended_by: string | null
           id: string
           member_user_id: string
+          optimistic_version: number
           orgao_id: string
           status: Database["public"]["Enums"]["member_defensor_bond_status"]
           updated_at: string
@@ -372,6 +373,7 @@ export type Database = {
           ended_by?: string | null
           id?: string
           member_user_id: string
+          optimistic_version?: number
           orgao_id: string
           status?: Database["public"]["Enums"]["member_defensor_bond_status"]
           updated_at?: string
@@ -384,6 +386,7 @@ export type Database = {
           ended_by?: string | null
           id?: string
           member_user_id?: string
+          optimistic_version?: number
           orgao_id?: string
           status?: Database["public"]["Enums"]["member_defensor_bond_status"]
           updated_at?: string
@@ -753,6 +756,15 @@ export type Database = {
         Args: { p_column_id: string }
         Returns: Json
       }
+      encerrar_member_defensor_bond: {
+        Args: {
+          p_bond_id: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       encerrar_vinculo_membro: {
         Args: { p_motivo: string; p_user_id: string }
         Returns: Json
@@ -1026,6 +1038,10 @@ export type Database = {
       }
       reset_workspace_to_default: {
         Args: { p_workspace_id: string }
+        Returns: Json
+      }
+      selecionar_contexto_defensor: {
+        Args: { p_defensor_user_id: string; p_idempotency_key: string }
         Returns: Json
       }
       selecionar_contexto_orgao: {
