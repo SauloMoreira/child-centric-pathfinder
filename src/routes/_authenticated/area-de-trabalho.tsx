@@ -106,6 +106,7 @@ import { CreatePanelSheet } from "@/features/work-area/components/CreatePanelShe
 import { RenamePanelSheet } from "@/features/work-area/components/RenamePanelSheet";
 import { ArchivePanelDialog } from "@/features/work-area/components/ArchivePanelDialog";
 import { panelIconComponent } from "@/features/work-area/components/panel-icon";
+import { RequestDefenderAccessSheet } from "@/features/team/components/request-defender-access-sheet";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
@@ -131,19 +132,31 @@ function AreaDeTrabalhoPage() {
   const contextoNome = isOwnerContext
     ? estado?.profile?.nome_completo ?? "Defensor(a) Público(a)"
     : defenderContext.current?.displayName ?? "Defensor(a) Público(a)";
+  const [requestOpen, setRequestOpen] = useState(false);
 
   if (!estado) {
     return <p className="p-8 text-sm text-muted-foreground">Carregando…</p>;
   }
   if (!defensorId) {
+    const isMemberMode = defenderContext.mode === "member";
     return (
       <div className="mx-auto max-w-2xl px-6 py-12">
         <div className="surface-panel p-6">
           <h1 className="text-lg font-semibold">Área de trabalho indisponível</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Selecione um Defensor vinculado para acessar a Área de Trabalho dele.
+            {isMemberMode
+              ? "Você ainda não possui vínculo ativo com um Defensor Público. Solicite acesso para começar a acompanhar uma Área de Trabalho em modo somente leitura."
+              : "Selecione um Defensor vinculado para acessar a Área de Trabalho dele."}
           </p>
+          {isMemberMode && (
+            <div className="mt-4">
+              <Button onClick={() => setRequestOpen(true)}>
+                Solicitar acesso a um Defensor
+              </Button>
+            </div>
+          )}
         </div>
+        <RequestDefenderAccessSheet open={requestOpen} onOpenChange={setRequestOpen} />
       </div>
     );
   }

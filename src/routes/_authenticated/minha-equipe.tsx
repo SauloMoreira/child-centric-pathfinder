@@ -268,6 +268,8 @@ function MinhaEquipePage() {
 
 
 
+      <PendingAccessRequestsSection enabled={defensor && ativo} />
+
       <DefenderBondsSection
         estado={estado}
         defensor={defensor}
