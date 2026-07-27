@@ -75,10 +75,9 @@ export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
 function AreaDeTrabalhoPage() {
   const { data: estado } = useEstadoInstitucional();
   const defensorId = isDefensor(estado) ? estado?.user_id ?? null : null;
-  // Membro/Admin Técnico: no futuro virá do DefenderWorkspaceSwitcher; por ora,
-  // usamos o contexto atual do defensor selecionado quando aplicável.
-  const contextDefensorId =
-    estado?.contextoAtual?.defensorUserId ?? defensorId ?? null;
+  // Nesta fase, apenas o próprio Defensor acessa sua Área de Trabalho.
+  // Membros/Admin Técnico usarão um seletor dedicado em turnos futuros.
+  const contextDefensorId = defensorId;
 
   if (!estado) {
     return <p className="p-8 text-sm text-muted-foreground">Carregando…</p>;
