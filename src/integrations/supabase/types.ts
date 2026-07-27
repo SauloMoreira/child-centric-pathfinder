@@ -1042,15 +1042,19 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: Json
       }
-      registrar_acesso_orgao_externo: {
-        Args: { p_finalidade?: string; p_modulo: string; p_orgao_id: string }
+      registrar_acesso_defensor_externo: {
+        Args: {
+          p_defensor_user_id: string
+          p_finalidade?: string | null
+          p_modulo: string
+        }
         Returns: Json
       }
       registrar_break_glass: {
         Args: {
           p_chamado: string
+          p_defensor_user_id: string | null
           p_justificativa: string
-          p_orgao_id: string
           p_prazo_minutos?: number
         }
         Returns: Json

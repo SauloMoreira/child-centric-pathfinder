@@ -17,11 +17,17 @@ function DiagnosticosTecnico() {
   const q = useQuery({
     queryKey: ["admin-tecnico", "diagnosticos"],
     queryFn: async () => {
-      const [{ count: orgaos }, { count: profiles }] = await Promise.all([
-        supabase.from("orgaos_execucao").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("user_id", { count: "exact", head: true }),
-      ]);
-      return { orgaos: orgaos ?? 0, profiles: profiles ?? 0 };
+      const [{ count: profiles }, { count: vinculos }, { data: defensoresResp }] =
+        await Promise.all([
+          supabase.from("profiles").select("user_id", { count: "exact", head: true }),
+          supabase
+            .from("member_defensor_bonds")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "ativo"),
+          supabase.rpc("listar_defensores_disponiveis_contexto"),
+        ]);
+      const defensores = (defensoresResp as { items?: unknown[] } | null)?.items?.length ?? 0;
+      return { defensores, vinculos: vinculos ?? 0, profiles: profiles ?? 0 };
     },
   });
 
@@ -30,8 +36,9 @@ function DiagnosticosTecnico() {
       title="Diagnósticos"
       description="Indicadores mínimos de saúde institucional consultados pelo próprio Administrador Técnico via RLS — sem uso de service_role no cliente."
     >
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card label="Órgãos" value={q.data?.orgaos ?? "…"} />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card label="Defensores ativos" value={q.data?.defensores ?? "…"} />
+        <Card label="Vínculos de equipe ativos" value={q.data?.vinculos ?? "…"} />
         <Card label="Perfis" value={q.data?.profiles ?? "…"} />
         <Card label="Ambiente" value="Lovable Cloud (US East)" mono />
       </div>

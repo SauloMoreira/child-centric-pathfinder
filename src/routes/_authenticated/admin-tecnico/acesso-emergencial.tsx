@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TecnicoPage } from "@/components/tecnico-guard";
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, Siren } from "lucide-react";
+import { useAvailableDefenders } from "@/features/team/defender-bonds";
 
 export const Route = createFileRoute("/_authenticated/admin-tecnico/acesso-emergencial")({
   head: () => ({
@@ -27,35 +28,22 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/acesso-emerg
 });
 
 function AcessoEmergencial() {
-  const [orgao, setOrgao] = useState<string>("");
+  const [defensor, setDefensor] = useState<string>("");
   const [chamado, setChamado] = useState("");
   const [motivo, setMotivo] = useState("");
   const [prazo, setPrazo] = useState(30);
   const [confirma, setConfirma] = useState(false);
 
-  const orgaosQ = useQuery({
-    queryKey: ["admin-tecnico", "orgaos-bg"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orgaos_execucao")
-        .select("id,nome,comarca")
-        .order("nome");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const defensoresQ = useAvailableDefenders();
 
   const mut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "registrar_break_glass" as never,
-        {
-          p_orgao_id: orgao || null,
-          p_justificativa: motivo,
-          p_chamado: chamado,
-          p_prazo_minutos: prazo,
-        } as never,
-      );
+      const { data, error } = await supabase.rpc("registrar_break_glass", {
+        p_defensor_user_id: defensor || null,
+        p_justificativa: motivo,
+        p_chamado: chamado,
+        p_prazo_minutos: prazo,
+      });
       if (error) throw error;
       return data as { correlation_id: string; expira_em: string };
     },
@@ -89,16 +77,16 @@ function AcessoEmergencial() {
         <div className="mt-4 space-y-3 text-sm">
           <div className="space-y-1">
             <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              Órgão afetado (opcional)
+              Defensor afetado (opcional)
             </label>
-            <Select value={orgao} onValueChange={setOrgao}>
+            <Select value={defensor} onValueChange={setDefensor}>
               <SelectTrigger>
-                <SelectValue placeholder="Sem órgão específico" />
+                <SelectValue placeholder="Sem Defensor específico" />
               </SelectTrigger>
               <SelectContent>
-                {(orgaosQ.data ?? []).map((o) => (
-                  <SelectItem key={o.id} value={o.id}>
-                    {o.nome} — {o.comarca}
+                {(defensoresQ.data?.items ?? []).map((d) => (
+                  <SelectItem key={d.defenderUserId} value={d.defenderUserId}>
+                    {d.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>
