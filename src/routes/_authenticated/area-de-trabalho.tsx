@@ -218,7 +218,6 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
   const activePanel = selectedPanel ?? panels[0] ?? null;
 
-  const contextoNome = estado?.profile?.nome_completo ?? "Defensor(a) Público(a)";
   const contextoLabel =
     access.accessMode === "owner"
       ? "Sua área de trabalho pessoal"
