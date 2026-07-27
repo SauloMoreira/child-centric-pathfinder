@@ -45,6 +45,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEstadoInstitucional, isDefensor } from "@/hooks/use-estado-institucional";
+import { useCurrentDefenderContext } from "@/features/team/defender-bonds";
 import {
   adicionarCardWorkspace,
   atualizarColunaWorkspace,
@@ -122,7 +123,14 @@ export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
 
 function AreaDeTrabalhoPage() {
   const { data: estado } = useEstadoInstitucional();
-  const defensorId = isDefensor(estado) ? estado?.user_id ?? null : null;
+  const defenderContext = useCurrentDefenderContext();
+  const isOwnerContext = defenderContext.mode === "owner" && isDefensor(estado);
+  const defensorId = isOwnerContext
+    ? estado?.user_id ?? null
+    : defenderContext.current?.defenderUserId ?? null;
+  const contextoNome = isOwnerContext
+    ? estado?.profile?.nome_completo ?? "Defensor(a) Público(a)"
+    : defenderContext.current?.displayName ?? "Defensor(a) Público(a)";
 
   if (!estado) {
     return <p className="p-8 text-sm text-muted-foreground">Carregando…</p>;
@@ -139,7 +147,7 @@ function AreaDeTrabalhoPage() {
       </div>
     );
   }
-  return <WorkArea defensorId={defensorId} contextoNome={estado.profile?.nome_completo ?? "Defensor(a) Público(a)"} />;
+  return <WorkArea defensorId={defensorId} contextoNome={contextoNome} />;
 }
 
 // -----------------------------------------------------------------------------
