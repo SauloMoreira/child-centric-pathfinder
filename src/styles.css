@@ -205,10 +205,58 @@
   border-radius: var(--radius-lg);
 }
 
+/* ---------------------------------------------------------------- */
+/* Kanban design tokens                                             */
+/* ---------------------------------------------------------------- */
+:root {
+  --kanban-col-width: 20rem;              /* 320px */
+  --kanban-col-min-width: 17.5rem;        /* 280px */
+  --kanban-col-max-width: 22.5rem;        /* 360px */
+  --kanban-col-radius: var(--radius-lg);
+  --kanban-col-gap: 0.875rem;
+  --kanban-card-gap: 0.625rem;
+  --kanban-toolbar-height: 3rem;
+  /* Alturas do bloco superior (cabeçalho + abas de Painéis + toolbar) */
+  --work-area-chrome-height: 15.5rem;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --work-area-chrome-height: 13.75rem;
+  }
+}
+
 @utility kanban-column {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  min-width: 288px;
-  max-width: 320px;
+  border-radius: var(--kanban-col-radius);
+  width: var(--kanban-col-width);
+  min-width: var(--kanban-col-min-width);
+  max-width: var(--kanban-col-max-width);
 }
+
+/*
+ * Cores das colunas do Kanban.
+ * Cada token é aplicado via `data-col-color="<token>"` na coluna, e disponibiliza
+ * três variáveis locais consumidas por header, faixa lateral e badge de contagem.
+ * Paleta institucional suave — nenhum fundo saturado.
+ */
+[data-col-color] {
+  --col-accent: var(--color-muted-foreground);
+  --col-accent-soft: color-mix(in oklab, var(--col-accent) 12%, var(--color-surface));
+  --col-accent-strong: color-mix(in oklab, var(--col-accent) 78%, black 6%);
+}
+[data-col-color="neutral"]  { --col-accent: oklch(0.55 0.02 150); }
+[data-col-color="green"]    { --col-accent: var(--institutional); }
+[data-col-color="blue"]     { --col-accent: oklch(0.55 0.14 250); }
+[data-col-color="amber"]    { --col-accent: oklch(0.68 0.14 75); }
+[data-col-color="burgundy"] { --col-accent: oklch(0.44 0.14 20); }
+[data-col-color="purple"]   { --col-accent: oklch(0.52 0.14 300); }
+[data-col-color="slate"]    { --col-accent: oklch(0.5 0.03 250); }
+[data-col-color="rose"]     { --col-accent: oklch(0.62 0.16 15); }
+
+@utility kanban-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-border-strong) 60%, transparent) transparent;
+}
+

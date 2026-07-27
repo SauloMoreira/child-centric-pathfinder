@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -16,7 +16,11 @@ import {
   Lock,
   GripVertical,
   Copy,
+  RefreshCw,
+  User,
+  Layers,
 } from "lucide-react";
+
 import {
   DndContext,
   DragOverlay,
@@ -122,7 +126,7 @@ function AreaDeTrabalhoPage() {
       </div>
     );
   }
-  return <WorkArea defensorId={defensorId} />;
+  return <WorkArea defensorId={defensorId} contextoNome={estado.profile?.nome_completo ?? "Defensor(a) Público(a)"} />;
 }
 
 // -----------------------------------------------------------------------------
@@ -151,7 +155,7 @@ function useAnnouncer() {
 // -----------------------------------------------------------------------------
 // Root WorkArea
 // -----------------------------------------------------------------------------
-function WorkArea({ defensorId }: { defensorId: string }) {
+function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNome: string }) {
   const workArea = useWorkArea(defensorId);
   const panels = workArea.data?.panels ?? [];
   const { selectedId, selectedPanel, select } = useSelectedPanel(defensorId, panels);
@@ -214,57 +218,92 @@ function WorkArea({ defensorId }: { defensorId: string }) {
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
   const activePanel = selectedPanel ?? panels[0] ?? null;
 
+  const contextoLabel =
+    access.accessMode === "owner"
+      ? "Sua área de trabalho pessoal"
+      : access.accessMode === "team_readonly"
+        ? "Somente leitura · Membro da equipe"
+        : access.accessMode === "technical_readonly"
+          ? "Modo técnico · Somente leitura"
+          : "";
+
   return (
-    <div className="flex h-full min-h-[calc(100vh-2rem)] flex-col px-6 py-6">
-      <header className="mb-3 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            Ágora · Área de trabalho
-          </p>
-          <h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            {activePanel && <PanelHeadingIcon iconName={activePanel.icon} />}
-            {activePanel?.name ?? "Área de Trabalho"}
-          </h1>
-          {access.accessMode === "team_readonly" && (
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Somente leitura · Membro de equipe
+    <div
+      className="flex min-h-[100dvh] flex-col bg-canvas"
+      style={{ ["--work-area-header-total" as string]: "12.5rem" }}
+    >
+      {/* Cabeçalho institucional */}
+      <header className="border-b border-border bg-surface px-4 py-4 lg:px-8 lg:py-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+              Ágora · Área de trabalho
             </p>
-          )}
-          {access.accessMode === "technical_readonly" && (
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-warning-foreground">
-              Modo técnico · Somente leitura
+            <h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl">
+              Área de Trabalho
+            </h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" aria-hidden />
+                <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
+              </span>
+              {contextoLabel && (
+                <>
+                  <span aria-hidden className="text-muted-foreground/40">·</span>
+                  <span
+                    className={cn(
+                      "font-mono text-[10px] uppercase tracking-[0.18em]",
+                      access.accessMode === "technical_readonly"
+                        ? "text-warning-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {contextoLabel}
+                  </span>
+                </>
+              )}
             </p>
-          )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/biblioteca">
+                <BookOpen className="h-4 w-4" /> Biblioteca
+              </Link>
+            </Button>
+          </div>
         </div>
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link to="/biblioteca">
-            <BookOpen className="h-4 w-4" /> Biblioteca
-          </Link>
-        </Button>
+
+        {/* Barra de Painéis */}
+        <div className="mt-4">
+          <p className="mb-1.5 px-1 font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
+            Painéis
+          </p>
+          <PanelTabs
+            defenderUserId={defensorId}
+            panels={panels}
+            selectedId={activePanelId}
+            onSelect={select}
+            access={access}
+            onCreate={() => setCreateOpen(true)}
+            onRename={(p) => setRenameTarget(p)}
+            onArchive={(p) => setArchiveTarget(p)}
+          />
+        </div>
       </header>
 
-      <PanelTabs
-        defenderUserId={defensorId}
-        panels={panels}
-        selectedId={activePanelId}
-        onSelect={select}
-        access={access}
-        onCreate={() => setCreateOpen(true)}
-        onRename={(p) => setRenameTarget(p)}
-        onArchive={(p) => setArchiveTarget(p)}
-      />
-
-      <div className="mt-4 flex-1 min-h-0">
+      {/* Corpo — Painel selecionado */}
+      <div className="flex min-h-0 flex-1 flex-col">
         {activePanelId ? (
           <PanelBoard
             key={activePanelId}
             defensorId={defensorId}
             panelId={activePanelId}
+            activePanel={activePanel}
             allPanels={panels}
           />
         ) : (
-          <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
-            Selecione um Painel.
+          <div className="m-4 flex-1 rounded-lg border border-dashed border-border bg-surface/60 p-12 text-center text-sm text-muted-foreground lg:m-8">
+            Selecione um Painel na barra acima.
           </div>
         )}
       </div>
@@ -297,8 +336,10 @@ function WorkArea({ defensorId }: { defensorId: string }) {
 
 function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
   const Icon = panelIconComponent(iconName);
-  return <Icon className="h-6 w-6 text-institutional" aria-hidden />;
+  return <Icon className="h-5 w-5 text-institutional" aria-hidden />;
 }
+
+
 
 // -----------------------------------------------------------------------------
 // PanelBoard — carrega apenas o Painel selecionado
@@ -306,10 +347,12 @@ function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
 function PanelBoard({
   defensorId,
   panelId,
+  activePanel,
   allPanels,
 }: {
   defensorId: string;
   panelId: string;
+  activePanel: PanelSummary | null;
   allPanels: PanelSummary[];
 }) {
   const qc = useQueryClient();
@@ -324,14 +367,14 @@ function PanelBoard({
 
   if (workspaceQuery.isLoading) {
     return (
-      <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+      <div className="m-4 flex flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-surface/60 p-12 text-sm text-muted-foreground lg:m-8">
         Carregando Painel…
       </div>
     );
   }
   if (!data?.workspace) {
     return (
-      <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+      <div className="m-4 flex flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-surface/60 p-12 text-sm text-muted-foreground lg:m-8">
         Painel indisponível.
       </div>
     );
@@ -348,11 +391,14 @@ function PanelBoard({
       access={data.access}
       columns={data.columns}
       cards={data.cards}
+      activePanel={activePanel}
       allPanels={allPanels}
+      isFetching={workspaceQuery.isFetching}
       onRefetch={() => qc.invalidateQueries({ queryKey: key })}
     />
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // ColumnsBoard — DnD de colunas + cards
@@ -368,7 +414,9 @@ function ColumnsBoard({
   access,
   columns,
   cards,
+  activePanel,
   allPanels,
+  isFetching,
   onRefetch,
 }: {
   defensorId: string;
@@ -376,7 +424,9 @@ function ColumnsBoard({
   access: WorkspaceAccess;
   columns: WorkspaceColumn[];
   cards: WorkspaceCardDto[];
+  activePanel: PanelSummary | null;
   allPanels: PanelSummary[];
+  isFetching: boolean;
   onRefetch: () => void;
 }) {
   const qc = useQueryClient();
@@ -592,10 +642,14 @@ function ColumnsBoard({
 
   const onDragCancel = () => setDragActive(null);
 
-  const [novaCol, setNovaCol] = useState("");
+  const [creatorOpen, setCreatorOpen] = useState(false);
+  const boardScrollRef = useRef<HTMLDivElement | null>(null);
 
   // "Adicionar a outro Painel"
   const [copyTarget, setCopyTarget] = useState<WorkspaceCardDto | null>(null);
+
+  const totalCards = cards.length;
+  const PanelIcon = panelIconComponent(activePanel?.icon ?? null);
 
   return (
     <>
@@ -607,9 +661,71 @@ function ColumnsBoard({
         onDragEnd={onDragEnd}
         onDragCancel={onDragCancel}
       >
-        <div className="h-full overflow-x-auto pb-4">
+        {/* Barra operacional do painel */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <PanelIcon className="h-4 w-4 shrink-0 text-institutional" aria-hidden />
+            <span className="truncate text-sm font-semibold text-foreground">
+              {activePanel?.name ?? "Painel"}
+            </span>
+          </div>
+          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <Layers className="h-3.5 w-3.5" aria-hidden />
+            {orderedColumns.length} {orderedColumns.length === 1 ? "coluna" : "colunas"}
+          </span>
+          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            {totalCards} {totalCards === 1 ? "card" : "cards"}
+          </span>
+
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => onRefetch()}
+              disabled={isFetching}
+              title="Atualizar Painel"
+            >
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", isFetching && "animate-spin")}
+                aria-hidden
+              />
+              Atualizar
+            </Button>
+            {access.canManageColumns && (
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => {
+                  setCreatorOpen(true);
+                  // rola para o fim para o input ficar visível
+                  requestAnimationFrame(() => {
+                    const el = boardScrollRef.current;
+                    if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                  });
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                Nova coluna
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Board — altura calculada para permitir rolagem vertical dentro das colunas */}
+        <div
+          ref={boardScrollRef}
+          className="kanban-scroll flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 lg:px-8"
+          style={{
+            minHeight: 0,
+          }}
+        >
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-            <div className="flex h-full min-w-max items-start gap-4">
+            <div className="flex h-full min-w-max items-stretch gap-4">
               {orderedColumns.map((c, idx) => (
                 <SortableColumn
                   key={c.id}
@@ -634,29 +750,16 @@ function ColumnsBoard({
               ))}
 
               {access.canManageColumns && (
-                <div className="w-72 shrink-0">
-                  <form
-                    className="surface-panel flex items-center gap-2 p-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const n = novaCol.trim();
-                      if (!n) return;
-                      criarCol.mutate(n);
-                      setNovaCol("");
-                    }}
-                  >
-                    <Input
-                      value={novaCol}
-                      onChange={(e) => setNovaCol(e.target.value)}
-                      placeholder="Nova coluna"
-                      className="h-8"
-                      maxLength={80}
-                    />
-                    <Button size="sm" type="submit" disabled={criarCol.isPending}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </form>
-                </div>
+                <AddColumnCard
+                  open={creatorOpen}
+                  setOpen={setCreatorOpen}
+                  onSubmit={(nome) => {
+                    criarCol.mutate(nome, {
+                      onSuccess: () => setCreatorOpen(false),
+                    });
+                  }}
+                  isPending={criarCol.isPending}
+                />
               )}
             </div>
           </SortableContext>
@@ -690,18 +793,107 @@ function ColumnsBoard({
 }
 
 // -----------------------------------------------------------------------------
+// AddColumnCard — placeholder integrado ao Kanban
+// -----------------------------------------------------------------------------
+function AddColumnCard({
+  open,
+  setOpen,
+  onSubmit,
+  isPending,
+}: {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  onSubmit: (nome: string) => void;
+  isPending: boolean;
+}) {
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => inputRef.current?.focus());
+    } else {
+      setValue("");
+    }
+  }, [open]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="kanban-column group flex h-full min-h-[16rem] flex-col items-center justify-center gap-2 border-dashed bg-surface/40 text-sm text-muted-foreground transition-colors hover:border-institutional/60 hover:bg-institutional/[0.04] hover:text-institutional"
+      >
+        <Plus className="h-5 w-5" aria-hidden />
+        Nova coluna
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="kanban-column flex h-full min-h-[16rem] flex-col gap-3 p-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const n = value.trim();
+        if (!n) return;
+        onSubmit(n);
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          Nova coluna
+        </span>
+        <button
+          type="button"
+          className="rounded p-1 text-muted-foreground hover:bg-muted"
+          onClick={() => setOpen(false)}
+          aria-label="Cancelar"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Nome da coluna"
+        className="h-9"
+        maxLength={80}
+      />
+      <div className="mt-auto flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen(false)}
+          disabled={isPending}
+        >
+          Cancelar
+        </Button>
+        <Button size="sm" type="submit" disabled={isPending || !value.trim()}>
+          Criar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+
+// -----------------------------------------------------------------------------
 // SortableColumn
 // -----------------------------------------------------------------------------
-const COLOR_INDICATOR: Record<string, string> = {
-  neutral: "bg-muted-foreground/40",
-  green: "bg-institutional",
-  blue: "bg-blue-500",
-  amber: "bg-amber-500",
-  burgundy: "bg-red-700",
-  purple: "bg-purple-500",
-  slate: "bg-slate-500",
-  rose: "bg-rose-500",
-};
+const VALID_COL_COLORS = new Set([
+  "neutral",
+  "green",
+  "blue",
+  "amber",
+  "burgundy",
+  "purple",
+  "slate",
+  "rose",
+]);
+
 
 function SortableColumn(props: {
   column: WorkspaceColumn;
@@ -745,7 +937,7 @@ function SortableColumn(props: {
     opacity: sortable.isDragging ? 0.4 : 1,
   };
 
-  const indicator = COLOR_INDICATOR[column.corToken] ?? COLOR_INDICATOR.neutral;
+  const colorToken = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
 
@@ -758,117 +950,141 @@ function SortableColumn(props: {
   });
 
   return (
-    <div ref={sortable.setNodeRef} style={style} className="w-72 shrink-0">
-      <div className="surface-panel flex h-full max-h-[calc(100vh-13rem)] flex-col p-3">
-        <header className="mb-2 flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              {access.canManageColumns && (
-                <button
-                  type="button"
-                  className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
-                  aria-label={`Arrastar coluna ${column.nome}`}
-                  {...sortable.attributes}
-                  {...sortable.listeners}
-                >
-                  <GripVertical className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <span
-                className={cn("h-2 w-2 shrink-0 rounded-full", indicator)}
-                style={column.corCustom ? { backgroundColor: column.corCustom } : undefined}
-                aria-hidden
-              />
-              <h3 className="truncate text-sm font-semibold">{column.nome}</h3>
-              <span className="font-mono text-[10px] text-muted-foreground">{cards.length}</span>
-            </div>
-            {column.descricao && (
-              <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-                {column.descricao}
-              </p>
-            )}
-          </div>
-          {access.canManageColumns && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="p-1 text-muted-foreground hover:text-foreground"
-                  aria-label="Ações da coluna"
-                >
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
-                  <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={index === totalColumns - 1}
-                  onClick={() => onMoveCol("right")}
-                >
-                  <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  disabled={totalColumns <= 1}
-                  onClick={() => setConfirmDelete(true)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Excluir coluna
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </header>
+    <div
+      ref={sortable.setNodeRef}
+      style={style}
+      data-col-color={colorToken}
+      className="kanban-column relative flex h-full min-h-0 flex-col overflow-hidden"
+    >
+      {/* faixa lateral colorida */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{
+          backgroundColor: column.corCustom ?? "var(--col-accent)",
+        }}
+      />
 
-        <div
-          ref={setDropRef}
-          className={cn(
-            "flex-1 space-y-2 overflow-y-auto rounded pr-1 transition",
-            isOver && "bg-institutional/5 ring-1 ring-institutional/30",
-          )}
-        >
-          <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-            {cards.map((card, ci) => (
-              <SortableCard
-                key={card.cardId}
-                card={card}
-                access={access}
-                index={ci}
-                columnCount={cards.length}
-                otherColumns={otherColumns}
-                onRemove={() => onRemoveCard(card.cardId)}
-                onMoveUp={() =>
-                  onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))
-                }
-                onMoveDown={() =>
-                  onMoveCard(card.cardId, column.id, Math.min(cards.length - 1, ci + 1))
-                }
-                onMoveToColumn={(targetId) =>
-                  onMoveCard(card.cardId, targetId, Number.MAX_SAFE_INTEGER)
-                }
-                onCopyToPanel={() => onCopyToPanel(card)}
-              />
-            ))}
-          </SortableContext>
-          {cards.length === 0 && (
-            <p className="py-6 text-center text-xs text-muted-foreground">
-              Nenhum atendimento ou cota nesta coluna.
+      {/* cabeçalho colorido */}
+      <header
+        className="flex shrink-0 items-start justify-between gap-2 border-b border-border pl-4 pr-2 py-2.5"
+        style={{ backgroundColor: "var(--col-accent-soft)" }}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {access.canManageColumns && (
+              <button
+                type="button"
+                className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
+                aria-label={`Arrastar coluna ${column.nome}`}
+                {...sortable.attributes}
+                {...sortable.listeners}
+              >
+                <GripVertical className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <h3
+              className="truncate text-sm font-semibold uppercase tracking-wide"
+              style={{ color: "var(--col-accent-strong)" }}
+            >
+              {column.nome}
+            </h3>
+            <span
+              className="ml-auto inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 font-mono text-[10px] font-semibold text-surface"
+              style={{ backgroundColor: "var(--col-accent)" }}
+              aria-label={`${cards.length} cards`}
+            >
+              {cards.length}
+            </span>
+          </div>
+          {column.descricao && (
+            <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+              {column.descricao}
             </p>
           )}
         </div>
+        {access.canManageColumns && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="rounded p-1 text-muted-foreground hover:bg-surface/60 hover:text-foreground"
+                aria-label="Ações da coluna"
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
+                <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={index === totalColumns - 1}
+                onClick={() => onMoveCol("right")}
+              >
+                <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive"
+                disabled={totalColumns <= 1}
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir coluna
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </header>
 
-        {access.canAddItems && (
-          <div className="mt-2">
-            <AddCardDialog
-              columnId={column.id}
-              workspace={workspace}
-              existingItemIds={cards.map((c) => c.itemId)}
-              onAdded={onAdded}
+      {/* corpo com rolagem interna */}
+      <div
+        ref={setDropRef}
+        className={cn(
+          "kanban-scroll flex-1 min-h-0 space-y-2 overflow-y-auto pl-4 pr-2 py-2.5 transition",
+          isOver && "bg-institutional/[0.04] ring-1 ring-inset ring-institutional/30",
+        )}
+      >
+        <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
+          {cards.map((card, ci) => (
+            <SortableCard
+              key={card.cardId}
+              card={card}
+              access={access}
+              index={ci}
+              columnCount={cards.length}
+              otherColumns={otherColumns}
+              onRemove={() => onRemoveCard(card.cardId)}
+              onMoveUp={() =>
+                onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))
+              }
+              onMoveDown={() =>
+                onMoveCard(card.cardId, column.id, Math.min(cards.length - 1, ci + 1))
+              }
+              onMoveToColumn={(targetId) =>
+                onMoveCard(card.cardId, targetId, Number.MAX_SAFE_INTEGER)
+              }
+              onCopyToPanel={() => onCopyToPanel(card)}
             />
+          ))}
+        </SortableContext>
+        {cards.length === 0 && (
+          <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-border/70 text-center text-[11px] text-muted-foreground">
+            Arraste ou adicione um card
           </div>
         )}
       </div>
+
+      {/* rodapé pegajoso — adicionar card */}
+      {access.canAddItems && (
+        <footer className="shrink-0 border-t border-border bg-surface/70 pl-4 pr-2 py-2">
+          <AddCardDialog
+            columnId={column.id}
+            workspace={workspace}
+            existingItemIds={cards.map((c) => c.itemId)}
+            onAdded={onAdded}
+          />
+        </footer>
+      )}
 
       {confirmDelete && (
         <DeleteColumnDialog
@@ -885,6 +1101,7 @@ function SortableColumn(props: {
     </div>
   );
 }
+
 
 function ColumnDragPreview({ name }: { name: string }) {
   return (
