@@ -93,8 +93,8 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data: any) => {
-      const code = data?.code as string | undefined;
+    onSuccess: (data: { code?: string } | null) => {
+      const code = data?.code;
       if (code === "ROLE_ASSIGNED_EMAIL_CONFIRMATION_PENDING") {
         toast.success("Papel atribuído", {
           description: "O acesso será liberado após a confirmação do e-mail.",
@@ -111,8 +111,9 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
       reset();
       onOpenChange(false);
     },
-    onError: (e: any) => {
-      const info = traduzirErroAtribuicao(e?.message ?? "");
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : "";
+      const info = traduzirErroAtribuicao(msg);
       if (info.needsMfa) {
         setMfaOpen(true);
         toast.warning(info.title, { description: info.description });
@@ -121,6 +122,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
       toast.error(info.title, { description: info.description });
     },
   });
+
 
   const podeSubmeter =
     !!target &&
