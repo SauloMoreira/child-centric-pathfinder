@@ -1063,6 +1063,13 @@ export type Database = {
         Args: { required_role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
+      tem_papel_usuario: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       access_request_status:
