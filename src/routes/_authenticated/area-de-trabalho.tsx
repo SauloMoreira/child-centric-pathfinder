@@ -347,10 +347,12 @@ function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
 function PanelBoard({
   defensorId,
   panelId,
+  activePanel,
   allPanels,
 }: {
   defensorId: string;
   panelId: string;
+  activePanel: PanelSummary | null;
   allPanels: PanelSummary[];
 }) {
   const qc = useQueryClient();
@@ -365,14 +367,14 @@ function PanelBoard({
 
   if (workspaceQuery.isLoading) {
     return (
-      <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+      <div className="m-4 flex flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-surface/60 p-12 text-sm text-muted-foreground lg:m-8">
         Carregando Painel…
       </div>
     );
   }
   if (!data?.workspace) {
     return (
-      <div className="surface-panel flex h-full items-center justify-center p-12 text-sm text-muted-foreground">
+      <div className="m-4 flex flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-surface/60 p-12 text-sm text-muted-foreground lg:m-8">
         Painel indisponível.
       </div>
     );
@@ -389,11 +391,14 @@ function PanelBoard({
       access={data.access}
       columns={data.columns}
       cards={data.cards}
+      activePanel={activePanel}
       allPanels={allPanels}
+      isFetching={workspaceQuery.isFetching}
       onRefetch={() => qc.invalidateQueries({ queryKey: key })}
     />
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // ColumnsBoard — DnD de colunas + cards
