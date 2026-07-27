@@ -78,9 +78,11 @@ export type Database = {
         Row: {
           category_id: string | null
           created_at: string
+          current_published_version_id: string | null
           current_version_id: string | null
           id: string
           kind: Database["public"]["Enums"]["content_kind"]
+          optimistic_version: number
           orgao_id: string | null
           owner_user_id: string
           status: Database["public"]["Enums"]["content_status"]
@@ -90,9 +92,11 @@ export type Database = {
         Insert: {
           category_id?: string | null
           created_at?: string
+          current_published_version_id?: string | null
           current_version_id?: string | null
           id?: string
           kind: Database["public"]["Enums"]["content_kind"]
+          optimistic_version?: number
           orgao_id?: string | null
           owner_user_id: string
           status?: Database["public"]["Enums"]["content_status"]
@@ -102,9 +106,11 @@ export type Database = {
         Update: {
           category_id?: string | null
           created_at?: string
+          current_published_version_id?: string | null
           current_version_id?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["content_kind"]
+          optimistic_version?: number
           orgao_id?: string | null
           owner_user_id?: string
           status?: Database["public"]["Enums"]["content_status"]
@@ -117,6 +123,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_current_pub_version_fk"
+            columns: ["current_published_version_id"]
+            isOneToOne: false
+            referencedRelation: "content_versions"
             referencedColumns: ["id"]
           },
           {
@@ -143,7 +156,9 @@ export type Database = {
           created_by: string
           form_schema: Json | null
           id: string
+          is_published: boolean
           item_id: string
+          published_at: string | null
           title: string
           version_number: number
         }
@@ -154,7 +169,9 @@ export type Database = {
           created_by: string
           form_schema?: Json | null
           id?: string
+          is_published?: boolean
           item_id: string
+          published_at?: string | null
           title: string
           version_number: number
         }
@@ -165,7 +182,9 @@ export type Database = {
           created_by?: string
           form_schema?: Json | null
           id?: string
+          is_published?: boolean
           item_id?: string
+          published_at?: string | null
           title?: string
           version_number?: number
         }
@@ -596,7 +615,14 @@ export type Database = {
         }
         Returns: Json
       }
-      arquivar_item: { Args: { p_item_id: string }; Returns: undefined }
+      arquivar_item: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key: string
+          p_item_id: string
+        }
+        Returns: Json
+      }
       atualizar_card_workspace: {
         Args: { p_card_id: string; p_note: string }
         Returns: undefined
@@ -620,11 +646,13 @@ export type Database = {
         Args: {
           p_body_json: Json
           p_body_text: string
+          p_expected_version: number
           p_form_schema?: Json
+          p_idempotency_key: string
           p_item_id: string
           p_title: string
         }
-        Returns: string
+        Returns: Json
       }
       atualizar_workspace_meta: {
         Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
@@ -903,10 +931,12 @@ export type Database = {
           body_json: Json
           categoria_id: string
           categoria_nome: string
+          current_published_version_id: string
           current_version_id: string
           form_schema: Json
           id: string
           kind: Database["public"]["Enums"]["content_kind"]
+          optimistic_version: number
           owner_user_id: string
           status: Database["public"]["Enums"]["content_status"]
           titulo: string
@@ -921,10 +951,12 @@ export type Database = {
       }
       publicar_versao: {
         Args: {
+          p_expected_version: number
+          p_idempotency_key: string
           p_item_id: string
           p_visibility: Database["public"]["Enums"]["content_visibility"]
         }
-        Returns: undefined
+        Returns: Json
       }
       reativar_membro_equipe: {
         Args: { p_motivo: string; p_user_id: string }
