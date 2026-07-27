@@ -1097,6 +1097,10 @@ export type Database = {
       }
     }
     Functions: {
+      adicionar_card_workspace: {
+        Args: { p_column_id: string; p_item_id: string; p_note?: string }
+        Returns: string
+      }
       admin_add_comarca_to_orgao: {
         Args: {
           p_comarca_nome: string
@@ -1191,6 +1195,14 @@ export type Database = {
         Args: { p_assistido_id: string; p_payload: Json }
         Returns: Json
       }
+      atualizar_card_workspace: {
+        Args: { p_card_id: string; p_note: string }
+        Returns: undefined
+      }
+      atualizar_coluna_workspace: {
+        Args: { p_column_id: string; p_cor?: string; p_nome: string }
+        Returns: undefined
+      }
       atualizar_membro_equipe: {
         Args: {
           p_funcao_interna: string
@@ -1259,6 +1271,10 @@ export type Database = {
         }
         Returns: Json
       }
+      criar_coluna_workspace: {
+        Args: { p_cor?: string; p_nome: string; p_workspace_id: string }
+        Returns: string
+      }
       criar_convite_equipe: {
         Args: {
           p_email: string
@@ -1276,6 +1292,15 @@ export type Database = {
       criar_workspace: {
         Args: { p_icone?: string; p_nome: string; p_orgao_id: string }
         Returns: Json
+      }
+      criar_workspace_defensor: {
+        Args: {
+          p_defensor_user_id: string
+          p_icone?: string
+          p_nome: string
+          p_orgao_id: string
+        }
+        Returns: string
       }
       defensor_alterar_orgao_ativo: {
         Args: {
@@ -1306,7 +1331,15 @@ export type Database = {
         Returns: Json
       }
       ensure_default_workspace: { Args: { p_orgao_id?: string }; Returns: Json }
+      excluir_coluna_workspace: {
+        Args: { p_column_id: string }
+        Returns: undefined
+      }
       excluir_workspace: { Args: { p_workspace_id: string }; Returns: Json }
+      excluir_workspace_defensor: {
+        Args: { p_workspace_id: string }
+        Returns: undefined
+      }
       get_workspace_column_assistidos: {
         Args: { p_column_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
@@ -1383,6 +1416,14 @@ export type Database = {
       listar_workspaces_orgao: { Args: { p_orgao_id?: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
       meu_estado_institucional: { Args: never; Returns: Json }
+      mover_card_workspace: {
+        Args: {
+          p_card_id: string
+          p_new_position: number
+          p_target_column_id: string
+        }
+        Returns: undefined
+      }
       promover_admin_tecnico: {
         Args: { p_justificativa: string; p_target_user_id: string }
         Returns: Json
@@ -1421,6 +1462,10 @@ export type Database = {
         Args: { p_motivo: string; p_request_id: string; p_version: number }
         Returns: Json
       }
+      remover_card_workspace: {
+        Args: { p_card_id: string }
+        Returns: undefined
+      }
       remover_foto_assistido: {
         Args: { p_assistido_id: string }
         Returns: Json
@@ -1429,9 +1474,25 @@ export type Database = {
         Args: { p_nome: string; p_workspace_id: string }
         Returns: Json
       }
+      renomear_workspace_defensor: {
+        Args: { p_icone?: string; p_nome: string; p_workspace_id: string }
+        Returns: undefined
+      }
+      reordenar_colunas_workspace: {
+        Args: { p_column_ids: string[]; p_workspace_id: string }
+        Returns: undefined
+      }
       reordenar_workspaces: {
         Args: { p_ordered_ids: string[]; p_orgao_id: string }
         Returns: Json
+      }
+      reordenar_workspaces_defensor: {
+        Args: {
+          p_defensor_user_id: string
+          p_orgao_id: string
+          p_workspace_ids: string[]
+        }
+        Returns: undefined
       }
       reorder_workspace_columns: {
         Args: { p_ordered_ids: string[]; p_workspace_id: string }
