@@ -47,6 +47,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEstadoInstitucional, isDefensor } from "@/hooks/use-estado-institucional";
 import {
   adicionarCardWorkspace,
+  atualizarColunaWorkspace,
   criarColunaWorkspace,
   excluirColunaWorkspace,
   isConcurrentChangeError,
@@ -59,6 +60,7 @@ import {
   workspaceKeys,
   type WorkspaceAccess,
   type WorkspaceCardDto,
+  type WorkspaceColor,
   type WorkspaceColumn,
   type WorkspaceMeta,
 } from "@/lib/reintegra-api";
