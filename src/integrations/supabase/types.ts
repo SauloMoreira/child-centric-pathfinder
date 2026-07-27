@@ -1344,6 +1344,61 @@ export type Database = {
         Args: { p_column_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
       }
+      listar_biblioteca: {
+        Args: {
+          p_apenas_meus?: boolean
+          p_category_id?: string
+          p_kind?: Database["public"]["Enums"]["content_kind"]
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: {
+          categoria_id: string
+          categoria_nome: string
+          id: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          owner_user_id: string
+          status: Database["public"]["Enums"]["content_status"]
+          titulo: string
+          updated_at: string
+          visibility: Database["public"]["Enums"]["content_visibility"]
+        }[]
+      }
+      listar_cards_coluna: {
+        Args: { p_column_id: string }
+        Returns: {
+          categoria: string
+          id: string
+          item_id: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          note: string
+          order_position: number
+          status: Database["public"]["Enums"]["content_status"]
+          titulo: string
+          updated_at: string
+        }[]
+      }
+      listar_categorias_biblioteca: {
+        Args: { p_kind?: Database["public"]["Enums"]["content_kind"] }
+        Returns: {
+          cor: string
+          id: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          nome: string
+          order_position: number
+        }[]
+      }
+      listar_colunas_workspace: {
+        Args: { p_workspace_id: string }
+        Returns: {
+          cor: string
+          id: string
+          nome: string
+          order_position: number
+          total_cards: number
+        }[]
+      }
       listar_convites_equipe: {
         Args: { p_orgao_id?: string }
         Returns: {
@@ -1409,9 +1464,32 @@ export type Database = {
           version: number
         }[]
       }
+      listar_versoes_item: {
+        Args: { p_item_id: string }
+        Returns: {
+          created_at: string
+          created_by: string
+          id: string
+          is_current: boolean
+          titulo: string
+          version_number: number
+        }[]
+      }
       listar_workspace: {
         Args: { p_orgao_id?: string; p_workspace_id?: string }
         Returns: Json
+      }
+      listar_workspaces_defensor: {
+        Args: { p_defensor_user_id: string; p_orgao_id: string }
+        Returns: {
+          icone: string
+          id: string
+          nome: string
+          order_position: number
+          total_cards: number
+          total_colunas: number
+          updated_at: string
+        }[]
       }
       listar_workspaces_orgao: { Args: { p_orgao_id?: string }; Returns: Json }
       meu_convite_pendente: { Args: never; Returns: Json }
@@ -1423,6 +1501,24 @@ export type Database = {
           p_target_column_id: string
         }
         Returns: undefined
+      }
+      obter_item_biblioteca: {
+        Args: { p_item_id: string }
+        Returns: {
+          body_json: Json
+          categoria_id: string
+          categoria_nome: string
+          current_version_id: string
+          form_schema: Json
+          id: string
+          kind: Database["public"]["Enums"]["content_kind"]
+          owner_user_id: string
+          status: Database["public"]["Enums"]["content_status"]
+          titulo: string
+          updated_at: string
+          version_number: number
+          visibility: Database["public"]["Enums"]["content_visibility"]
+        }[]
       }
       promover_admin_tecnico: {
         Args: { p_justificativa: string; p_target_user_id: string }
