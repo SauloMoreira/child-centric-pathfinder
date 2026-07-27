@@ -21,9 +21,7 @@ function NotFoundComponent() {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Erro 404
         </p>
-        <h1 className="mt-3 text-2xl font-semibold text-foreground">
-          Página não encontrada
-        </h1>
+        <h1 className="mt-3 text-2xl font-semibold text-foreground">Página não encontrada</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           O endereço acessado não existe ou não está disponível para o seu perfil.
         </p>
@@ -57,8 +55,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           Esta tela não pôde ser carregada
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Tente novamente em instantes. Se o problema persistir, informe a
-          equipe institucional responsável pelo Ágora.
+          Tente novamente em instantes. Se o problema persistir, informe a equipe institucional
+          responsável pelo Ágora.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -90,22 +88,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Ágora" },
       {
         name: "description",
-        content:
-          "Ágora - sistema de Formulários e cotas",
+        content: "Ágora - sistema de Formulários e cotas",
       },
       { name: "author", content: "Defensoria Pública do Estado do Rio Grande do Sul" },
       { property: "og:title", content: "Ágora" },
       {
         property: "og:description",
-        content:
-          "Ágora - sistema de Formulários e cotas",
+        content: "Ágora - sistema de Formulários e cotas",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Ágora" },
       { name: "twitter:description", content: "Ágora - sistema de Formulários e cotas" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -147,11 +151,7 @@ function RootComponent() {
   // em SIGNED_OUT (evita 401 storm contra sessão zerada).
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (
-        event !== "SIGNED_IN" &&
-        event !== "SIGNED_OUT" &&
-        event !== "USER_UPDATED"
-      ) return;
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") {
         queryClient.invalidateQueries();

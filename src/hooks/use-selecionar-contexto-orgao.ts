@@ -25,7 +25,6 @@ const OPERATIONAL_KEYS = [
   "biblioteca-categorias",
 ];
 
-
 export function useSelecionarContextoOrgao() {
   const qc = useQueryClient();
   const router = useRouter();
@@ -50,12 +49,10 @@ export function useSelecionarContextoOrgao() {
     onSuccess: async (r) => {
       if (!r.ok) {
         const map: Record<string, string> = {
-          ORGANIZATION_NOT_ACCESSIBLE:
-            "Você não possui vínculo ativo com este órgão.",
+          ORGANIZATION_NOT_ACCESSIBLE: "Você não possui vínculo ativo com este órgão.",
           ORGANIZATION_NOT_FOUND: "Órgão não encontrado.",
           PROFILE_INACTIVE: "Sua conta institucional não está ativa.",
-          CONCURRENT_CHANGE:
-            "O órgão em uso foi alterado em outra janela. Recarregando…",
+          CONCURRENT_CHANGE: "O órgão em uso foi alterado em outra janela. Recarregando…",
           UNAUTHENTICATED: "Sessão expirada. Faça login novamente.",
         };
         toast.error(map[r.code] ?? "Não foi possível alterar o órgão em uso.");
@@ -66,20 +63,16 @@ export function useSelecionarContextoOrgao() {
       // Cancela e remove apenas caches operacionais (preserva estado institucional,
       // catálogos, autenticação e preferências).
       await qc.cancelQueries({
-        predicate: (q) =>
-          OPERATIONAL_KEYS.includes(String(q.queryKey?.[0] ?? "")),
+        predicate: (q) => OPERATIONAL_KEYS.includes(String(q.queryKey?.[0] ?? "")),
       });
       qc.removeQueries({
-        predicate: (q) =>
-          OPERATIONAL_KEYS.includes(String(q.queryKey?.[0] ?? "")),
+        predicate: (q) => OPERATIONAL_KEYS.includes(String(q.queryKey?.[0] ?? "")),
       });
 
       await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
       await router.invalidate();
 
-      toast.success(
-        `Órgão de trabalho alterado para "${r.contextoAtual.nome}".`,
-      );
+      toast.success(`Órgão de trabalho alterado para "${r.contextoAtual.nome}".`);
     },
     onError: () => {
       toast.error("Não foi possível alterar o órgão em uso.");

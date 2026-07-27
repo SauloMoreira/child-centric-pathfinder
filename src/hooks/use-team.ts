@@ -77,16 +77,13 @@ export function useInviteTeamMember() {
     }) => {
       const idempotencyKey = crypto.randomUUID();
       const redirectTo = `${window.location.origin}/ativar-convite`;
-      const { data, error } = await supabase.functions.invoke(
-        "invite-team-member",
-        {
-          body: {
-            ...input,
-            idempotencyKey,
-            redirectTo,
-          },
+      const { data, error } = await supabase.functions.invoke("invite-team-member", {
+        body: {
+          ...input,
+          idempotencyKey,
+          redirectTo,
         },
-      );
+      });
       if (error) {
         // supabase.functions.invoke embrulha erros HTTP; extrair corpo
         let bodyMsg = "";
@@ -210,7 +207,6 @@ export function useUpdateMember() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team-members"] }),
   });
 }
-
 
 export function useMyPendingInvitation() {
   return useQuery({

@@ -25,12 +25,7 @@ type Props = {
   signOutOnCancel?: boolean;
 };
 
-export function MfaChallengeDialog({
-  open,
-  onOpenChange,
-  onSuccess,
-  signOutOnCancel,
-}: Props) {
+export function MfaChallengeDialog({ open, onOpenChange, onSuccess, signOutOnCancel }: Props) {
   const qc = useQueryClient();
   const [factor, setFactor] = useState<VerifiedFactor | null>(null);
   const [loading, setLoading] = useState(false);
@@ -121,8 +116,8 @@ export function MfaChallengeDialog({
             Confirmar autenticação em dois fatores
           </DialogTitle>
           <DialogDescription>
-            Informe o código de 6 dígitos gerado pelo seu aplicativo
-            autenticador para elevar esta sessão.
+            Informe o código de 6 dígitos gerado pelo seu aplicativo autenticador para elevar esta
+            sessão.
           </DialogDescription>
         </DialogHeader>
 
@@ -160,18 +155,11 @@ export function MfaChallengeDialog({
               </p>
             )}
             <DialogFooter className="gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={verifying}
-              >
+              <Button type="button" variant="outline" onClick={handleCancel} disabled={verifying}>
                 {signOutOnCancel ? "Sair" : "Cancelar"}
               </Button>
               <Button type="submit" disabled={verifying || code.length !== 6}>
-                {verifying && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                )}
+                {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
                 Confirmar
               </Button>
             </DialogFooter>
@@ -197,8 +185,7 @@ export function MfaChallengeDialog({
 
 /** Retorna true se a sessão atual precisa de step-up MFA. */
 export async function precisaStepUpMfa(): Promise<boolean> {
-  const { data, error } =
-    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (error || !data) return false;
   return data.currentLevel === "aal1" && data.nextLevel === "aal2";
 }

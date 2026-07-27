@@ -9,11 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export function normalizeComarca(v: string): string {
@@ -65,8 +61,7 @@ export function ComarcaCombobox({
   const queryNorm = normalizeComarca(query);
   const canonicalQuery = canonicalizeComarca(query);
   const existingMatch = normalizedOptions.find((o) => o.norm === queryNorm);
-  const canCreate =
-    canonicalQuery.length >= 2 && !existingMatch;
+  const canCreate = canonicalQuery.length >= 2 && !existingMatch;
 
   const filtered = useMemo(() => {
     if (!queryNorm) return normalizedOptions;
@@ -90,14 +85,9 @@ export function ComarcaCombobox({
           aria-expanded={open}
           aria-invalid={rest["aria-invalid"]}
           disabled={disabled}
-          className={cn(
-            "w-full justify-between font-normal",
-            !value && "text-muted-foreground",
-          )}
+          className={cn("w-full justify-between font-normal", !value && "text-muted-foreground")}
         >
-          <span className="truncate">
-            {value || placeholder}
-          </span>
+          <span className="truncate">{value || placeholder}</span>
           {loading ? (
             <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin opacity-50" aria-hidden />
           ) : (
@@ -105,10 +95,7 @@ export function ComarcaCombobox({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
-        align="start"
-      >
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={placeholder}
@@ -141,9 +128,7 @@ export function ComarcaCombobox({
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        value && normalizeComarca(value) === o.norm
-                          ? "opacity-100"
-                          : "opacity-0",
+                        value && normalizeComarca(value) === o.norm ? "opacity-100" : "opacity-0",
                       )}
                       aria-hidden
                     />

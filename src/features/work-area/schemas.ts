@@ -1,14 +1,7 @@
 import { z } from "zod";
-import {
-  PANEL_ICON_ALLOWLIST,
-  PANEL_NAME_MAX,
-  PANEL_NAME_MIN,
-} from "./types";
+import { PANEL_ICON_ALLOWLIST, PANEL_NAME_MAX, PANEL_NAME_MIN } from "./types";
 
-const iconSchema = z
-  .enum(PANEL_ICON_ALLOWLIST)
-  .nullable()
-  .optional();
+const iconSchema = z.enum(PANEL_ICON_ALLOWLIST).nullable().optional();
 
 export const panelNameSchema = z
   .string()

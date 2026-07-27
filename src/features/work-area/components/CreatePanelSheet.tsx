@@ -81,15 +81,14 @@ export function CreatePanelSheet({
         <SheetHeader>
           <SheetTitle>Novo Painel</SheetTitle>
           <SheetDescription>
-            Painéis organizam colunas e cards de forma independente. Você pode
-            ter até {PANEL_MAX} Painéis ativos.
+            Painéis organizam colunas e cards de forma independente. Você pode ter até {PANEL_MAX}{" "}
+            Painéis ativos.
           </SheetDescription>
         </SheetHeader>
 
         {atLimit ? (
           <div className="mt-6 rounded-md border border-border bg-muted/50 p-4 text-sm">
-            Limite de {PANEL_MAX} Painéis atingido. Arquive um Painel para criar
-            outro.
+            Limite de {PANEL_MAX} Painéis atingido. Arquive um Painel para criar outro.
           </div>
         ) : (
           <form onSubmit={submit} className="mt-6 space-y-4">
@@ -102,9 +101,7 @@ export function CreatePanelSheet({
                 placeholder="Ex: Prioridades"
                 {...register("name")}
               />
-              {errors.name && (
-                <p className="text-xs text-destructive">{errors.name.message}</p>
-              )}
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -135,11 +132,7 @@ export function CreatePanelSheet({
             </div>
 
             <SheetFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={mut.isPending}>

@@ -26,10 +26,7 @@ import { ShieldAlert, Check, X, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitacoes")({
   head: () => ({
-    meta: [
-      { title: "Solicitações — Ágora" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Solicitações — Ágora" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: SolicitacoesAdmin,
 });
@@ -116,7 +113,6 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
     },
   });
 
-
   const [aprovando, setAprovando] = useState<Solicitacao | null>(null);
   const [rejeitando, setRejeitando] = useState<Solicitacao | null>(null);
 
@@ -129,15 +125,19 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
           </p>
           <h1 className="mt-2 text-2xl font-semibold">Solicitações de acesso</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Revise, aprove ou rejeite pedidos pendentes. A decisão exige MFA
-            (AAL2) e é registrada em auditoria institucional.
+            Revise, aprove ou rejeite pedidos pendentes. A decisão exige MFA (AAL2) e é registrada
+            em auditoria institucional.
           </p>
         </div>
         {!aal2 && (
           <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs">
             <p className="font-medium">MFA necessário</p>
             <p className="text-muted-foreground">
-              Configure e valide o segundo fator em <Link to="/conta" className="underline">Minha conta</Link>.
+              Configure e valide o segundo fator em{" "}
+              <Link to="/conta" className="underline">
+                Minha conta
+              </Link>
+              .
             </p>
           </div>
         )}
@@ -171,8 +171,7 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
                   ) : (
                     <span className="rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[11px]">
                       Proposta de novo órgão: {s.proposta_novo_orgao_nome}
-                      {s.proposta_novo_orgao_comarca &&
-                        ` — ${s.proposta_novo_orgao_comarca}`}
+                      {s.proposta_novo_orgao_comarca && ` — ${s.proposta_novo_orgao_comarca}`}
                     </span>
                   )}
                 </p>
@@ -190,11 +189,7 @@ function SolicitacoesInner({ aal2 }: { aal2: boolean }) {
                 >
                   <X className="mr-1 h-4 w-4" aria-hidden /> Rejeitar
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setAprovando(s)}
-                  disabled={!aal2}
-                >
+                <Button size="sm" onClick={() => setAprovando(s)} disabled={!aal2}>
                   <Check className="mr-1 h-4 w-4" aria-hidden /> Aprovar
                 </Button>
               </div>
@@ -265,8 +260,7 @@ function DialogAprovar({
       toast.success("Solicitação aprovada.");
       onDone();
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao aprovar."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao aprovar."),
   });
 
   return (
@@ -275,16 +269,15 @@ function DialogAprovar({
         <DialogHeader>
           <DialogTitle>Aprovar solicitação institucional</DialogTitle>
           <DialogDescription>
-            Ao aprovar, o usuário receberá o papel de Defensor Público e vínculo
-            com o órgão escolhido. Ação registrada em auditoria e exigindo MFA.
+            Ao aprovar, o usuário receberá o papel de Defensor Público e vínculo com o órgão
+            escolhido. Ação registrada em auditoria e exigindo MFA.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <div className="rounded-md border border-border p-3">
             <p className="font-medium">{solicitacao.nome_completo}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              <span className="font-mono">{solicitacao.matricula}</span> ·{" "}
-              {solicitacao.cargo}
+              <span className="font-mono">{solicitacao.matricula}</span> · {solicitacao.cargo}
             </p>
           </div>
           {propostaNovo ? (
@@ -293,8 +286,7 @@ function DialogAprovar({
                 Solicitante propôs criação de novo órgão:
                 <br />
                 <span className="font-medium">
-                  {solicitacao.proposta_novo_orgao_sigla} —{" "}
-                  {solicitacao.proposta_novo_orgao_nome}
+                  {solicitacao.proposta_novo_orgao_sigla} — {solicitacao.proposta_novo_orgao_nome}
                 </span>
               </p>
               <label className="flex items-center gap-2 text-sm">
@@ -332,7 +324,6 @@ function DialogAprovar({
                     </SelectItem>
                   ))}
                 </SelectContent>
-
               </Select>
             </div>
           )}
@@ -377,8 +368,7 @@ function DialogRejeitar({
       toast.success("Solicitação rejeitada.");
       onDone();
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao rejeitar."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao rejeitar."),
   });
 
   return (

@@ -26,20 +26,16 @@ export function parsePanelErrorCode(err: unknown): PanelErrorCode {
 const PT_MESSAGES: Record<PanelErrorCode, string> = {
   PANEL_LIMIT_REACHED: "O limite máximo de 8 Painéis foi atingido.",
   PANEL_NAME_ALREADY_EXISTS: "Já existe um Painel com esse nome.",
-  PANEL_NOT_EMPTY:
-    "Este Painel possui Atendimentos ou Cotas. Remova os cards antes de excluí-lo.",
-  LAST_PANEL_CANNOT_BE_DELETED:
-    "A Área de Trabalho precisa possuir ao menos um Painel.",
+  PANEL_NOT_EMPTY: "Este Painel possui Atendimentos ou Cotas. Remova os cards antes de excluí-lo.",
+  LAST_PANEL_CANNOT_BE_DELETED: "A Área de Trabalho precisa possuir ao menos um Painel.",
   PANEL_ORDER_INVALID:
     "Não foi possível atualizar a ordem dos Painéis. Atualize a página e tente novamente.",
   CONCURRENT_CHANGE: "A Área de Trabalho foi alterada em outra sessão.",
   FORBIDDEN: "Você não possui permissão para realizar esta ação.",
-  PROFILE_INACTIVE:
-    "Seu acesso está inativo. Entre em contato com a administração.",
+  PROFILE_INACTIVE: "Seu acesso está inativo. Entre em contato com a administração.",
   PANEL_NOT_FOUND: "O Painel solicitado não foi encontrado.",
   DUPLICATE_PANEL_ITEM: "Este conteúdo já está no Painel selecionado.",
-  WORK_AREA_NOT_INITIALIZED:
-    "A Área de Trabalho ainda não foi inicializada pelo Defensor.",
+  WORK_AREA_NOT_INITIALIZED: "A Área de Trabalho ainda não foi inicializada pelo Defensor.",
   UNKNOWN: "Não foi possível concluir a operação. Tente novamente.",
 };
 

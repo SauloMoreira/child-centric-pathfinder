@@ -47,9 +47,7 @@ export function useWorkArea(defenderUserId: string | null | undefined) {
   const isOwner = !!defenderUserId && viewerId === defenderUserId;
 
   const query = useQuery({
-    queryKey: defenderUserId
-      ? workAreaKeys.panels(defenderUserId)
-      : ["work-area", "unknown"],
+    queryKey: defenderUserId ? workAreaKeys.panels(defenderUserId) : ["work-area", "unknown"],
     enabled: !!defenderUserId,
     queryFn: async (): Promise<WorkArea> => {
       try {
@@ -63,10 +61,7 @@ export function useWorkArea(defenderUserId: string | null | undefined) {
       }
     },
     retry: (failureCount, err) => {
-      if (
-        err instanceof WorkAreaNotInitializedError ||
-        err instanceof WorkAreaForbiddenError
-      ) {
+      if (err instanceof WorkAreaNotInitializedError || err instanceof WorkAreaForbiddenError) {
         return false;
       }
       return failureCount < 2;
@@ -74,8 +69,7 @@ export function useWorkArea(defenderUserId: string | null | undefined) {
     staleTime: 15_000,
   });
 
-  const notInitialized =
-    query.error instanceof WorkAreaNotInitializedError;
+  const notInitialized = query.error instanceof WorkAreaNotInitializedError;
   const forbidden = query.error instanceof WorkAreaForbiddenError;
 
   return {
@@ -146,16 +140,12 @@ export function useRenamePanel(defenderUserId: string) {
     },
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: workAreaKeys.panels(defenderUserId) });
-      const prev = qc.getQueryData<WorkArea>(
-        workAreaKeys.panels(defenderUserId),
-      );
+      const prev = qc.getQueryData<WorkArea>(workAreaKeys.panels(defenderUserId));
       if (prev) {
         qc.setQueryData<WorkArea>(workAreaKeys.panels(defenderUserId), {
           ...prev,
           panels: prev.panels.map((p) =>
-            p.id === vars.panelId
-              ? { ...p, name: vars.name, icon: vars.icon ?? p.icon }
-              : p,
+            p.id === vars.panelId ? { ...p, name: vars.name, icon: vars.icon ?? p.icon } : p,
           ),
         });
       }
@@ -194,9 +184,7 @@ export function useReorderPanels(defenderUserId: string) {
     },
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: workAreaKeys.panels(defenderUserId) });
-      const prev = qc.getQueryData<WorkArea>(
-        workAreaKeys.panels(defenderUserId),
-      );
+      const prev = qc.getQueryData<WorkArea>(workAreaKeys.panels(defenderUserId));
       if (prev) {
         const reordered = vars.items.map((p, idx) => ({ ...p, position: idx }));
         qc.setQueryData<WorkArea>(workAreaKeys.panels(defenderUserId), {
@@ -225,10 +213,7 @@ export function useArchivePanel(defenderUserId: string) {
   const keyRef = useRef<string | null>(null);
 
   return useMutation({
-    mutationFn: async (vars: {
-      panelId: string;
-      expectedVersion: number;
-    }) => {
+    mutationFn: async (vars: { panelId: string; expectedVersion: number }) => {
       if (!keyRef.current) keyRef.current = uuid();
       const input: ArchivePanelInput = {
         panelId: vars.panelId,

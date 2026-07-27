@@ -25,10 +25,7 @@ import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
   head: () => ({
-    meta: [
-      { title: "Solicitar acesso — Ágora" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Solicitar acesso — Ágora" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   beforeLoad: async () => {
     const { data, error } = await supabase.rpc("meu_estado_institucional");
@@ -46,7 +43,6 @@ export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
   component: SolicitarAcesso,
 });
 
-
 const NOVO = "__novo__";
 const CARGO_DEFENSOR = "Defensor Público";
 const CARGO_MEMBRO = "Membro de equipe";
@@ -62,17 +58,15 @@ const formSchema = z
     novo_nome: z.string().trim().max(200).optional(),
     novo_comarca: z.string().trim().max(120).optional(),
   })
-  .refine(
-    (v) =>
-      v.cargo !== CARGO_DEFENSOR || (v.matricula && v.matricula.trim().length >= 2),
-    { message: "Informe sua matrícula.", path: ["matricula"] },
-  );
+  .refine((v) => v.cargo !== CARGO_DEFENSOR || (v.matricula && v.matricula.trim().length >= 2), {
+    message: "Informe sua matrícula.",
+    path: ["matricula"],
+  });
 
 function SolicitarAcesso() {
   const { data: estado, isLoading: estadoLoading } = useEstadoInstitucional();
   const navigate = useNavigate();
   const qc = useQueryClient();
-
 
   const orgaosQ = useQuery({
     queryKey: ["orgaos-execucao"],
@@ -117,8 +111,7 @@ function SolicitarAcesso() {
       toast.success("Solicitação cancelada.");
       qc.invalidateQueries({ queryKey: ["estado-institucional"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao cancelar."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao cancelar."),
   });
 
   async function onSubmit(e: React.FormEvent) {
@@ -136,10 +129,7 @@ function SolicitarAcesso() {
       toast.error("Selecione seu órgão de execução ou proponha um novo.");
       return;
     }
-    if (
-      orgaoSel === NOVO &&
-      (!form.novo_nome.trim() || !form.novo_comarca.trim())
-    ) {
+    if (orgaoSel === NOVO && (!form.novo_nome.trim() || !form.novo_comarca.trim())) {
       toast.error("Para propor novo órgão, informe nome e comarca.");
       return;
     }
@@ -168,7 +158,11 @@ function SolicitarAcesso() {
     if (error) {
       const code = (error as { code?: string; message?: string }).code;
       const msg = error.message || "";
-      if (code === "PROFILE_ALREADY_ACTIVE" || /já processado/i.test(msg) || /already.?active/i.test(msg)) {
+      if (
+        code === "PROFILE_ALREADY_ACTIVE" ||
+        /já processado/i.test(msg) ||
+        /already.?active/i.test(msg)
+      ) {
         toast.info("Seu acesso já está ativo. Redirecionamos você para a Área de Trabalho.");
         await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
         navigate({ to: "/area-de-trabalho", replace: true });
@@ -202,7 +196,6 @@ function SolicitarAcesso() {
   }
 
   if (solicitacaoAberta) {
-
     return (
       <div className="mx-auto max-w-2xl p-6 lg:p-8">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
@@ -218,9 +211,8 @@ function SolicitarAcesso() {
         </p>
         <div className="mt-6 surface-panel p-6">
           <p className="text-sm">
-            Enquanto aguarda, o acesso às áreas operacionais permanece
-            indisponível. Se identificou um erro no envio, você pode cancelar e
-            preencher novamente.
+            Enquanto aguarda, o acesso às áreas operacionais permanece indisponível. Se identificou
+            um erro no envio, você pode cancelar e preencher novamente.
           </p>
           <Button
             className="mt-4"
@@ -243,8 +235,8 @@ function SolicitarAcesso() {
       </p>
       <h1 className="mt-2 text-2xl font-semibold">Solicitar acesso ao Ágora</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        Informe seus dados funcionais e o órgão de execução. Um Administrador
-        Institucional revisará e aprovará seu acesso operacional.
+        Informe seus dados funcionais e o órgão de execução. Um Administrador Institucional revisará
+        e aprovará seu acesso operacional.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-8">
@@ -305,17 +297,17 @@ function SolicitarAcesso() {
             Órgão de execução
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Escolha seu órgão de execução na DPE-RS. Caso não esteja listado,
-            proponha a inclusão para revisão do Administrador Institucional.
+            Escolha seu órgão de execução na DPE-RS. Caso não esteja listado, proponha a inclusão
+            para revisão do Administrador Institucional.
           </p>
           <div className="mt-4 space-y-4">
             <div className="space-y-2">
               <Label>Órgão</Label>
               <Select value={orgaoSel} onValueChange={setOrgaoSel}>
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    orgaosQ.isLoading ? "Carregando…" : "Selecionar órgão"
-                  } />
+                  <SelectValue
+                    placeholder={orgaosQ.isLoading ? "Carregando…" : "Selecionar órgão"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {orgaosQ.data?.map((o) => (
@@ -323,9 +315,7 @@ function SolicitarAcesso() {
                       {o.nome} — {o.comarca}
                     </SelectItem>
                   ))}
-                  <SelectItem value={NOVO}>
-                    Propor novo órgão de execução…
-                  </SelectItem>
+                  <SelectItem value={NOVO}>Propor novo órgão de execução…</SelectItem>
                 </SelectContent>
               </Select>
             </div>

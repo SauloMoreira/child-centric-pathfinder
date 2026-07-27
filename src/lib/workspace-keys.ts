@@ -18,10 +18,5 @@ export const workAreaKeys = {
     [...workAreaKeys.panel(defenderUserId, panelId), "columns"] as const,
 
   cards: (defenderUserId: string, panelId: string, columnId: string) =>
-    [
-      ...workAreaKeys.panel(defenderUserId, panelId),
-      "column",
-      columnId,
-      "cards",
-    ] as const,
+    [...workAreaKeys.panel(defenderUserId, panelId), "column", columnId, "cards"] as const,
 };

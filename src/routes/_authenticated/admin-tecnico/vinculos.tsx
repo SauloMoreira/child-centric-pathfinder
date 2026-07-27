@@ -15,9 +15,9 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/vinculos")({
       requireAal2
     >
       <div className="surface-panel p-6 text-sm text-muted-foreground">
-        Interface operacional será liberada na Fase 2 junto com o módulo de
-        movimentações institucionais. A RPC de correção de vínculo já está
-        prevista no roteiro e será acionada exclusivamente por esta tela.
+        Interface operacional será liberada na Fase 2 junto com o módulo de movimentações
+        institucionais. A RPC de correção de vínculo já está prevista no roteiro e será acionada
+        exclusivamente por esta tela.
       </div>
     </TecnicoPage>
   ),

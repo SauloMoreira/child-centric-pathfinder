@@ -20,9 +20,6 @@ export function parseDragId(
   return null;
 }
 
-export function isPanelDrag(data: unknown): data is Extract<
-  WorkAreaDragData,
-  { type: "panel" }
-> {
+export function isPanelDrag(data: unknown): data is Extract<WorkAreaDragData, { type: "panel" }> {
   return !!data && typeof data === "object" && (data as WorkAreaDragData).type === "panel";
 }

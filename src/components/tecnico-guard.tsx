@@ -1,10 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import { ShieldAlert, Terminal } from "lucide-react";
-import {
-  useEstadoInstitucional,
-  isAdminTecnico,
-} from "@/hooks/use-estado-institucional";
+import { useEstadoInstitucional, isAdminTecnico } from "@/hooks/use-estado-institucional";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -54,8 +51,8 @@ export function TecnicoPage({
             <div>
               <h1 className="text-lg font-semibold">Acesso restrito</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Esta área é exclusiva do Administrador Técnico. Toda tentativa
-                de acesso é registrada em auditoria.
+                Esta área é exclusiva do Administrador Técnico. Toda tentativa de acesso é
+                registrada em auditoria.
               </p>
             </div>
           </div>
@@ -76,8 +73,10 @@ export function TecnicoPage({
             <div>
               <h1 className="text-lg font-semibold">MFA obrigatório</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Esta operação exige sessão em AAL2. Configure e valide o segundo
-                fator em <Link to="/conta" className="underline">Minha conta</Link>{" "}
+                Esta operação exige sessão em AAL2. Configure e valide o segundo fator em{" "}
+                <Link to="/conta" className="underline">
+                  Minha conta
+                </Link>{" "}
                 e retorne para continuar.
               </p>
             </div>
@@ -100,9 +99,7 @@ export function TecnicoPage({
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h1>
             {description && (
-              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-                {description}
-              </p>
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{description}</p>
             )}
           </div>
         </div>

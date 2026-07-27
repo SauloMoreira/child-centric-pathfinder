@@ -41,9 +41,7 @@ export class WorkAreaForbiddenError extends Error {
  * Retorna `WorkArea` para caller autorizado com Painéis, ou lança
  * `WorkAreaNotInitializedError` / `WorkAreaForbiddenError`.
  */
-export async function readWorkArea(input: {
-  defenderUserId: string;
-}): Promise<WorkArea> {
+export async function readWorkArea(input: { defenderUserId: string }): Promise<WorkArea> {
   const { data, error } = await supabase.rpc(
     "listar_area_trabalho_defensor" as never,
     { p_defensor_user_id: input.defenderUserId } as never,
@@ -84,9 +82,7 @@ export type CreatePanelResponse = {
   optimisticVersion: number;
 };
 
-export async function createPanel(
-  input: CreatePanelInput,
-): Promise<CreatePanelResponse> {
+export async function createPanel(input: CreatePanelInput): Promise<CreatePanelResponse> {
   const { data, error } = await supabase.rpc("criar_painel", {
     p_defensor_user_id: input.defenderUserId,
     p_nome: input.name,

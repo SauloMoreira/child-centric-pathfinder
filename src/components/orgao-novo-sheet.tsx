@@ -22,18 +22,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  useEstadoInstitucional,
-  isAdminTecnico,
-} from "@/hooks/use-estado-institucional";
+import { useEstadoInstitucional, isAdminTecnico } from "@/hooks/use-estado-institucional";
 
-const MFA_ERROR_PATTERNS = [
-  "AAL2",
-  "MFA",
-  "aal2",
-  "mfa",
-  "insufficient_aal",
-] as const;
+const MFA_ERROR_PATTERNS = ["AAL2", "MFA", "aal2", "mfa", "insufficient_aal"] as const;
 
 const MFA_GUIDANCE_MESSAGE =
   "Para criar órgãos, o Administrador Técnico precisa concluir a autenticação em dois fatores (MFA). Ative ou confirme o MFA e tente novamente.";
@@ -90,19 +81,14 @@ export function OrgaoNovoSheet({
   const [duplicateId, setDuplicateId] = useState<string | null>(null);
   const [mfaBlocked, setMfaBlocked] = useState(false);
   const [mfaChallengeOpen, setMfaChallengeOpen] = useState(false);
-  const [hasVerifiedFactor, setHasVerifiedFactor] = useState<boolean | null>(
-    null,
-  );
-  const [idempotencyKey, setIdempotencyKey] = useState(() =>
-    crypto.randomUUID(),
-  );
+  const [hasVerifiedFactor, setHasVerifiedFactor] = useState<boolean | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const qc = useQueryClient();
   const { data: estado, refetch: refetchEstado } = useEstadoInstitucional();
   const isEdit = mode === "edit" && !!orgao;
   const requiresMfa = isAdminTecnico(estado) && !isEdit;
   const hasAal2 = !!estado?.aal2;
   const mfaMissing = requiresMfa && !hasAal2;
-
 
   const form = useForm<FormValues>({
     resolver: zodResolver(orgaoSchema),
@@ -138,15 +124,12 @@ export function OrgaoNovoSheet({
         setHasVerifiedFactor(false);
         return;
       }
-      setHasVerifiedFactor(
-        (data?.totp ?? []).some((f) => f.status === "verified"),
-      );
+      setHasVerifiedFactor((data?.totp ?? []).some((f) => f.status === "verified"));
     });
     return () => {
       alive = false;
     };
   }, [open, mfaMissing]);
-
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -174,9 +157,7 @@ export function OrgaoNovoSheet({
       return data as unknown as RpcResult;
     },
     onSuccess: () => {
-      toast.success(
-        isEdit ? "Órgão atualizado com sucesso." : "Órgão criado com sucesso.",
-      );
+      toast.success(isEdit ? "Órgão atualizado com sucesso." : "Órgão criado com sucesso.");
       setDuplicateId(null);
       form.reset();
       setOpen(false);
@@ -190,9 +171,7 @@ export function OrgaoNovoSheet({
       const msg = err?.message ?? "";
       if (msg.includes("ORGANIZATION_ALREADY_EXISTS")) {
         setDuplicateId(err.hint ?? null);
-        toast.error(
-          "Já existe um órgão de execução com este nome na comarca informada.",
-        );
+        toast.error("Já existe um órgão de execução com este nome na comarca informada.");
         return;
       }
       if (isMfaError(msg)) {
@@ -200,9 +179,7 @@ export function OrgaoNovoSheet({
         toast.error(MFA_GUIDANCE_MESSAGE);
         return;
       }
-      toast.error(
-        msg || (isEdit ? "Falha ao atualizar órgão." : "Falha ao criar órgão."),
-      );
+      toast.error(msg || (isEdit ? "Falha ao atualizar órgão." : "Falha ao criar órgão."));
     },
   });
 
@@ -214,9 +191,7 @@ export function OrgaoNovoSheet({
     }
     // Snap comarca to existing canonical when normalized value matches.
     const norm = normalizeComarca(values.comarca);
-    const canonical =
-      comarcasSugeridas.find((c) => normalizeComarca(c) === norm) ??
-      values.comarca;
+    const canonical = comarcasSugeridas.find((c) => normalizeComarca(c) === norm) ?? values.comarca;
     mutation.mutate({ ...values, comarca: canonical });
   });
 
@@ -237,9 +212,7 @@ export function OrgaoNovoSheet({
       <SheetTrigger asChild>{trigger ?? defaultTrigger}</SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>
-            {isEdit ? "Editar órgão de execução" : "Novo órgão de execução"}
-          </SheetTitle>
+          <SheetTitle>{isEdit ? "Editar órgão de execução" : "Novo órgão de execução"}</SheetTitle>
           <SheetDescription>
             Informe o nome oficial do órgão e a comarca à qual ele pertence.
           </SheetDescription>
@@ -261,9 +234,7 @@ export function OrgaoNovoSheet({
               {...form.register("nome")}
             />
             {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.nome.message}
-              </p>
+              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
             )}
           </div>
 
@@ -288,31 +259,23 @@ export function OrgaoNovoSheet({
               )}
             />
             {form.formState.errors.comarca && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.comarca.message}
-              </p>
+              <p className="text-xs text-destructive">{form.formState.errors.comarca.message}</p>
             )}
           </div>
 
           {duplicateId && (
             <section className="rounded-md border border-warning/40 bg-warning/10 p-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle
-                  className="mt-0.5 h-4 w-4 text-warning"
-                  aria-hidden
-                />
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" aria-hidden />
                 <div className="flex-1 space-y-2 text-xs">
                   <p className="font-medium">
-                    Já existe um órgão de execução com este nome na comarca
-                    informada.
+                    Já existe um órgão de execução com este nome na comarca informada.
                   </p>
                   <p className="text-muted-foreground">
-                    Não é possível duplicar um órgão na mesma comarca. Você
-                    pode consultar o registro existente.
+                    Não é possível duplicar um órgão na mesma comarca. Você pode consultar o
+                    registro existente.
                   </p>
-                  <p className="font-mono text-[11px] text-muted-foreground">
-                    ID: {duplicateId}
-                  </p>
+                  <p className="font-mono text-[11px] text-muted-foreground">ID: {duplicateId}</p>
                 </div>
               </div>
             </section>
@@ -324,14 +287,9 @@ export function OrgaoNovoSheet({
               className="rounded-md border border-destructive/40 bg-destructive/10 p-3"
             >
               <div className="flex items-start gap-2">
-                <ShieldAlert
-                  className="mt-0.5 h-4 w-4 text-destructive"
-                  aria-hidden
-                />
+                <ShieldAlert className="mt-0.5 h-4 w-4 text-destructive" aria-hidden />
                 <div className="flex-1 space-y-2 text-xs">
-                  <p className="font-medium">
-                    MFA obrigatório para esta operação
-                  </p>
+                  <p className="font-medium">MFA obrigatório para esta operação</p>
                   <p className="text-muted-foreground">
                     {hasVerifiedFactor
                       ? "Confirme seu código MFA para continuar. Sua sessão ainda não está elevada (AAL2)."
@@ -347,12 +305,7 @@ export function OrgaoNovoSheet({
                       Confirmar MFA agora
                     </Button>
                   ) : (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setOpen(false)}
-                    >
+                    <Button asChild size="sm" variant="outline" onClick={() => setOpen(false)}>
                       <Link to="/conta">Configurar MFA em Minha conta</Link>
                     </Button>
                   )}
@@ -360,7 +313,6 @@ export function OrgaoNovoSheet({
               </div>
             </section>
           )}
-
 
           <SheetFooter className="gap-2">
             <Button
@@ -379,15 +331,9 @@ export function OrgaoNovoSheet({
                 !form.watch("nome")?.trim() ||
                 !form.watch("comarca")?.trim()
               }
-              title={
-                mfaMissing
-                  ? "Conclua o MFA (AAL2) para criar órgãos."
-                  : undefined
-              }
+              title={mfaMissing ? "Conclua o MFA (AAL2) para criar órgãos." : undefined}
             >
-              {mutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-              )}
+              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
               {isEdit ? "Salvar alterações" : "Criar órgão"}
             </Button>
           </SheetFooter>

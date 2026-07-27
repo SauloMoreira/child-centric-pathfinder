@@ -7,14 +7,12 @@ export const Route = createFileRoute("/")({
       { title: "Ágora" },
       {
         name: "description",
-        content:
-          "Ágora - sistema de Formulários e cotas",
+        content: "Ágora - sistema de Formulários e cotas",
       },
       { property: "og:title", content: "Ágora" },
       {
         property: "og:description",
-        content:
-          "Ágora - sistema de Formulários e cotas",
+        content: "Ágora - sistema de Formulários e cotas",
       },
     ],
   }),
@@ -56,13 +54,11 @@ function PublicLanding() {
               Plataforma institucional · uso interno
             </p>
             <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Plataforma colaborativa de atendimentos e cotas da Defensoria
-              Pública.
+              Plataforma colaborativa de atendimentos e cotas da Defensoria Pública.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Espaço institucional para criar, organizar e utilizar modelos
-              reutilizáveis de atendimento e cotas. O acesso é concedido
-              mediante aprovação institucional.
+              Espaço institucional para criar, organizar e utilizar modelos reutilizáveis de
+              atendimento e cotas. O acesso é concedido mediante aprovação institucional.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -84,9 +80,8 @@ function PublicLanding() {
             </div>
 
             <p className="mt-6 max-w-xl text-xs text-muted-foreground">
-              Somente servidores com e-mail institucional válido e vínculo
-              funcional aprovado podem operar o sistema. Todo acesso é
-              registrado em auditoria.
+              Somente servidores com e-mail institucional válido e vínculo funcional aprovado podem
+              operar o sistema. Todo acesso é registrado em auditoria.
             </p>
           </section>
 
@@ -101,8 +96,8 @@ function PublicLanding() {
                 <div>
                   <p className="font-medium">Autenticação institucional</p>
                   <p className="text-muted-foreground">
-                    E-mail e senha, confirmação de e-mail, recuperação, MFA
-                    obrigatório para administradores.
+                    E-mail e senha, confirmação de e-mail, recuperação, MFA obrigatório para
+                    administradores.
                   </p>
                 </div>
               </li>
@@ -111,8 +106,8 @@ function PublicLanding() {
                 <div>
                   <p className="font-medium">Aprovação institucional</p>
                   <p className="text-muted-foreground">
-                    Novos usuários passam por revisão do Administrador
-                    Institucional antes de operar o sistema.
+                    Novos usuários passam por revisão do Administrador Institucional antes de operar
+                    o sistema.
                   </p>
                 </div>
               </li>
@@ -121,8 +116,8 @@ function PublicLanding() {
                 <div>
                   <p className="font-medium">Prévia do centro de comando</p>
                   <p className="text-muted-foreground">
-                    Quadro Kanban estrutural pronto para receber os módulos
-                    operacionais nas próximas fases.
+                    Quadro Kanban estrutural pronto para receber os módulos operacionais nas
+                    próximas fases.
                   </p>
                 </div>
               </li>
@@ -133,10 +128,7 @@ function PublicLanding() {
 
       <footer className="border-t border-border bg-surface">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {new Date().getFullYear()} Defensoria Pública do Estado do Rio
-            Grande do Sul.
-          </p>
+          <p>© {new Date().getFullYear()} Defensoria Pública do Estado do Rio Grande do Sul.</p>
           <p className="font-mono uppercase tracking-[0.18em]">
             Dados fictícios · homologação institucional
           </p>

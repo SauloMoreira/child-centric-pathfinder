@@ -34,8 +34,7 @@ export const Route = createFileRoute("/_authenticated/biblioteca")({
       { title: "Biblioteca — Ágora" },
       {
         name: "description",
-        content:
-          "Biblioteca institucional de modelos de atendimentos e cotas reutilizáveis.",
+        content: "Biblioteca institucional de modelos de atendimentos e cotas reutilizáveis.",
       },
     ],
   }),
@@ -98,7 +97,9 @@ function BibliotecaPage() {
           />
         </div>
         <Select value={kind} onValueChange={(v) => setKind(v as ContentKind | "todos")}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os tipos</SelectItem>
             <SelectItem value="atendimento">Atendimentos</SelectItem>
@@ -106,11 +107,15 @@ function BibliotecaPage() {
           </SelectContent>
         </Select>
         <Select value={categoria} onValueChange={setCategoria}>
-          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas as categorias</SelectItem>
             {categorias.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+              <SelectItem key={c.id} value={c.id}>
+                {c.nome}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -197,8 +202,7 @@ function NovoItemDialog() {
       setTitulo("");
       navigate({ to: "/biblioteca/$itemId", params: { itemId: id } });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao criar"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao criar"),
   });
 
   return (
@@ -216,7 +220,9 @@ function NovoItemDialog() {
           <div>
             <Label>Tipo</Label>
             <Select value={kind} onValueChange={(v) => setKind(v as ContentKind)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="atendimento">Atendimento</SelectItem>
                 <SelectItem value="cota">Cota</SelectItem>
@@ -236,18 +242,24 @@ function NovoItemDialog() {
           <div>
             <Label>Categoria (opcional)</Label>
             <Select value={categoria} onValueChange={setCategoria}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="nenhuma">Sem categoria</SelectItem>
                 {(categoriasQuery.data ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
             {mut.isPending ? "Criando…" : "Criar"}
           </Button>

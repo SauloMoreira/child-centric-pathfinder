@@ -69,9 +69,7 @@ export function RequestDefenderAccessSheet({ open, onOpenChange }: Props) {
         defensorUserId: selected.defensorUserId,
         message: message.trim() || null,
       });
-      toast.success(
-        "Solicitação enviada. O Defensor precisa aprová-la para liberar o acesso.",
-      );
+      toast.success("Solicitação enviada. O Defensor precisa aprová-la para liberar o acesso.");
       onOpenChange(false);
     } catch (err) {
       toast.error(friendlyTeamError(err, "Não foi possível enviar a solicitação."));
@@ -87,8 +85,8 @@ export function RequestDefenderAccessSheet({ open, onOpenChange }: Props) {
             Solicitar acesso a um Defensor
           </SheetTitle>
           <SheetDescription>
-            Escolha o Defensor Público responsável. Ele receberá sua solicitação e precisa
-            aprovar antes de liberar o acesso somente leitura à Área de Trabalho.
+            Escolha o Defensor Público responsável. Ele receberá sua solicitação e precisa aprovar
+            antes de liberar o acesso somente leitura à Área de Trabalho.
           </SheetDescription>
         </SheetHeader>
 

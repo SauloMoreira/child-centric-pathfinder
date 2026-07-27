@@ -35,8 +35,7 @@ function normalize(v: string) {
 
 function OrgaosTecnico() {
   const { data: estado } = useEstadoInstitucional();
-  const canManage =
-    isAdminTecnico(estado) || isAdminInstitucionalStrict(estado);
+  const canManage = isAdminTecnico(estado) || isAdminInstitucionalStrict(estado);
   const [busca, setBusca] = useState("");
 
   const q = useQuery({
@@ -63,8 +62,7 @@ function OrgaosTecnico() {
     const n = normalize(busca);
     if (!n) return q.data ?? [];
     return (q.data ?? []).filter(
-      (o) =>
-        normalize(o.nome).includes(n) || normalize(o.comarca).includes(n),
+      (o) => normalize(o.nome).includes(n) || normalize(o.comarca).includes(n),
     );
   }, [q.data, busca]);
 
@@ -72,9 +70,7 @@ function OrgaosTecnico() {
     <TecnicoPage
       title="Órgãos de execução"
       description="Cadastro institucional de órgãos. Cada órgão possui identificador interno único e não pode ser duplicado na mesma comarca."
-      action={
-        canManage ? <OrgaoNovoSheet comarcasSugeridas={comarcas} /> : undefined
-      }
+      action={canManage ? <OrgaoNovoSheet comarcasSugeridas={comarcas} /> : undefined}
     >
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1 max-w-md">
@@ -112,9 +108,7 @@ function OrgaosTecnico() {
                 <th className="px-4 py-2 text-left font-mono">Comarca</th>
                 <th className="px-4 py-2 text-left font-mono">Criado em</th>
                 <th className="px-4 py-2 text-left font-mono">ID interno</th>
-                {canManage && (
-                  <th className="px-4 py-2 text-right font-mono">Ações</th>
-                )}
+                {canManage && <th className="px-4 py-2 text-right font-mono">Ações</th>}
               </tr>
             </thead>
             <tbody>

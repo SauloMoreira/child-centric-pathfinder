@@ -97,8 +97,8 @@ export function AddTeamMemberSheet({
         <SheetHeader>
           <SheetTitle>Adicionar membro de equipe</SheetTitle>
           <SheetDescription>
-            O membro será vinculado ao seu órgão de execução e receberá um convite
-            para criar o próprio acesso.
+            O membro será vinculado ao seu órgão de execução e receberá um convite para criar o
+            próprio acesso.
           </SheetDescription>
         </SheetHeader>
 
@@ -109,10 +109,7 @@ export function AddTeamMemberSheet({
           <p className="mt-1 text-sm font-medium">{orgaoAtivoLabel}</p>
         </div>
 
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="mt-6 space-y-4"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="nomeCompleto">Nome completo</Label>
             <Input id="nomeCompleto" {...form.register("nomeCompleto")} />
@@ -127,9 +124,7 @@ export function AddTeamMemberSheet({
             <Label htmlFor="email">E-mail institucional</Label>
             <Input id="email" type="email" {...form.register("email")} />
             {form.formState.errors.email && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.email.message}
-              </p>
+              <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
             )}
           </div>
 
@@ -149,10 +144,7 @@ export function AddTeamMemberSheet({
             <Select
               value={funcao}
               onValueChange={(v) =>
-                form.setValue(
-                  "funcaoInterna",
-                  v as CreateTeamMemberInput["funcaoInterna"],
-                )
+                form.setValue("funcaoInterna", v as CreateTeamMemberInput["funcaoInterna"])
               }
             >
               <SelectTrigger id="funcaoInterna">
@@ -171,11 +163,7 @@ export function AddTeamMemberSheet({
           {funcao === "outro" && (
             <div className="space-y-1.5">
               <Label htmlFor="outraFuncao">Descreva a função</Label>
-              <Input
-                id="outraFuncao"
-                maxLength={100}
-                {...form.register("outraFuncao")}
-              />
+              <Input id="outraFuncao" maxLength={100} {...form.register("outraFuncao")} />
               {form.formState.errors.outraFuncao && (
                 <p className="text-xs text-destructive">
                   {form.formState.errors.outraFuncao.message}
@@ -186,7 +174,10 @@ export function AddTeamMemberSheet({
 
           {showOrgSelector && (
             <div className="space-y-1.5 rounded-md border border-institutional/40 bg-institutional/5 p-3">
-              <Label htmlFor="justificativa" className="text-xs font-mono uppercase tracking-[0.16em] text-institutional">
+              <Label
+                htmlFor="justificativa"
+                className="text-xs font-mono uppercase tracking-[0.16em] text-institutional"
+              >
                 Justificativa técnica (acesso global)
               </Label>
               <Textarea
@@ -202,10 +193,7 @@ export function AddTeamMemberSheet({
           <SheetFooter className="mt-6 flex gap-2 sm:flex-row-reverse">
             <Button
               type="submit"
-              disabled={
-                invite.isPending ||
-                (showOrgSelector && justificativa.trim().length < 10)
-              }
+              disabled={invite.isPending || (showOrgSelector && justificativa.trim().length < 10)}
             >
               {invite.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enviar convite

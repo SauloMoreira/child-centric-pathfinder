@@ -1,12 +1,7 @@
 // Domínio: vínculos Membro ↔ Defensor + contexto do Defensor selecionado.
 // Nenhum vínculo artificial é criado para o Administrador Técnico:
 // a autorização técnica decorre exclusivamente do papel admin_tecnico.
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // ---------- Tipos DTO ----------
@@ -55,10 +50,8 @@ export type DefenderTeam = {
 
 export const defenderBondsKeys = {
   availableDefenders: ["defender-bonds", "available"] as const,
-  team: (defenderUserId: string) =>
-    ["defender-bonds", "team", defenderUserId] as const,
-  candidateMembers: (termo: string) =>
-    ["defender-bonds", "candidates", termo] as const,
+  team: (defenderUserId: string) => ["defender-bonds", "team", defenderUserId] as const,
+  candidateMembers: (termo: string) => ["defender-bonds", "candidates", termo] as const,
 };
 
 // ---------- Hooks ----------
@@ -69,9 +62,7 @@ export function useAvailableDefenders(
   return useQuery<AvailableDefendersResponse>({
     queryKey: defenderBondsKeys.availableDefenders,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "listar_defensores_disponiveis_contexto" as never,
-      );
+      const { data, error } = await supabase.rpc("listar_defensores_disponiveis_contexto" as never);
       if (error) throw error;
       return data as AvailableDefendersResponse;
     },
@@ -102,10 +93,9 @@ export function useSearchCandidateMembers(termo: string, enabled: boolean) {
     queryKey: defenderBondsKeys.candidateMembers(termo),
     enabled: enabled && termo.trim().length >= 2,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "buscar_usuarios_membro_equipe",
-        { p_termo: termo } as never,
-      );
+      const { data, error } = await supabase.rpc("buscar_usuarios_membro_equipe", {
+        p_termo: termo,
+      } as never);
       if (error) throw error;
       return (data as { ok: true; items: CandidateMember[] }).items;
     },
@@ -117,13 +107,10 @@ export function useLinkMember(defenderUserId: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (memberUserId: string) => {
-      const { data, error } = await supabase.rpc(
-        "vincular_membro_defensor",
-        {
-          p_member_user_id: memberUserId,
-          p_idempotency_key: crypto.randomUUID(),
-        } as never,
-      );
+      const { data, error } = await supabase.rpc("vincular_membro_defensor", {
+        p_member_user_id: memberUserId,
+        p_idempotency_key: crypto.randomUUID(),
+      } as never);
       if (error) throw error;
       return data as {
         ok: true;
@@ -147,15 +134,12 @@ export function useEndBond(defenderUserId: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { bondId: string; expectedVersion: number }) => {
-      const { data, error } = await supabase.rpc(
-        "encerrar_member_defensor_bond",
-        {
-          p_bond_id: input.bondId,
-          p_expected_version: input.expectedVersion,
-          p_reason: "Encerrado pelo Defensor via Minha equipe.",
-          p_idempotency_key: crypto.randomUUID(),
-        } as never,
-      );
+      const { data, error } = await supabase.rpc("encerrar_member_defensor_bond", {
+        p_bond_id: input.bondId,
+        p_expected_version: input.expectedVersion,
+        p_reason: "Encerrado pelo Defensor via Minha equipe.",
+        p_idempotency_key: crypto.randomUUID(),
+      } as never);
       if (error) throw error;
       return data as {
         ok: true;
@@ -178,13 +162,10 @@ export function useSelectDefenderContext() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (defenderUserId: string) => {
-      const { data, error } = await supabase.rpc(
-        "selecionar_contexto_defensor",
-        {
-          p_defensor_user_id: defenderUserId,
-          p_idempotency_key: crypto.randomUUID(),
-        } as never,
-      );
+      const { data, error } = await supabase.rpc("selecionar_contexto_defensor", {
+        p_defensor_user_id: defenderUserId,
+        p_idempotency_key: crypto.randomUUID(),
+      } as never);
       if (error) throw error;
       return data as { ok: true; defenderUserId: string; mode: string };
     },

@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Search, LayoutGrid, List, UserPlus, ShieldAlert, XCircle, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  List,
+  UserPlus,
+  ShieldAlert,
+  XCircle,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +38,7 @@ import {
   isAtivo,
 } from "@/hooks/use-estado-institucional";
 import { AddTeamMemberSheet } from "@/components/add-team-member-sheet";
-import {
-  KanbanColumn,
-  MemberCard,
-  InvitationCard,
-  EmptyState,
-} from "@/components/team-kanban";
+import { KanbanColumn, MemberCard, InvitationCard, EmptyState } from "@/components/team-kanban";
 import { friendlyTeamError } from "@/lib/team-errors";
 import {
   useCurrentDefenderContext,
@@ -51,8 +55,7 @@ export const Route = createFileRoute("/_authenticated/minha-equipe")({
       { title: "Minha equipe — Ágora" },
       {
         name: "description",
-        content:
-          "Gestão da equipe de execução: convites, membros ativos, bloqueios e histórico.",
+        content: "Gestão da equipe de execução: convites, membros ativos, bloqueios e histórico.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -80,9 +83,7 @@ function MinhaEquipePage() {
     const q = busca.trim().toLowerCase();
     if (!q) return list;
     return list.filter(
-      (m) =>
-        (m.nome_completo ?? "").toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q),
+      (m) => (m.nome_completo ?? "").toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
     );
   }, [members.data, busca]);
 
@@ -91,9 +92,7 @@ function MinhaEquipePage() {
     const q = busca.trim().toLowerCase();
     if (!q) return list;
     return list.filter(
-      (i) =>
-        i.nome_completo.toLowerCase().includes(q) ||
-        i.email.toLowerCase().includes(q),
+      (i) => i.nome_completo.toLowerCase().includes(q) || i.email.toLowerCase().includes(q),
     );
   }, [invites.data, busca]);
 
@@ -220,7 +219,6 @@ function MinhaEquipePage() {
             )
           }
         />
-
       ) : view === "kanban" ? (
         <div className="flex flex-1 gap-3 overflow-x-auto p-4 lg:p-6">
           <KanbanColumn
@@ -274,9 +272,6 @@ function MinhaEquipePage() {
         </div>
       )}
 
-
-
-
       <PendingAccessRequestsSection enabled={defensor && ativo} />
 
       <DefenderBondsSection
@@ -313,8 +308,8 @@ function DefenderBondsSection({
 }) {
   const ctx = useCurrentDefenderContext();
   const targetDefenderId = defensor
-    ? estado?.user_id ?? null
-    : ctx.current?.defenderUserId ?? null;
+    ? (estado?.user_id ?? null)
+    : (ctx.current?.defenderUserId ?? null);
 
   const team = useDefenderTeam(targetDefenderId);
   const endBond = useEndBond(targetDefenderId);
@@ -514,9 +509,7 @@ function MetricPill({
   return (
     <div className="flex items-center gap-2">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
-      <span className="font-mono uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </span>
+      <span className="font-mono uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
       <span className="font-semibold">{value}</span>
     </div>
   );

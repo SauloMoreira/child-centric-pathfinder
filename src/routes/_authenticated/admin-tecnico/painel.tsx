@@ -13,24 +13,66 @@ import {
 
 export const Route = createFileRoute("/_authenticated/admin-tecnico/painel")({
   head: () => ({
-    meta: [
-      { title: "Central técnica — Ágora" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Central técnica — Ágora" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: PainelTecnico,
 });
 
 const modulos = [
-  { to: "/admin-tecnico/usuarios", label: "Usuários", icon: Users, desc: "Consultar, bloquear e reativar contas." },
-  { to: "/admin-tecnico/administradores", label: "Administradores", icon: ShieldCheck, desc: "Promoções técnicas e institucionais." },
-  { to: "/admin-tecnico/orgaos", label: "Órgãos", icon: Building2, desc: "Criar, editar, ativar e inativar órgãos." },
-  { to: "/admin-tecnico/vinculos", label: "Vínculos", icon: Users, desc: "Corrigir vínculos institucionais." },
-  { to: "/admin-tecnico/seguranca", label: "Segurança", icon: Lock, desc: "MFA, sessões, políticas técnicas." },
-  { to: "/admin-tecnico/auditoria", label: "Auditoria", icon: ScrollText, desc: "Consulta global append-only." },
-  { to: "/admin-tecnico/configuracoes", label: "Configurações", icon: Sliders, desc: "Políticas funcionais da aplicação." },
-  { to: "/admin-tecnico/diagnosticos", label: "Diagnósticos", icon: Activity, desc: "Saúde do backend e integridade." },
-  { to: "/admin-tecnico/acesso-emergencial", label: "Acesso emergencial", icon: Siren, desc: "Break-glass com auditoria obrigatória." },
+  {
+    to: "/admin-tecnico/usuarios",
+    label: "Usuários",
+    icon: Users,
+    desc: "Consultar, bloquear e reativar contas.",
+  },
+  {
+    to: "/admin-tecnico/administradores",
+    label: "Administradores",
+    icon: ShieldCheck,
+    desc: "Promoções técnicas e institucionais.",
+  },
+  {
+    to: "/admin-tecnico/orgaos",
+    label: "Órgãos",
+    icon: Building2,
+    desc: "Criar, editar, ativar e inativar órgãos.",
+  },
+  {
+    to: "/admin-tecnico/vinculos",
+    label: "Vínculos",
+    icon: Users,
+    desc: "Corrigir vínculos institucionais.",
+  },
+  {
+    to: "/admin-tecnico/seguranca",
+    label: "Segurança",
+    icon: Lock,
+    desc: "MFA, sessões, políticas técnicas.",
+  },
+  {
+    to: "/admin-tecnico/auditoria",
+    label: "Auditoria",
+    icon: ScrollText,
+    desc: "Consulta global append-only.",
+  },
+  {
+    to: "/admin-tecnico/configuracoes",
+    label: "Configurações",
+    icon: Sliders,
+    desc: "Políticas funcionais da aplicação.",
+  },
+  {
+    to: "/admin-tecnico/diagnosticos",
+    label: "Diagnósticos",
+    icon: Activity,
+    desc: "Saúde do backend e integridade.",
+  },
+  {
+    to: "/admin-tecnico/acesso-emergencial",
+    label: "Acesso emergencial",
+    icon: Siren,
+    desc: "Break-glass com auditoria obrigatória.",
+  },
 ] as const;
 
 function PainelTecnico() {

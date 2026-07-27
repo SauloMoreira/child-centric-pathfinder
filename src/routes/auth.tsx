@@ -8,10 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
-import {
-  MfaChallengeDialog,
-  precisaStepUpMfa,
-} from "@/components/mfa-challenge-dialog";
+import { MfaChallengeDialog, precisaStepUpMfa } from "@/components/mfa-challenge-dialog";
 
 const authSearchSchema = z.object({
   modo: z.enum(["entrar", "cadastro", "recuperar"]).optional(),
@@ -27,15 +24,13 @@ function caminhoSeguro(next: string | undefined): string | null {
   return next;
 }
 
-
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Acesso institucional — Ágora" },
       {
         name: "description",
-        content:
-          "Entrada institucional do sistema Ágora da Defensoria Pública do RS.",
+        content: "Entrada institucional do sistema Ágora da Defensoria Pública do RS.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -53,11 +48,7 @@ const passwordSchema = z
   .string()
   .min(10, { message: "A senha deve ter no mínimo 10 caracteres." })
   .max(128);
-const nomeSchema = z
-  .string()
-  .trim()
-  .min(3, { message: "Informe seu nome completo." })
-  .max(120);
+const nomeSchema = z.string().trim().min(3, { message: "Informe seu nome completo." }).max(120);
 
 function AuthPage() {
   const { modo, next } = useSearch({ from: "/auth" });
@@ -80,7 +71,6 @@ function AuthPage() {
     };
   }, [navigate, retorno]);
 
-
   return (
     <div className="min-h-screen bg-canvas">
       <div className="mx-auto grid min-h-screen max-w-6xl grid-cols-1 lg:grid-cols-2">
@@ -100,18 +90,16 @@ function AuthPage() {
                 Acesso institucional restrito.
               </h1>
               <p className="mt-4 max-w-md text-sm text-sidebar-muted">
-                Somente servidores autorizados podem operar a plataforma.
-                Novos acessos passam por aprovação do Administrador
-                Institucional.
+                Somente servidores autorizados podem operar a plataforma. Novos acessos passam por
+                aprovação do Administrador Institucional.
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3 rounded-md border border-sidebar-border/60 p-4 text-xs text-sidebar-muted">
             <ShieldCheck className="mt-0.5 h-4 w-4 text-sidebar-foreground" aria-hidden />
             <p>
-              Toda tentativa de acesso e ação sensível é registrada em
-              auditoria institucional. Utilize apenas dados fictícios nesta
-              etapa de homologação.
+              Toda tentativa de acesso e ação sensível é registrada em auditoria institucional.
+              Utilize apenas dados fictícios nesta etapa de homologação.
             </p>
           </div>
         </aside>
@@ -130,12 +118,17 @@ function AuthPage() {
                   replace: true,
                 })
               }
-
             >
               <TabsList className="w-full">
-                <TabsTrigger value="entrar" className="flex-1">Entrar</TabsTrigger>
-                <TabsTrigger value="cadastro" className="flex-1">Criar acesso</TabsTrigger>
-                <TabsTrigger value="recuperar" className="flex-1">Recuperar</TabsTrigger>
+                <TabsTrigger value="entrar" className="flex-1">
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger value="cadastro" className="flex-1">
+                  Criar acesso
+                </TabsTrigger>
+                <TabsTrigger value="recuperar" className="flex-1">
+                  Recuperar
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="entrar" className="mt-6">
                 <SignInForm />
@@ -200,8 +193,6 @@ function SignInForm() {
     }
     concluirRedirect();
   }
-
-
 
   return (
     <>
@@ -292,7 +283,7 @@ function SignUpForm() {
       toast.error(
         error.message.includes("weak") || error.message.toLowerCase().includes("pwned")
           ? "Esta senha aparece em vazamentos conhecidos. Escolha outra."
-          : "Não foi possível criar o acesso agora. Tente novamente."
+          : "Não foi possível criar o acesso agora. Tente novamente.",
       );
       return;
     }
@@ -304,9 +295,8 @@ function SignUpForm() {
       <div className="surface-panel p-6 text-sm">
         <h2 className="text-base font-semibold">Confirme seu e-mail</h2>
         <p className="mt-2 text-muted-foreground">
-          Enviamos um link de confirmação para o e-mail informado. Após confirmar,
-          você poderá entrar e completar seus dados funcionais para solicitar
-          acesso institucional ao sistema.
+          Enviamos um link de confirmação para o e-mail informado. Após confirmar, você poderá
+          entrar e completar seus dados funcionais para solicitar acesso institucional ao sistema.
         </p>
       </div>
     );
@@ -315,12 +305,18 @@ function SignUpForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <p className="text-xs text-muted-foreground">
-        A criação da conta é apenas o primeiro passo. O acesso operacional ao
-        sistema depende de aprovação do Administrador Institucional.
+        A criação da conta é apenas o primeiro passo. O acesso operacional ao sistema depende de
+        aprovação do Administrador Institucional.
       </p>
       <div className="space-y-2">
         <Label htmlFor="nome">Nome completo</Label>
-        <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required maxLength={120} />
+        <Input
+          id="nome"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          required
+          maxLength={120}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="su-email">E-mail institucional</Label>
@@ -363,8 +359,8 @@ function SignUpForm() {
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Utilize senha com no mínimo 10 caracteres. Senhas presentes em vazamentos
-        conhecidos são recusadas automaticamente.
+        Utilize senha com no mínimo 10 caracteres. Senhas presentes em vazamentos conhecidos são
+        recusadas automaticamente.
       </p>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
@@ -397,8 +393,8 @@ function RecoveryForm() {
       <div className="surface-panel p-6 text-sm">
         <h2 className="text-base font-semibold">Verifique seu e-mail</h2>
         <p className="mt-2 text-muted-foreground">
-          Se houver uma conta associada a este endereço, um link de
-          redefinição de senha foi enviado. O link expira em poucos minutos.
+          Se houver uma conta associada a este endereço, um link de redefinição de senha foi
+          enviado. O link expira em poucos minutos.
         </p>
       </div>
     );
@@ -407,8 +403,7 @@ function RecoveryForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <p className="text-xs text-muted-foreground">
-        Enviaremos um link de redefinição para o e-mail informado, caso ele
-        esteja cadastrado.
+        Enviaremos um link de redefinição para o e-mail informado, caso ele esteja cadastrado.
       </p>
       <div className="space-y-2">
         <Label htmlFor="rec-email">E-mail institucional</Label>

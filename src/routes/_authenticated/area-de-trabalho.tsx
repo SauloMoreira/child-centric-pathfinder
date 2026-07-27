@@ -96,11 +96,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  useWorkArea,
-  useSelectedPanel,
-  type PanelSummary,
-} from "@/features/work-area";
+import { useWorkArea, useSelectedPanel, type PanelSummary } from "@/features/work-area";
 import { PanelTabs } from "@/features/work-area/components/PanelTabs";
 import { CreatePanelSheet } from "@/features/work-area/components/CreatePanelSheet";
 import { RenamePanelSheet } from "@/features/work-area/components/RenamePanelSheet";
@@ -127,11 +123,11 @@ function AreaDeTrabalhoPage() {
   const defenderContext = useCurrentDefenderContext();
   const isOwnerContext = defenderContext.mode === "owner" && isDefensor(estado);
   const defensorId = isOwnerContext
-    ? estado?.user_id ?? null
-    : defenderContext.current?.defenderUserId ?? null;
+    ? (estado?.user_id ?? null)
+    : (defenderContext.current?.defenderUserId ?? null);
   const contextoNome = isOwnerContext
-    ? estado?.profile?.nome_completo ?? "Defensor(a) Público(a)"
-    : defenderContext.current?.displayName ?? "Defensor(a) Público(a)";
+    ? (estado?.profile?.nome_completo ?? "Defensor(a) Público(a)")
+    : (defenderContext.current?.displayName ?? "Defensor(a) Público(a)");
   const [requestOpen, setRequestOpen] = useState(false);
 
   if (!estado) {
@@ -150,9 +146,7 @@ function AreaDeTrabalhoPage() {
           </p>
           {isMemberMode && (
             <div className="mt-4">
-              <Button onClick={() => setRequestOpen(true)}>
-                Solicitar acesso a um Defensor
-              </Button>
+              <Button onClick={() => setRequestOpen(true)}>Solicitar acesso a um Defensor</Button>
             </div>
           )}
         </div>
@@ -174,12 +168,7 @@ function useAnnouncer() {
     requestAnimationFrame(() => setMessage(m));
   }, []);
   const node = (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      className="sr-only"
-    >
+    <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
       {message}
     </div>
   );
@@ -285,7 +274,9 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
               </span>
               {contextoLabel && (
                 <>
-                  <span aria-hidden className="text-muted-foreground/40">·</span>
+                  <span aria-hidden className="text-muted-foreground/40">
+                    ·
+                  </span>
                   <span
                     className={cn(
                       "font-mono text-[10px] uppercase tracking-[0.18em]",
@@ -376,8 +367,6 @@ function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
   return <Icon className="h-5 w-5 text-institutional" aria-hidden />;
 }
 
-
-
 // -----------------------------------------------------------------------------
 // PanelBoard — carrega apenas o Painel selecionado
 // -----------------------------------------------------------------------------
@@ -435,7 +424,6 @@ function PanelBoard({
     />
   );
 }
-
 
 // -----------------------------------------------------------------------------
 // ColumnsBoard — DnD de colunas + cards
@@ -687,8 +675,7 @@ function ColumnsBoard({
       }
       if (card.columnId === targetColumnId && targetPosition === card.orderPosition) return;
 
-      const targetColName =
-        orderedColumns.find((c) => c.id === targetColumnId)?.nome ?? "coluna";
+      const targetColName = orderedColumns.find((c) => c.id === targetColumnId)?.nome ?? "coluna";
       const kindLabel = card.kind === "cota" ? "Cota" : "Atendimento";
       announce(`${kindLabel} movido para a coluna "${targetColName}".`);
 
@@ -729,12 +716,16 @@ function ColumnsBoard({
               {activePanel?.name ?? "Painel"}
             </span>
           </div>
-          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span aria-hidden className="text-muted-foreground/40">
+            ·
+          </span>
           <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             <Layers className="h-3.5 w-3.5" aria-hidden />
             {orderedColumns.length} {orderedColumns.length === 1 ? "coluna" : "colunas"}
           </span>
-          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span aria-hidden className="text-muted-foreground/40">
+            ·
+          </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             {totalCards} {totalCards === 1 ? "card" : "cards"}
           </span>
@@ -749,10 +740,7 @@ function ColumnsBoard({
               disabled={isFetching}
               title="Atualizar Painel"
             >
-              <RefreshCw
-                className={cn("h-3.5 w-3.5", isFetching && "animate-spin")}
-                aria-hidden
-              />
+              <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} aria-hidden />
               Atualizar
             </Button>
             {access.canManageColumns && (
@@ -940,7 +928,6 @@ function AddColumnCard({
   );
 }
 
-
 // -----------------------------------------------------------------------------
 // SortableColumn
 // -----------------------------------------------------------------------------
@@ -965,7 +952,6 @@ const COLUMN_COLOR_OPTIONS: { token: WorkspaceColor; label: string }[] = [
   { token: "burgundy", label: "Bordô" },
   { token: "slate", label: "Cinza" },
 ];
-
 
 function SortableColumn(props: {
   column: WorkspaceColumn;
@@ -1011,7 +997,9 @@ function SortableColumn(props: {
     opacity: sortable.isDragging ? 0.4 : 1,
   };
 
-  const colorToken: WorkspaceColor = VALID_COL_COLORS.has(column.corToken) ? column.corToken : "neutral";
+  const colorToken: WorkspaceColor = VALID_COL_COLORS.has(column.corToken)
+    ? column.corToken
+    : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
@@ -1133,9 +1121,7 @@ function SortableColumn(props: {
               columnCount={cards.length}
               otherColumns={otherColumns}
               onRemove={() => onRemoveCard(card.cardId)}
-              onMoveUp={() =>
-                onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))
-              }
+              onMoveUp={() => onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))}
               onMoveDown={() =>
                 onMoveCard(card.cardId, column.id, Math.min(cards.length - 1, ci + 1))
               }
@@ -1363,7 +1349,6 @@ function EditColumnSheet(props: {
   );
 }
 
-
 function ColumnDragPreview({ name }: { name: string }) {
   return (
     <div className="w-72 rounded-md border-2 border-institutional bg-card p-3 shadow-lg opacity-90 pointer-events-none">
@@ -1418,8 +1403,8 @@ function DeleteColumnDialog({
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Esta coluna possui {cards.length} card(s). Selecione outra coluna do mesmo Painel
-              para recebê-los antes da exclusão.
+              Esta coluna possui {cards.length} card(s). Selecione outra coluna do mesmo Painel para
+              recebê-los antes da exclusão.
             </p>
             <Label htmlFor="dest">Coluna de destino</Label>
             <select
@@ -1588,10 +1573,7 @@ function SortableCard(props: {
               <DropdownMenuItem disabled={index === 0} onClick={onMoveUp}>
                 <ArrowUp className="mr-2 h-4 w-4" /> Mover para cima
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={index === columnCount - 1}
-                onClick={onMoveDown}
-              >
+              <DropdownMenuItem disabled={index === columnCount - 1} onClick={onMoveDown}>
                 <ArrowDown className="mr-2 h-4 w-4" /> Mover para baixo
               </DropdownMenuItem>
               {otherColumns.length > 0 && (
@@ -1732,9 +1714,7 @@ function AddCardDialog({
                     onClick={() => !alreadyIn && setSelecionado(i.id)}
                     className={cn(
                       "flex w-full items-start gap-2 rounded p-2 text-left text-xs transition",
-                      alreadyIn
-                        ? "cursor-not-allowed opacity-50"
-                        : "hover:bg-muted",
+                      alreadyIn ? "cursor-not-allowed opacity-50" : "hover:bg-muted",
                       selected && "bg-muted",
                     )}
                   >
@@ -1760,10 +1740,7 @@ function AddCardDialog({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button
-            disabled={!selecionado || add.isPending}
-            onClick={() => add.mutate()}
-          >
+          <Button disabled={!selecionado || add.isPending} onClick={() => add.mutate()}>
             Adicionar
           </Button>
         </DialogFooter>
@@ -1836,8 +1813,7 @@ function MoveToPanelDialog({
       });
     },
     onSuccess: () => {
-      const panelName =
-        availablePanels.find((p) => p.id === targetPanelId)?.name ?? null;
+      const panelName = availablePanels.find((p) => p.id === targetPanelId)?.name ?? null;
       toast.success("Card adicionado ao outro Painel");
       qc.invalidateQueries({
         queryKey: [...workspaceKeys.byDefender(defensorId), targetPanelId],
@@ -1846,9 +1822,7 @@ function MoveToPanelDialog({
     },
     onError: (e: unknown) => {
       if (isConcurrentChangeError(e)) {
-        toast.error(
-          "O Painel de destino foi alterado. Atualizamos os dados; tente novamente.",
-        );
+        toast.error("O Painel de destino foi alterado. Atualizamos os dados; tente novamente.");
         qc.invalidateQueries({
           queryKey: [...workspaceKeys.byDefender(defensorId), targetPanelId, "picker"],
         });
