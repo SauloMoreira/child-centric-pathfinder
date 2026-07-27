@@ -79,7 +79,9 @@ export async function listarBiblioteca(params: {
   return (data ?? []) as BibliotecaItem[];
 }
 
-export async function listarCategoriasBiblioteca(kind?: ContentKind): Promise<BibliotecaCategoria[]> {
+export async function listarCategoriasBiblioteca(
+  kind?: ContentKind,
+): Promise<BibliotecaCategoria[]> {
   const { data, error } = await supabase.rpc("listar_categorias_biblioteca", {
     p_kind: kind ?? undefined,
   } as never);
@@ -221,8 +223,7 @@ export type WorkspaceCompleto = {
 };
 
 export const workspaceKeys = {
-  byDefender: (defenderUserId: string) =>
-    ["ws", "byDefender", defenderUserId] as const,
+  byDefender: (defenderUserId: string) => ["ws", "byDefender", defenderUserId] as const,
 };
 
 function uuid(): string {
@@ -254,7 +255,6 @@ export async function listarWorkspaceCompleto(
   if (error) throw error;
   return data as WorkspaceCompleto;
 }
-
 
 export async function criarColunaWorkspace(params: {
   workspaceId: string;

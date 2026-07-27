@@ -95,10 +95,7 @@ function RoleBadge({ role }: { role: string | null }) {
   }
   const isAdmin = role.startsWith("admin_");
   return (
-    <Badge
-      variant={isAdmin ? "default" : "secondary"}
-      className="font-mono text-[10px]"
-    >
+    <Badge variant={isAdmin ? "default" : "secondary"} className="font-mono text-[10px]">
       {ROLE_LABEL[role] ?? role}
     </Badge>
   );
@@ -147,11 +144,7 @@ function UsuariosTecnico() {
     const b = busca.trim().toLowerCase();
     return q.data.filter((u) => {
       if (filtroPapel === "sem_papel" && u.role_atual) return false;
-      if (
-        filtroPapel !== "todos" &&
-        filtroPapel !== "sem_papel" &&
-        u.role_atual !== filtroPapel
-      )
+      if (filtroPapel !== "todos" && filtroPapel !== "sem_papel" && u.role_atual !== filtroPapel)
         return false;
       if (filtroStatus !== "todos" && u.status !== filtroStatus) return false;
       if (!b) return true;
@@ -257,10 +250,7 @@ function UsuariosTecnico() {
               <tbody>
                 {filtered.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="p-6 text-center text-muted-foreground"
-                    >
+                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
                       Nenhum usuário corresponde aos filtros.
                     </td>
                   </tr>
@@ -274,10 +264,7 @@ function UsuariosTecnico() {
                     u.role_atual !== "admin_tecnico" &&
                     u.role_atual !== "admin_institucional";
                   return (
-                    <tr
-                      key={u.user_id}
-                      className="border-t border-border hover:bg-muted/20"
-                    >
+                    <tr key={u.user_id} className="border-t border-border hover:bg-muted/20">
                       <td className="px-4 py-2">
                         <button
                           className="text-left hover:underline"
@@ -286,12 +273,8 @@ function UsuariosTecnico() {
                           {u.nome_completo ?? "—"}
                         </button>
                       </td>
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {u.email ?? "—"}
-                      </td>
-                      <td className="px-4 py-2 font-mono text-xs">
-                        {u.matricula ?? "—"}
-                      </td>
+                      <td className="px-4 py-2 text-xs text-muted-foreground">{u.email ?? "—"}</td>
+                      <td className="px-4 py-2 font-mono text-xs">{u.matricula ?? "—"}</td>
                       <td className="px-4 py-2">
                         <RoleBadge role={u.role_atual} />
                       </td>
@@ -300,9 +283,7 @@ function UsuariosTecnico() {
                           <div>
                             <div>{u.orgao_nome}</div>
                             {u.orgao_comarca && (
-                              <div className="text-muted-foreground">
-                                {u.orgao_comarca}
-                              </div>
+                              <div className="text-muted-foreground">{u.orgao_comarca}</div>
                             )}
                           </div>
                         ) : (
@@ -320,18 +301,14 @@ function UsuariosTecnico() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64">
-                            <DropdownMenuLabel className="text-xs">
-                              Ações
-                            </DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-xs">Ações</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => setDrawerUser(u)}>
                               <UserRound className="h-4 w-4 mr-2" /> Visualizar usuário
                             </DropdownMenuItem>
                             {podePromover && (
                               <DropdownMenuItem
                                 onClick={() => openAssignAsDefensor(u)}
-                                className={
-                                  semPapel ? "text-primary font-medium" : undefined
-                                }
+                                className={semPapel ? "text-primary font-medium" : undefined}
                               >
                                 <ShieldCheck className="h-4 w-4 mr-2" />
                                 Definir como Defensor Público
@@ -469,10 +446,7 @@ function UsuarioDrawer({ user, onClose }: { user: UsuarioRow | null; onClose: ()
                   </h4>
                   <ul className="space-y-1">
                     {detalhesQ.data.roles.map((r, i) => (
-                      <li
-                        key={i}
-                        className="rounded border border-border bg-muted/30 p-2 text-xs"
-                      >
+                      <li key={i} className="rounded border border-border bg-muted/30 p-2 text-xs">
                         <div className="flex justify-between">
                           <span className="font-mono">{r.role}</span>
                           <span className="text-muted-foreground">
@@ -509,8 +483,7 @@ function UsuarioDrawer({ user, onClose }: { user: UsuarioRow | null; onClose: ()
                           {m.orgao_comarca ?? "—"}
                           {" · desde "}
                           {new Date(m.since).toLocaleDateString("pt-BR")}
-                          {m.until &&
-                            ` até ${new Date(m.until).toLocaleDateString("pt-BR")}`}
+                          {m.until && ` até ${new Date(m.until).toLocaleDateString("pt-BR")}`}
                         </div>
                       </li>
                     ))}
@@ -525,17 +498,12 @@ function UsuarioDrawer({ user, onClose }: { user: UsuarioRow | null; onClose: ()
                   </h4>
                   <ul className="space-y-1">
                     {detalhesQ.data.audit.slice(0, 10).map((a, i) => (
-                      <li
-                        key={i}
-                        className="rounded border border-border bg-muted/30 p-2 text-xs"
-                      >
+                      <li key={i} className="rounded border border-border bg-muted/30 p-2 text-xs">
                         <div className="flex justify-between font-mono">
                           <span>{a.action}</span>
                           <span
                             className={
-                              a.result === "sucesso"
-                                ? "text-emerald-600"
-                                : "text-destructive"
+                              a.result === "sucesso" ? "text-emerald-600" : "text-destructive"
                             }
                           >
                             {a.result}
@@ -556,4 +524,3 @@ function UsuarioDrawer({ user, onClose }: { user: UsuarioRow | null; onClose: ()
     </Sheet>
   );
 }
-

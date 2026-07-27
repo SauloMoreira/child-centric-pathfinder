@@ -3,16 +3,9 @@ import { Building2, Check, ChevronDown, Globe2, Loader2, Search } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import {
-  isAdminTecnico,
-  useEstadoInstitucional,
-} from "@/hooks/use-estado-institucional";
+import { isAdminTecnico, useEstadoInstitucional } from "@/hooks/use-estado-institucional";
 import { useOrgaosAcessiveis } from "@/hooks/use-orgaos-acessiveis";
 import { useSelecionarContextoOrgao } from "@/hooks/use-selecionar-contexto-orgao";
 
@@ -43,8 +36,7 @@ export function OperationalOrgSwitcher() {
     const t = termo.trim().toLowerCase();
     return base.filter(
       (o) =>
-        o.nome.toLowerCase().includes(t) ||
-        (o.comarcas[0]?.nome ?? "").toLowerCase().includes(t),
+        o.nome.toLowerCase().includes(t) || (o.comarcas[0]?.nome ?? "").toLowerCase().includes(t),
     );
   }, [tecnico, orgaosQ.data, disponiveisLocal, termo]);
 
@@ -69,13 +61,10 @@ export function OperationalOrgSwitcher() {
       <div className="hidden items-center gap-2 rounded-md border border-border bg-surface-2/60 px-3 py-1.5 text-xs md:flex">
         <Building2 className="h-3.5 w-3.5 text-institutional" aria-hidden />
         <span className="max-w-[220px] truncate font-medium">{contexto.nome}</span>
-        {contexto.comarca && (
-          <span className="text-muted-foreground"> · {contexto.comarca}</span>
-        )}
+        {contexto.comarca && <span className="text-muted-foreground"> · {contexto.comarca}</span>}
       </div>
     );
   }
-
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -100,11 +89,7 @@ export function OperationalOrgSwitcher() {
             <Building2 className="h-4 w-4 shrink-0 text-institutional" aria-hidden />
             <span className="flex-1 truncate text-left">
               {contexto?.nome ??
-                (tecnico
-                  ? "Selecionar órgão"
-                  : semVinculos
-                    ? "Sem vínculo"
-                    : "Selecionar órgão")}
+                (tecnico ? "Selecionar órgão" : semVinculos ? "Sem vínculo" : "Selecionar órgão")}
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
           </Button>
@@ -116,8 +101,7 @@ export function OperationalOrgSwitcher() {
               Órgão de trabalho
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              A seleção altera apenas o contexto em uso. Vínculos permanecem
-              ativos.
+              A seleção altera apenas o contexto em uso. Vínculos permanecem ativos.
             </p>
             <div className="relative mt-3">
               <Search
@@ -137,8 +121,8 @@ export function OperationalOrgSwitcher() {
           <div className="max-h-[360px] overflow-y-auto py-1">
             {semVinculos && (
               <p className="p-4 text-xs text-muted-foreground">
-                Nenhum órgão de execução está vinculado à sua conta. Contate a
-                administração institucional.
+                Nenhum órgão de execução está vinculado à sua conta. Contate a administração
+                institucional.
               </p>
             )}
 
@@ -165,10 +149,7 @@ export function OperationalOrgSwitcher() {
                 >
                   <div className="mt-0.5 h-4 w-4 shrink-0">
                     {atual ? (
-                      <Check
-                        className="h-4 w-4 text-institutional"
-                        aria-hidden
-                      />
+                      <Check className="h-4 w-4 text-institutional" aria-hidden />
                     ) : (
                       <span className="block h-3 w-3 rounded-full border border-border" />
                     )}
@@ -176,9 +157,7 @@ export function OperationalOrgSwitcher() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{o.nome}</p>
                     {comarca && (
-                      <p className="truncate text-xs text-muted-foreground">
-                        Comarca: {comarca}
-                      </p>
+                      <p className="truncate text-xs text-muted-foreground">Comarca: {comarca}</p>
                     )}
                   </div>
                   {atual && (

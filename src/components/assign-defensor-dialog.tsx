@@ -124,7 +124,6 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
     },
   });
 
-
   const podeSubmeter =
     !!target &&
     !!orgaoId &&
@@ -152,8 +151,8 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
           <DialogHeader>
             <DialogTitle>Definir usuário como Defensor Público</DialogTitle>
             <DialogDescription>
-              A atribuição concederá acesso ao ecossistema de informações do órgão de
-              execução selecionado.
+              A atribuição concederá acesso ao ecossistema de informações do órgão de execução
+              selecionado.
             </DialogDescription>
           </DialogHeader>
 
@@ -169,13 +168,10 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
               <div className="grid grid-cols-2 gap-2 pt-1 text-xs text-muted-foreground">
                 <div>
                   Matrícula:{" "}
-                  <span className="font-mono text-foreground">
-                    {target.matricula ?? "—"}
-                  </span>
+                  <span className="font-mono text-foreground">{target.matricula ?? "—"}</span>
                 </div>
                 <div>
-                  Status:{" "}
-                  <span className="font-mono text-foreground">{target.status}</span>
+                  Status: <span className="font-mono text-foreground">{target.status}</span>
                 </div>
                 {target.orgao_nome && (
                   <div className="col-span-2">
@@ -201,9 +197,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
               <ShieldAlert className="h-4 w-4" />
               <AlertTitle>Confirmação de segurança necessária</AlertTitle>
               <AlertDescription className="space-y-2">
-                <p>
-                  Para alterar o papel de um usuário, confirme sua autenticação de segurança.
-                </p>
+                <p>Para alterar o papel de um usuário, confirme sua autenticação de segurança.</p>
                 <Button size="sm" variant="outline" onClick={() => setMfaOpen(true)}>
                   <ShieldCheck className="h-4 w-4 mr-1" /> Confirmar autenticação
                 </Button>
@@ -239,9 +233,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
                   placeholder="Ex.: 12345-6"
                   maxLength={30}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Obrigatória para Defensor Público.
-                </p>
+                <p className="text-xs text-muted-foreground">Obrigatória para Defensor Público.</p>
               </div>
             )}
 
@@ -271,8 +263,8 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
                 className="mt-0.5"
               />
               <span>
-                Confirmo que este usuário está autorizado a atuar como Defensor Público
-                no órgão selecionado.
+                Confirmo que este usuário está autorizado a atuar como Defensor Público no órgão
+                selecionado.
               </span>
             </label>
           </div>
@@ -285,10 +277,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
             >
               Cancelar
             </Button>
-            <Button
-              onClick={() => mutation.mutate()}
-              disabled={!podeSubmeter}
-            >
+            <Button onClick={() => mutation.mutate()} disabled={!podeSubmeter}>
               {mutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
               Confirmar atribuição
             </Button>
