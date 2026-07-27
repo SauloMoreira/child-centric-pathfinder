@@ -145,16 +145,16 @@ function VinculosSection() {
             "workspace",
             "workspace-column",
             "workspace-search",
-            "assistidos-picker",
-            "buscar-assistidos",
-            "processos",
+            "workspaces-list",
             "team-members",
             "team-invitations",
             "orgaos-acessiveis",
-            "workspaces-list",
+            "biblioteca",
+            "biblioteca-categorias",
           ].includes(key);
         },
       });
+
       await qc.invalidateQueries({ queryKey: ["estado-institucional"] });
       toast.success(
         r.created

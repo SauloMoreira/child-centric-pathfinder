@@ -17,13 +17,14 @@ const OPERATIONAL_KEYS = [
   "workspace",
   "workspace-column",
   "workspace-search",
-  "assistidos-picker",
-  "buscar-assistidos",
-  "processos",
+  "workspaces-list",
   "team-members",
   "team-invitations",
   "orgaos-acessiveis",
+  "biblioteca",
+  "biblioteca-categorias",
 ];
+
 
 export function useSelecionarContextoOrgao() {
   const qc = useQueryClient();
