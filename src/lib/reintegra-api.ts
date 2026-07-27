@@ -34,12 +34,21 @@ export type ItemDetalhado = {
   categoria_nome: string | null;
   owner_user_id: string;
   current_version_id: string | null;
+  current_published_version_id: string | null;
+  optimistic_version: number;
   titulo: string;
   body_json: unknown;
   form_schema: unknown;
   version_number: number;
   updated_at: string;
 };
+
+export type MutationResult = {
+  version_id?: string;
+  version_number?: number;
+  optimistic_version: number;
+};
+
 
 export type WorkspaceResumo = {
   id: string;
