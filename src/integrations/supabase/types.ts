@@ -888,6 +888,7 @@ export type Database = {
         Args: { p_cursor?: string; p_limit?: number; p_termo?: string }
         Returns: Json
       }
+      listar_painel_completo: { Args: { p_panel_id: string }; Returns: Json }
       listar_solicitacoes_acesso: {
         Args: {
           p_limit?: number
