@@ -14,7 +14,7 @@ import {
 } from "@/components/mfa-challenge-dialog";
 
 const authSearchSchema = z.object({
-  modo: z.enum(["entrar", "cadastro", "recuperar"]).optional().default("entrar"),
+  modo: z.enum(["entrar", "cadastro", "recuperar"]).optional(),
   // Caminho relativo de mesma origem para retorno após autenticação
   // (usado pelo consentimento OAuth do servidor MCP).
   next: z.string().optional(),
