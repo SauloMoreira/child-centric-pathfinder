@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { TecnicoPage } from "@/components/tecnico-guard";
 import {
   Users,
-  Building2,
   ScrollText,
   Siren,
   ShieldCheck,
@@ -30,12 +29,6 @@ const modulos = [
     label: "Administradores",
     icon: ShieldCheck,
     desc: "Promoções técnicas e institucionais.",
-  },
-  {
-    to: "/admin-tecnico/orgaos",
-    label: "Órgãos",
-    icon: Building2,
-    desc: "Criar, editar, ativar e inativar órgãos.",
   },
   {
     to: "/admin-tecnico/vinculos",

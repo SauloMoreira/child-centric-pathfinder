@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   UserCircle2,
   ShieldCheck,
-  Building2,
   ClipboardList,
   LogOut,
   ChevronRight,
@@ -40,7 +39,6 @@ import {
 } from "@/hooks/use-estado-institucional";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarState } from "@/components/app-shell/sidebar-context";
-import { OperationalOrgSwitcher } from "@/components/app-shell/operational-org-switcher";
 import { DefenderContextSwitcher } from "@/components/app-shell/defender-context-switcher";
 
 type NavItem = {
@@ -118,12 +116,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
             icon: ShieldCheck,
             visible: institucional || tecnico,
           },
-          {
-            to: "/admin/orgaos",
-            label: "Órgãos de execução",
-            icon: Building2,
-            visible: institucional || tecnico,
-          },
         ],
       },
       {
@@ -144,7 +136,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
             icon: UsersRound,
             visible: tecnico,
           },
-          { to: "/admin-tecnico/orgaos", label: "Órgãos", icon: Building2, visible: tecnico },
           { to: "/admin-tecnico/vinculos", label: "Vínculos", icon: Link2, visible: tecnico },
           { to: "/admin-tecnico/seguranca", label: "Segurança", icon: Lock, visible: tecnico },
           {
@@ -222,19 +213,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
     />
   );
 
-  const sidebarOrgBlock = (
-    <SidebarOrgBlock collapsed={collapsed && !isMobile} estado={estado} tecnico={tecnico} />
-  );
-
   const sidebarUserBlock = (
     <SidebarUserBlock
       collapsed={collapsed && !isMobile}
       nome={nome}
       initials={initials}
       papel={papel}
-      comarca={
-        estado?.orgao_ativo?.comarca ?? (tecnico ? "acesso técnico global" : "sem vínculo ativo")
-      }
+      comarca={tecnico ? "acesso técnico global" : "Defensoria Pública"}
       onSignOut={handleSignOut}
     />
   );
@@ -244,7 +229,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
       {/* Sidebar desktop */}
       <DesktopSidebar>
         <SidebarHeader collapsed={collapsed} />
-        {sidebarOrgBlock}
         <DefenderContextSwitcher collapsed={collapsed && !isMobile} />
         {sidebarNav}
         {sidebarUserBlock}
@@ -260,7 +244,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
           <div className="flex h-full flex-col">
             <SidebarHeader collapsed={false} mobile />
-            {sidebarOrgBlock}
             <DefenderContextSwitcher collapsed={false} />
             {sidebarNav}
             {sidebarUserBlock}
@@ -293,56 +276,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
         )}
         <main className="flex-1 overflow-x-hidden">{children}</main>
       </div>
-    </div>
-  );
-}
-
-function SidebarOrgBlock({
-  collapsed,
-  estado,
-  tecnico,
-}: {
-  collapsed: boolean;
-  estado: ReturnType<typeof useEstadoInstitucional>["data"];
-  tecnico: boolean;
-}) {
-  const { toggleCollapsed } = useSidebarState();
-  const nomeOrgao =
-    estado?.orgao_ativo?.nome ?? (tecnico ? "Acesso técnico global" : "Sem vínculo ativo");
-
-  if (collapsed) {
-    return (
-      <div className="border-b border-sidebar-border p-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label={`Defensoria Pública: ${nomeOrgao}. Expandir menu para trocar.`}
-              className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
-              <Building2 className="h-4 w-4 text-institutional" aria-hidden />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <div className="text-xs">
-              <p className="font-mono uppercase tracking-[0.14em] text-muted-foreground">
-                Defensoria Pública
-              </p>
-              <p className="font-medium">{nomeOrgao}</p>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border-b border-sidebar-border px-3 py-3">
-      <p className="px-1 pb-1.5 font-mono text-[9px] uppercase tracking-[0.24em] text-sidebar-muted">
-        Defensoria Pública
-      </p>
-      <OperationalOrgSwitcher />
     </div>
   );
 }
