@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS private.query_assistidos_by_filter(jsonb, text, uuid, int, int);

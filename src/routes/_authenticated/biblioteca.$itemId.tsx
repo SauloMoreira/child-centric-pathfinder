@@ -211,9 +211,12 @@ function ItemEditor() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground print:hidden">
-        Modelos institucionais não devem conter nomes, CPFs, endereços ou
-        quaisquer dados pessoais de assistidos.
+        Modelos institucionais devem permanecer genéricos: nunca inclua nomes,
+        CPFs, endereços, números de processo ou qualquer dado pessoal ou de
+        caso concreto. Respostas preenchidas durante o uso permanecem apenas
+        no navegador e não são enviadas ao Orienta DPE.
       </p>
+
     </div>
   );
 }
