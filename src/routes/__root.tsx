@@ -91,19 +91,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
+          "Ágora - sistema de Formulários e cotas",
       },
       { name: "author", content: "Defensoria Pública do Estado do Rio Grande do Sul" },
       { property: "og:title", content: "Reintegra" },
       {
         property: "og:description",
         content:
-          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
+          "Ágora - sistema de Formulários e cotas",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Reintegra" },
-      { name: "twitter:description", content: "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude." },
+      { name: "twitter:description", content: "Ágora - sistema de Formulários e cotas" },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
     ],

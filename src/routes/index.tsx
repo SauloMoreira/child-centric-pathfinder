@@ -8,13 +8,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
+          "Ágora - sistema de Formulários e cotas",
       },
       { property: "og:title", content: "Reintegra" },
       {
         property: "og:description",
         content:
-          "Reintegra Infância: Gestão visual e integrada para a Infância e Juventude.",
+          "Ágora - sistema de Formulários e cotas",
       },
     ],
   }),
