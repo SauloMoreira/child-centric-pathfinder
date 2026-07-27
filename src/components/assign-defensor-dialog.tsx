@@ -80,7 +80,7 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
   };
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<{ code?: string } | null> => {
       if (!target || !orgaoId) throw new Error("Dados incompletos");
       const idempotencyKey = crypto.randomUUID();
       const { data, error } = await supabase.rpc("admin_assign_defensor_role", {
@@ -91,8 +91,9 @@ export function AssignDefensorDialog({ open, onOpenChange, target }: Props) {
         p_idempotency_key: idempotencyKey,
       });
       if (error) throw error;
-      return data;
+      return (data as { code?: string } | null) ?? null;
     },
+
     onSuccess: (data: { code?: string } | null) => {
       const code = data?.code;
       if (code === "ROLE_ASSIGNED_EMAIL_CONFIRMATION_PENDING") {
