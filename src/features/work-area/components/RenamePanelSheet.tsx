@@ -43,13 +43,19 @@ export function RenamePanelSheet({
     formState: { errors },
   } = useForm<RenamePanelFormInput>({
     resolver: zodResolver(renamePanelSchema),
-    defaultValues: { name: panel?.name ?? "", icon: panel?.icon ?? "layers" },
+    defaultValues: {
+      name: panel?.name ?? "",
+      icon: (panel?.icon as RenamePanelFormInput["icon"]) ?? "layers",
+    },
   });
   const mut = useRenamePanel(defenderUserId);
 
   useEffect(() => {
     if (panel) {
-      reset({ name: panel.name, icon: panel.icon ?? "layers" });
+      reset({
+        name: panel.name,
+        icon: (panel.icon as RenamePanelFormInput["icon"]) ?? "layers",
+      });
       setIcon(panel.icon ?? "layers");
     }
   }, [panel, reset]);
