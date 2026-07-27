@@ -1,104 +1,91 @@
-## Múltiplos vínculos de Defensor + contexto operacional por órgão
+# Vincular Membro de Equipe a Defensor Público + Acesso Técnico Global
 
-Reescreve o modelo institucional para separar **vínculo** (autorização) de **contexto operacional** (órgão em uso agora), permitindo N Defensores por órgão e N órgãos por Defensor, com seletor no cabeçalho.
+Escopo ampliado: além da UI de vínculo membro↔defensor, o Administrador Técnico passa a enxergar e operar (somente leitura) o contexto de qualquer Defensor ativo — **sem** criar vínculo artificial em `member_defensor_bonds`.
 
-### Diagnóstico confirmado
-- `private.user_org_memberships` usa `orgao_id`, `ativo`, `since/until`, `granted_by/ended_by` — ainda **não** tem `tipo_vinculo`.
-- Índice `user_org_memberships_one_active_per_user UNIQUE(user_id) WHERE ativo` — bloqueia múltiplos vínculos, **precisa ser removido**.
-- `private.current_active_org_id()` retorna o único membership ativo; usado por RLS de assistidos/processos/workspaces.
-- RPC `defensor_alterar_orgao_ativo` encerra+recria vínculo (destrutiva).
-- `meu_estado_institucional` devolve `orgao_ativo` singular; frontend consome como campo único.
-- Não existe `private.idempotency_operations` (criaremos).
-- `private.audit_events.action` é texto livre (sem migration de enum).
+## Princípios não-negociáveis
 
-### Migrations (numeração sequencial real após a última existente)
+- `member_defensor_bonds` é **apenas** para `membro_equipe ↔ defensor_publico`. Nunca inserir linhas para `admin_tecnico`.
+- Autorização técnica = papel `admin_tecnico` ativo + perfil ativo. Contexto nunca é fonte primária de autorização.
+- Ordem do helper de acesso: **owner → technical_readonly → team_readonly → sem acesso**.
+- Todas as RPCs: `SECURITY DEFINER`, `SET search_path=''`, chamadas qualificadas, `REVOKE ... FROM public/anon`, `GRANT EXECUTE TO authenticated`.
 
-1. **membership_type_and_multiple_defender_memberships**
-   - Cria enum `private.membership_type_enum` (`defensor`, `membro_equipe`, `administrativo`).
-   - Adiciona `tipo_vinculo membership_type_enum` em `user_org_memberships` (nullable inicial).
-   - Backfill: `defensor` para users com role `defensor_publico`, `membro_equipe` para `membro_equipe`, `administrativo` para demais legados.
-   - `ALTER COLUMN tipo_vinculo SET NOT NULL` após validação.
-   - Dropa `user_org_memberships_one_active_per_user`.
-   - Cria `uq_membership_active_user_org_type (user_id, orgao_id, tipo_vinculo) WHERE ativo AND until IS NULL`.
-   - Cria `uq_team_member_single_active_org (user_id) WHERE ativo AND until IS NULL AND tipo_vinculo='membro_equipe'`.
-   - Corrige registros com inconsistência `ativo`/`until` antes.
+## 1. Migration única
 
-2. **user_operational_context**
-   - Cria `private.user_operational_context` (user_id PK, orgao_id FK RESTRICT, selected_at, selected_by FK, updated_at, version bigint).
-   - Trigger `updated_at`.
-   - `REVOKE ALL ... FROM public, anon, authenticated` (acesso só via funções SECURITY DEFINER).
+### 1.1 Helper `private.user_workspace_access(actor uuid, defender uuid) → panel_access_mode`
+Retorna `owner | technical_readonly | team_readonly | none`, na ordem acima. Usa perfil ativo + papéis + `member_defensor_bonds` + `defensor_context`. Substitui a lógica atual espalhada em `listar_area_trabalho_defensor` / `can_view_workspace`. Nenhum EXECUTE para `authenticated`.
 
-3. **idempotency_operations**
-   - Cria `private.idempotency_operations` (id, idempotency_key, operation_name, actor_user_id, request_hash, status, result jsonb, created_at, completed_at, expires_at).
-   - `UNIQUE (actor_user_id, operation_name, idempotency_key)`.
-   - Helper `private.claim_idempotency_v2(...)` retornando status/resultado.
+### 1.2 Policy `member_defensor_bonds`
+- Manter `select_self` (defensor OU membro).
+- **Nova** `select_technical`: `private.user_is_active_admin_tecnico(auth.uid())` — leitura total para o Técnico. Sem INSERT/UPDATE/DELETE.
 
-4. **operational_context_security_functions**
-   - `private.current_operational_org_id()` — lê contexto, revalida acessibilidade, retorna null se inválido; nunca escolhe automaticamente entre vários vínculos.
-   - `private.user_can_select_org(uuid)` — regras por papel.
-   - `private.user_can_access_org(uuid)` — considera membership OU papel administrativo.
-   - `private.user_has_active_org_membership(user_id, orgao_id, tipo_vinculo)`.
-   - Todas `SECURITY DEFINER SET search_path=''` com identificadores qualificados.
-   - `current_active_org_id()` marcada como legada, reescrita para delegar a `current_operational_org_id()` **somente** em usos operacionais; usos administrativos migrados para funções novas.
+### 1.3 RPCs novas
 
-5. **backfill_operational_context**
-   - Para user com exatamente 1 membership ativo: cria contexto naquele órgão.
-   - Defensor com N vínculos: usa `orgao_ativo` histórico se identificável; senão vínculo com `since` mais recente; senão deixa nulo.
-   - Membro: contexto = único vínculo ativo.
-   - Admin técnico: preserva órgão anterior se houver; senão nulo (mantém acesso admin).
-   - Não encerra memberships, não altera papéis, não move dados. Emite `RAISE NOTICE` com contagens.
+- **`listar_defensores_disponiveis_contexto()`** → `[{defenderUserId, displayName, institutionalLabel, isCurrentContext}]`.
+  - Técnico: todos Defensores com perfil ativo + papel `defensor_publico`.
+  - Membro: apenas vínculos ativos.
+  - Defensor: só o próprio.
+- **`buscar_usuarios_membro_equipe(p_termo)`** — só permite se caller é Defensor ativo; senão `FORBIDDEN`. Retorna membros puros ativos (ILIKE nome/email, unaccent, LIMIT 20). Colunas mínimas.
+- **`vincular_membro_defensor(p_member_user_id, p_idempotency_key)`** — só Defensor. Técnico → `FORBIDDEN`. Valida alvo é `membro_equipe` puro ativo. Idempotente. Erros: `MEMBER_NOT_FOUND`, `MEMBERSHIP_ALREADY_ACTIVE`, `FORBIDDEN`.
+- **`encerrar_vinculo_membro_defensor(p_bond_id, p_expected_version, p_idempotency_key)`** — só Defensor dono. Preenche `ended_at`, `ended_by`, `status='encerrado'`, incrementa `optimistic_version`. Remove `defensor_context` do membro se apontar para esse Defensor. Erros: `MEMBERSHIP_NOT_FOUND`, `MEMBERSHIP_ALREADY_ENDED`, `CONCURRENT_CHANGE`, `FORBIDDEN`.
+- **`listar_membros_do_defensor(p_defensor_user_id uuid DEFAULT NULL)`** → `{defenderUserId, accessMode:'owner'|'technical_readonly', canLinkMembers, canEndBonds, members:[...]}`.
+  - Defensor: `p_defensor_user_id` opcional; se enviado ≠ próprio → `FORBIDDEN`. `canLinkMembers=true, canEndBonds=true`.
+  - Técnico: `p_defensor_user_id` obrigatório; valida Defensor ativo. Ambos flags `false`.
+  - Outros papéis: `FORBIDDEN`.
 
-6. **operational_context_rpcs**
-   - `public.selecionar_contexto_orgao(p_orgao_id, p_expected_version, p_idempotency_key)` — transacional, idempotente, sem MFA. Retorna `{ok, code, contextoAtual, version, correlationId}`. Erros de domínio como retorno estruturado (não `RAISE`), para preservar auditoria.
-   - `public.admin_add_defensor_org_membership(p_user_id, p_orgao_id, p_idempotency_key)` — preserva outros vínculos, exigências atuais de MFA/role admin mantidas.
-   - `public.admin_end_defensor_org_membership(p_membership_id, p_motivo, p_idempotency_key)` — encerra só o vínculo alvo; se era o contexto: limpa; se resta exatamente 1, seleciona; se restam vários, deixa nulo.
-   - `public.admin_list_defensor_memberships(p_user_id)`.
-   - Remove/marca legada `defensor_alterar_orgao_ativo` — vira wrapper que chama `selecionar_contexto_orgao` (sem encerrar vínculo).
+### 1.4 RPCs alteradas
 
-7. **institutional_state_v2**
-   - Reescreve `meu_estado_institucional` para devolver `papel`, `status`, `acessoGlobal`, `contextoAtual`, `orgaosDisponiveis` (null para admin técnico), `contextVersion`.
-   - Mantém `orgao_ativo` como espelho de `contextoAtual` (compat).
+- **`selecionar_contexto_defensor(p_defensor_user_id)`**
+  - Técnico: valida Defensor ativo, grava contexto, sem exigir vínculo.
+  - Membro: mantém regra (vínculo ativo). Sem vínculo → `MEMBERSHIP_NOT_FOUND`.
+  - Defensor: só o próprio; outro id → `FORBIDDEN`.
+- **`listar_area_trabalho_defensor`** — usar `private.user_workspace_access`; passa a devolver `accessMode='technical_readonly'` para o Técnico.
+- **RPCs de mutação de painel/coluna/card** — recalcular via `user_workspace_access`; qualquer modo diferente de `owner` → `FORBIDDEN`. (`technical_readonly` bloqueia criação/edição/DnD.)
 
-8. **accessible_organizations_rpc**
-   - `public.listar_orgaos_acessiveis(p_termo, p_cursor, p_limit)` — paginação por cursor keyset; retorna somente id/nome/comarcas/comarca principal/membership_id/selecionado. Limite máx 100. Escopo por papel.
+### 1.5 Auditoria
+Eventos abstratos (sem PII): `defender_context.selected`, `defender_team.viewed_technical`, `member_defender_bond.created`, `member_defender_bond.ended` — metadados: actor, defender, bond, accessMode, resultado, correlationId.
 
-9. **operational_context_rls**
-   - Reescreve policies operacionais (assistidos, assistido_familiares, assistido_processos, assistido_acolhimentos, assistido_providencias, assistido_vinculos, processos, processo_assistidos, orgao_workspaces, workspace_columns) para `user_can_access_org(orgao_id) AND orgao_id = current_operational_org_id()`.
-   - Remove bypasses `USING(true)` operacionais; admin técnico opera pelo contexto.
-   - Mantém policies administrativas específicas (listagem admin de usuários/órgãos) inalteradas.
+## 2. Frontend
 
-### Frontend
+### 2.1 Novos módulos
+- `src/features/team/api.ts` — wrappers das RPCs.
+- `src/features/team/hooks.ts` — `useAvailableDefenders`, `useDefenderTeam(defenderUserId)`, `useLinkMember`, `useEndBond`, `useSearchMembers`.
+- `src/features/team/components/LinkMemberSheet.tsx` — combobox com debounce (300ms), sucesso invalida `['defender-team', defenderId]`.
+- `src/components/app-shell/defender-context-switcher.tsx` — substitui a ideia inicial de `MemberContextSwitcher`.
+  - Membro: título "Trabalhando com"; estado vazio "Aguardando vínculo com um Defensor Público".
+  - Técnico: título "Contexto técnico"; busca; badge fixa **MODO TÉCNICO · SOMENTE LEITURA**.
+  - Defensor: não renderiza.
+- `src/lib/team-errors.ts` — adiciona `MEMBER_NOT_FOUND`, `DEFENDER_NOT_FOUND`, `MEMBERSHIP_*`, `FORBIDDEN`, `CONCURRENT_CHANGE` em PT-BR.
 
-- **`src/lib/institutional/keys.ts`** — fábricas `institutionalKeys`, `workspaceKeys(orgaoId)`, `assistidoKeys(orgaoId)`, `processoKeys(orgaoId)`, `equipeKeys(orgaoId)`, `documentoKeys(orgaoId)`.
-- **`use-estado-institucional.ts`** — novo tipo `EstadoInstitucional` (papel/status/acessoGlobal/contextoAtual/orgaosDisponiveis/contextVersion). Mantém `orgao_ativo` legado.
-- **`use-selecionar-contexto-orgao.ts`** — chama a RPC; cancela/remove **apenas** query keys operacionais do órgão anterior (via predicate por prefixo com orgaoId antigo); invalida router; refetch estado; toast; UUID de idempotência por clique.
-- **`use-orgaos-acessiveis.ts`** — infinite query paginada; enabled só quando `open`.
-- **`src/components/app-shell/operational-org-switcher.tsx`** — botão compacto no header (badge com Building2 + nome + comarca principal). Popover + Command com busca (nome/comarca). Estados: único órgão (badge estático), sem vínculos (mensagem orientativa), admin técnico (badge "ACESSO GLOBAL" + busca global paginada). Check no atual, "Em uso".
-- **`app-shell.tsx`** — insere switcher no header (direita do breadcrumb), badge global do admin técnico, skeleton via `React.Suspense`/loading key quando `contextVersion` muda; sidebar recolhível preservada.
-- **`conta.tsx`** — nova seção "Órgãos vinculados": lista com nome/comarcas/data início/status/"Em uso" + botão "Usar este órgão". Remove ChangeOrgSheet destrutivo (mantém arquivo apenas se usado noutro fluxo; caso contrário, remoção).
-- **`use-workspace.ts` + cadastros** — troca `orgaoId` local pelo `contextoAtual.orgaoId`; queries `enabled` apenas quando há contexto; passam a usar as novas fábricas de keys. Cadastros já derivam órgão no backend — não enviarão `orgao_id`.
-- **`alterar-orgao.tsx`** — redirect para `/conta` (já é stub); remover link/menções.
-- **Textos** — substituir "Alterar órgão de execução" por "Selecionar órgão de trabalho"; remover avisos de perda de vínculo em toda a UI.
+### 2.2 Rota `/minha-equipe`
+- Se caller é Técnico e não há `defenderContext`, mostrar estado "Selecione um Defensor no seletor lateral".
+- Botão **"+ Vincular membro"** e ação **"Encerrar vínculo"** só aparecem quando `canLinkMembers`/`canEndBonds` do payload for `true`.
+- Header do modo técnico exibe nome do Defensor + chip "somente leitura".
+- Backend continua validando; UI é apenas espelho.
 
-### Segurança/invariantes
-- Nenhum vínculo apagado; nenhum papel alterado; nenhum dado movido.
-- `SECURITY DEFINER` + `search_path=''` com nomes qualificados.
-- Erros de domínio como retorno estruturado (não `RAISE`) para não perder auditoria.
-- Frontend nunca envia `orgao_id` divergente do contexto.
-- Cancelamento de queries por predicate (evita `cancelQueries()` sem filtro).
+### 2.3 Área de Trabalho
+- Query key inclui `defensorUserId` (não órgão): `['work-area', defensorUserId]`.
+- Ao trocar contexto: `queryClient.cancelQueries(['work-area'])` + `removeQueries` do antigo antes de setar o novo; skeleton enquanto carrega.
+- Botões de criar/renomear/arquivar painel, criar coluna, mover card etc. respeitam `access.canManagePanels/Columns/MoveCards/AddItems` (já vindos do backend com `technical_readonly=false`).
 
-### Verificação
-- `supabase--linter` após cada migration.
-- `psql` para confirmar novos índices e drop do antigo.
-- Build/typecheck automáticos.
-- Smoke: login como `saulocmoreira@gmail.com`, criar 2º vínculo via RPC admin, alternar contexto, confirmar isolamento de dados.
+## 3. Bootstrap E2E (após Auth criado pelo usuário)
 
-### Fora do escopo
-- Tela administrativa dedicada de gestão de vínculos (RPCs ficarão prontas).
-- Mudar regra de Membro de Equipe.
-- Encerrar vínculo pela "Minha conta".
-- Realtime/WebSocket.
+Insert pontual: perfil ativo `e2e-team-readonly`, papel exclusivo `membro_equipe`, `member_defensor_bonds` ativo com Lucas, `defensor_context` apontando para Lucas. Sem tocar contas admin_tecnico/defensor. Verificar `accessMode='team_readonly'` via query.
 
----
+## 4. Testes
 
-**Ordem de execução:** aplico as migrations 1→9 em série (validando cada uma), depois entrego o frontend em um único bloco coerente. Custo alto de tokens/tempo — confirme para prosseguir.
+- **Vitest**: mapping de erros; hooks `useAvailableDefenders`/`useDefenderTeam` (mock `supabase.rpc`) para cada perfil.
+- **Playwright (specs preparadas, execução condicionada ao bootstrap E2E existente)**:
+  - Técnico lista todos, troca contexto, abre `/area-de-trabalho`, botões de mutação ausentes, `technical_readonly` badge visível.
+  - Membro sem vínculo → estado vazio; com vínculo → `team_readonly`.
+  - Defensor gerencia própria equipe; tentativa cross-defensor bloqueada.
+- **SQL smoke** (via `supabase--read_query`): `listar_area_trabalho_defensor` para cada persona retorna `accessMode` correto; nenhum registro de `admin_tecnico` em `member_defensor_bonds`.
+
+## 5. Entregáveis
+
+Migration, RPCs, matriz de permissões, seletor de Defensores, tela Minha equipe adaptada, policies/grants, resultado de typecheck + build + lint, confirmação: **nenhum vínculo artificial criado para o Técnico**.
+
+## Fora de escopo
+
+- Rota "Administração → Vínculos" (a operação obrigatória já cabe em Minha equipe).
+- Capacidade administrativa do Técnico para criar/encerrar vínculos em nome do Defensor (deve ser feature separada, auditada).
+- Reformulação da listagem por órgão em Minha equipe (mantida como está).

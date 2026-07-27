@@ -704,6 +704,10 @@ export type Database = {
         Args: { p_limit?: number; p_termo?: string }
         Returns: Json
       }
+      buscar_usuarios_membro_equipe: {
+        Args: { p_termo: string }
+        Returns: Json
+      }
       cancelar_convite_equipe: {
         Args: { p_invitation_id: string; p_motivo: string }
         Returns: Json
@@ -852,6 +856,7 @@ export type Database = {
           telefone: string
         }[]
       }
+      listar_defensores_disponiveis_contexto: { Args: never; Returns: Json }
       listar_equipe: {
         Args: { p_orgao_id?: string }
         Returns: {
@@ -869,6 +874,10 @@ export type Database = {
           user_id: string
           vinculado_em: string
         }[]
+      }
+      listar_membros_do_defensor: {
+        Args: { p_defensor_user_id?: string }
+        Returns: Json
       }
       listar_orgaos_acessiveis: {
         Args: { p_cursor?: string; p_limit?: number; p_termo?: string }
@@ -1069,6 +1078,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      vincular_membro_defensor: {
+        Args: { p_idempotency_key: string; p_member_user_id: string }
+        Returns: Json
       }
     }
     Enums: {
