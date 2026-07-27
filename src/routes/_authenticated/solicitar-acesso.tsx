@@ -26,7 +26,7 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/solicitar-acesso")({
   head: () => ({
     meta: [
-      { title: "Solicitar acesso — Reintegra Infância" },
+      { title: "Solicitar acesso — Ágora" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -241,7 +241,7 @@ function SolicitarAcesso() {
       <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
         Cadastro institucional · Fase 1
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">Solicitar acesso ao Reintegra Infância</h1>
+      <h1 className="mt-2 text-2xl font-semibold">Solicitar acesso ao Ágora</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Informe seus dados funcionais e o órgão de execução. Um Administrador
         Institucional revisará e aprovará seu acesso operacional.

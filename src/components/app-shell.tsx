@@ -354,7 +354,7 @@ function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobi
       <Link
         to="/area-de-trabalho"
         className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}
-        aria-label="Reintegra Infância"
+        aria-label="Ágora"
       >
         <span
           aria-hidden

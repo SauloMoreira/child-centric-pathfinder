@@ -4,13 +4,13 @@ import { ArrowRight, ShieldCheck, Users, LayoutDashboard } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Reintegra" },
+      { title: "Ágora" },
       {
         name: "description",
         content:
           "Ágora - sistema de Formulários e cotas",
       },
-      { property: "og:title", content: "Reintegra" },
+      { property: "og:title", content: "Ágora" },
       {
         property: "og:description",
         content:
@@ -36,7 +36,7 @@ function PublicLanding() {
               <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
                 DPE-RS
               </p>
-              <p className="text-sm font-semibold">Reintegra</p>
+              <p className="text-sm font-semibold">Ágora</p>
             </div>
           </div>
           <Link

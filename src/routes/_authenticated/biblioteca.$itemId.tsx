@@ -32,7 +32,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/biblioteca/$itemId")({
   head: () => ({
     meta: [
-      { title: "Editar modelo — Reintegra Infância" },
+      { title: "Editar modelo — Ágora" },
       { name: "description", content: "Edição de modelo institucional da biblioteca." },
     ],
   }),

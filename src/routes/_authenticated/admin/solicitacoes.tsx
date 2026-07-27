@@ -27,7 +27,7 @@ import { ShieldAlert, Check, X, Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/admin/solicitacoes")({
   head: () => ({
     meta: [
-      { title: "Solicitações — Reintegra Infância" },
+      { title: "Solicitações — Ágora" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

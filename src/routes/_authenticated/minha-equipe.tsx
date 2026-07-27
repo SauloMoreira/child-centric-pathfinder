@@ -48,7 +48,7 @@ import { PendingAccessRequestsSection } from "@/features/team/components/pending
 export const Route = createFileRoute("/_authenticated/minha-equipe")({
   head: () => ({
     meta: [
-      { title: "Minha equipe — Reintegra" },
+      { title: "Minha equipe — Ágora" },
       {
         name: "description",
         content:

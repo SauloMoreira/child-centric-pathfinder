@@ -31,11 +31,11 @@ function caminhoSeguro(next: string | undefined): string | null {
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Acesso institucional — Reintegra Infância" },
+      { title: "Acesso institucional — Ágora" },
       {
         name: "description",
         content:
-          "Entrada institucional do sistema Reintegra Infância da Defensoria Pública do RS.",
+          "Entrada institucional do sistema Ágora da Defensoria Pública do RS.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -94,7 +94,7 @@ function AuthPage() {
             </Link>
             <div className="mt-16">
               <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-sidebar-muted">
-                DPE-RS · Reintegra Infância
+                DPE-RS · Ágora
               </p>
               <h1 className="mt-4 text-3xl font-semibold leading-tight">
                 Acesso institucional restrito.

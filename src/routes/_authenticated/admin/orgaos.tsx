@@ -9,7 +9,7 @@ import { ShieldAlert, Building2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/admin/orgaos")({
   head: () => ({
     meta: [
-      { title: "Órgãos de execução — Reintegra Infância" },
+      { title: "Órgãos de execução — Ágora" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

@@ -58,7 +58,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Tente novamente em instantes. Se o problema persistir, informe a
-          equipe institucional responsável pelo Reintegra Infância.
+          equipe institucional responsável pelo Ágora.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -87,14 +87,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Reintegra" },
+      { title: "Ágora" },
       {
         name: "description",
         content:
           "Ágora - sistema de Formulários e cotas",
       },
       { name: "author", content: "Defensoria Pública do Estado do Rio Grande do Sul" },
-      { property: "og:title", content: "Reintegra" },
+      { property: "og:title", content: "Ágora" },
       {
         property: "og:description",
         content:
@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Reintegra" },
+      { name: "twitter:title", content: "Ágora" },
       { name: "twitter:description", content: "Ágora - sistema de Formulários e cotas" },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3bbb3a20-2cd5-4ee9-9aee-3d04db89fb94/id-preview-d1e864ab--e61db62b-3818-48ce-ad06-2efc8ab6faaf.lovable.app-1785096411293.png" },

@@ -5,7 +5,7 @@ export default defineTool({
   name: "meu_estado_institucional",
   title: "Meu estado institucional",
   description:
-    "Retorna o perfil, papéis e vínculos institucionais do usuário conectado no Reintegra.",
+    "Retorna o perfil, papéis e vínculos institucionais do usuário conectado no Ágora.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {

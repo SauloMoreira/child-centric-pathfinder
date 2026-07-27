@@ -14,7 +14,7 @@ import { friendlyTeamError } from "@/lib/team-errors";
 export const Route = createFileRoute("/ativar-convite")({
   head: () => ({
     meta: [
-      { title: "Ativar convite — Reintegra" },
+      { title: "Ativar convite — Ágora" },
       {
         name: "description",
         content:
@@ -116,7 +116,7 @@ function AtivarConvitePage() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="h-4 w-4" aria-hidden />
           <span className="font-mono uppercase tracking-[0.18em] text-[10px]">
-            Reintegra — Ativação de conta
+            Ágora — Ativação de conta
           </span>
         </div>
 
@@ -209,7 +209,7 @@ function AtivarConvitePage() {
                       className="text-xs leading-relaxed text-muted-foreground"
                     >
                       Declaro que li e aceito os termos institucionais de uso do
-                      sistema Reintegra e o dever de sigilo funcional sobre os
+                      sistema Ágora e o dever de sigilo funcional sobre os
                       dados acessados.
                     </Label>
                   </div>

@@ -16,7 +16,7 @@ import { OrgaoCombobox, type OrgaoOption } from "@/components/orgao-combobox";
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({
     meta: [
-      { title: "Minha conta — Reintegra Infância" },
+      { title: "Minha conta — Ágora" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

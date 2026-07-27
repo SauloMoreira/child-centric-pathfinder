@@ -31,7 +31,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/biblioteca")({
   head: () => ({
     meta: [
-      { title: "Biblioteca — Reintegra Infância" },
+      { title: "Biblioteca — Ágora" },
       {
         name: "description",
         content:
@@ -77,7 +77,7 @@ function BibliotecaPage() {
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            Reintegra · Biblioteca institucional
+            Ágora · Biblioteca institucional
           </p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-institutional" />

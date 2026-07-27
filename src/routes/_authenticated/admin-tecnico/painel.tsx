@@ -14,7 +14,7 @@ import {
 export const Route = createFileRoute("/_authenticated/admin-tecnico/painel")({
   head: () => ({
     meta: [
-      { title: "Central técnica — Reintegra Infância" },
+      { title: "Central técnica — Ágora" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -37,7 +37,7 @@ function PainelTecnico() {
   return (
     <TecnicoPage
       title="Central técnica"
-      description="Ponto único de operação técnica do Reintegra Infância. Acesso global, ações auditadas, MFA obrigatório para operações sensíveis."
+      description="Ponto único de operação técnica do Ágora. Acesso global, ações auditadas, MFA obrigatório para operações sensíveis."
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {modulos.map((m) => {

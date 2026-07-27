@@ -93,13 +93,13 @@ function Consent() {
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6">
       <div className="rounded-lg border border-border bg-card p-8">
         <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-          DPE-RS · Reintegra Infância
+          DPE-RS · Ágora
         </p>
         <h1 className="mt-4 text-xl font-semibold">
           Conectar {cliente} à sua conta institucional
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Ao aprovar, {cliente} poderá usar as ferramentas do Reintegra agindo
+          Ao aprovar, {cliente} poderá usar as ferramentas do Ágora agindo
           como você, respeitando seus papéis, vínculos e políticas de acesso.
           Toda ação continuará registrada em auditoria.
         </p>

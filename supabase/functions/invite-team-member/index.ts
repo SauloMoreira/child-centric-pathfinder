@@ -1,5 +1,5 @@
 // Edge Function: invite-team-member
-// Fase 2 — Reintegra Infância
+// Fase 2 — Ágora
 // Valida o JWT do solicitante, cria o convite via RPC segura, envia e-mail
 // pelo Supabase Auth Admin API (inviteUserByEmail) e registra o resultado.
 // Nunca expõe service_role no frontend.
