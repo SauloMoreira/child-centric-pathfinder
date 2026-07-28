@@ -91,6 +91,35 @@ export function RichTextEditor({
     emit();
   };
 
+  /**
+   * Não há execCommand nativo e confiável para maiúsculas/minúsculas, então
+   * transformamos manualmente os nós de texto dentro da seleção. Usar
+   * `Range.cloneContents`/`insertNode` preserva a estrutura de tags
+   * (negrito/itálico/sublinhado) do trecho selecionado — só o conteúdo
+   * textual dos nós de texto é alterado.
+   */
+  const transformSelectionCase = (fn: (s: string) => string) => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    if (!el.contains(range.commonAncestorContainer)) return;
+
+    const fragment = range.cloneContents();
+    const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+      node.nodeValue = fn(node.nodeValue ?? "");
+    }
+
+    range.deleteContents();
+    range.insertNode(fragment);
+    sel.removeAllRanges();
+    emit();
+  };
+
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     // Cola sempre como texto simples: descarta HTML externo (evita colar
     // markup/atributos arbitrários) — negrito/itálico/sublinhado seguem
@@ -136,6 +165,31 @@ export function RichTextEditor({
           aria-label="Sublinhado"
         >
           <Underline className="h-3.5 w-3.5" />
+        </Button>
+        <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-[11px] font-semibold"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => transformSelectionCase((s) => s.toLocaleUpperCase("pt-BR"))}
+          aria-label="Maiúsculas"
+          title="Colocar seleção em maiúsculas"
+        >
+          AA
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-[11px] font-semibold"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => transformSelectionCase((s) => s.toLocaleLowerCase("pt-BR"))}
+          aria-label="Minúsculas"
+          title="Colocar seleção em minúsculas"
+        >
+          aa
         </Button>
       </div>
       <div

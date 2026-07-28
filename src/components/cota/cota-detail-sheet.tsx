@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RichTextViewer } from "@/components/cota/rich-text-editor";
 import { useCotaDetalhe, useExcluirCota, mensagemErroCota } from "@/features/cota/hooks";
+import { copyRichText } from "@/lib/utils";
 
 interface CotaDetailSheetProps {
   itemId: string | null;
@@ -45,7 +46,8 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
   const handleCopy = async () => {
     if (!detalhe.data) return;
     try {
-      await navigator.clipboard.writeText(detalhe.data.bodyText);
+      const html = (detalhe.data.bodyJson as { html?: string } | null)?.html ?? null;
+      await copyRichText(html, detalhe.data.bodyText);
       toast.success("Texto da cota copiado");
     } catch {
       toast.error("Não foi possível copiar o texto");

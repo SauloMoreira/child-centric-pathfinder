@@ -97,7 +97,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, copyRichText } from "@/lib/utils";
 import { useWorkArea, useSelectedPanel, type PanelSummary } from "@/features/work-area";
 import { PanelTabs } from "@/features/work-area/components/PanelTabs";
 import { CreatePanelSheet } from "@/features/work-area/components/CreatePanelSheet";
@@ -1555,7 +1555,7 @@ function SortableCard(props: {
         onClick={async (e) => {
           e.stopPropagation();
           try {
-            await navigator.clipboard.writeText(card.bodyText ?? "");
+            await copyRichText(card.bodyHtml, card.bodyText ?? "");
             toast.success("Texto da cota copiado");
           } catch {
             toast.error("Não foi possível copiar o texto");

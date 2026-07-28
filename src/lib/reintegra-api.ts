@@ -304,6 +304,8 @@ export type WorkspaceCardDto = {
   orderPosition: number;
   /** Texto puro da cota, para copiar sem abrir o card. Sempre null para atendimento. */
   bodyText: string | null;
+  /** HTML formatado (negrito/itálico/sublinhado) da cota, para copiar com formatação. Sempre null para atendimento. */
+  bodyHtml: string | null;
   canOpen: boolean;
   canEdit: boolean;
   canUse: boolean;
