@@ -5,14 +5,7 @@ export type ContentKind = "atendimento" | "cota";
 export type ContentStatus = "rascunho" | "publicado" | "arquivado";
 export type ContentVisibility = "privado" | "orgao" | "institucional";
 export type WorkspaceColor =
-  | "neutral"
-  | "green"
-  | "blue"
-  | "amber"
-  | "burgundy"
-  | "purple"
-  | "slate"
-  | "rose";
+  "neutral" | "green" | "blue" | "amber" | "burgundy" | "purple" | "slate" | "rose";
 
 export type BibliotecaItem = {
   id: string;
@@ -57,6 +50,105 @@ export type MutationResult = {
   version_number?: number;
   optimistic_version: number;
 };
+
+// -------- COTA --------
+// Modelo de texto reutilizável (negrito/itálico/sublinhado) criado por um
+// Defensor Público para uso da sua equipe. Sem rascunho/publicação: toda
+// cota já nasce visível para a equipe (visibility "equipe") e cada edição
+// gera uma nova versão imutável. Apenas o Defensor autor edita ou exclui.
+export type CotaCategoria = { id: string; nome: string };
+
+export type CotaDetalhe = {
+  id: string;
+  titulo: string;
+  bodyJson: unknown;
+  bodyText: string;
+  categorias: CotaCategoria[];
+  ownerUserId: string;
+  ownerDisplayName: string;
+  updatedAt: string;
+  optimisticVersion: number;
+  canEdit: boolean;
+};
+
+export async function criarCota(params: {
+  titulo: string;
+  bodyJson: unknown;
+  bodyText: string;
+  categoryIds?: string[];
+}): Promise<{ item_id: string; version_id: string }> {
+  const { data, error } = await supabase.rpc("criar_cota", {
+    p_titulo: params.titulo,
+    p_body_json: params.bodyJson as never,
+    p_body_text: params.bodyText,
+    p_category_ids: (params.categoryIds ?? null) as never,
+  } as never);
+  if (error) throw error;
+  return data as { item_id: string; version_id: string };
+}
+
+export async function atualizarCota(params: {
+  itemId: string;
+  expectedVersion: number;
+  titulo: string;
+  bodyJson: unknown;
+  bodyText: string;
+  categoryIds?: string[];
+}): Promise<{ optimisticVersion: number; versionId: string; versionNumber: number }> {
+  const { data, error } = await supabase.rpc("atualizar_cota", {
+    p_item_id: params.itemId,
+    p_expected_version: params.expectedVersion,
+    p_idempotency_key: uuid(),
+    p_titulo: params.titulo,
+    p_body_json: params.bodyJson as never,
+    p_body_text: params.bodyText,
+    p_category_ids: (params.categoryIds ?? null) as never,
+  } as never);
+  if (error) throw error;
+  return data as { optimisticVersion: number; versionId: string; versionNumber: number };
+}
+
+export async function excluirCota(params: {
+  itemId: string;
+  expectedVersion: number;
+}): Promise<{ deleted: boolean }> {
+  const { data, error } = await supabase.rpc("excluir_cota", {
+    p_item_id: params.itemId,
+    p_expected_version: params.expectedVersion,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return data as { deleted: boolean };
+}
+
+export async function obterCotaDetalhe(itemId: string): Promise<CotaDetalhe> {
+  const { data, error } = await supabase.rpc("obter_cota_detalhe", { p_item_id: itemId } as never);
+  if (error) throw error;
+  return data as CotaDetalhe;
+}
+
+export async function adminCriarCategoriaBiblioteca(params: {
+  kind: ContentKind;
+  nome: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc("admin_criar_categoria_biblioteca", {
+    p_kind: params.kind,
+    p_nome: params.nome,
+  } as never);
+  if (error) throw error;
+  return data as string;
+}
+
+export async function adminRenomearCategoriaBiblioteca(params: {
+  categoryId: string;
+  nome: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc("admin_renomear_categoria_biblioteca", {
+    p_category_id: params.categoryId,
+    p_nome: params.nome,
+  } as never);
+  if (error) throw error;
+}
 
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
@@ -210,6 +302,8 @@ export type WorkspaceCardDto = {
   updatedAt: string;
   archivedByAuthor: boolean;
   orderPosition: number;
+  /** Texto puro da cota, para copiar sem abrir o card. Sempre null para atendimento. */
+  bodyText: string | null;
   canOpen: boolean;
   canEdit: boolean;
   canUse: boolean;

@@ -797,6 +797,50 @@ export type Database = {
         }
         Returns: string
       }
+      criar_cota: {
+        Args: {
+          p_body_json: Json
+          p_body_text: string
+          p_category_ids?: string[]
+          p_titulo: string
+        }
+        Returns: Json
+      }
+      atualizar_cota: {
+        Args: {
+          p_body_json: Json
+          p_body_text: string
+          p_category_ids?: string[]
+          p_expected_version: number
+          p_idempotency_key: string
+          p_item_id: string
+          p_titulo: string
+        }
+        Returns: Json
+      }
+      excluir_cota: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key: string
+          p_item_id: string
+        }
+        Returns: Json
+      }
+      obter_cota_detalhe: {
+        Args: { p_item_id: string }
+        Returns: Json
+      }
+      admin_criar_categoria_biblioteca: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["content_kind"]
+          p_nome: string
+        }
+        Returns: string
+      }
+      admin_renomear_categoria_biblioteca: {
+        Args: { p_category_id: string; p_nome: string }
+        Returns: undefined
+      }
       criar_convite_equipe: {
         Args: {
           p_email: string
@@ -1170,7 +1214,7 @@ export type Database = {
       audit_result: "sucesso" | "falha" | "negado"
       content_kind: "atendimento" | "cota"
       content_status: "rascunho" | "publicado" | "arquivado"
-      content_visibility: "privado" | "orgao" | "institucional"
+      content_visibility: "privado" | "orgao" | "institucional" | "equipe"
       member_defensor_bond_status: "ativo" | "encerrado"
       profile_status:
         | "aguardando_dados"
@@ -1338,7 +1382,7 @@ export const Constants = {
       audit_result: ["sucesso", "falha", "negado"],
       content_kind: ["atendimento", "cota"],
       content_status: ["rascunho", "publicado", "arquivado"],
-      content_visibility: ["privado", "orgao", "institucional"],
+      content_visibility: ["privado", "orgao", "institucional", "equipe"],
       member_defensor_bond_status: ["ativo", "encerrado"],
       profile_status: [
         "aguardando_dados",

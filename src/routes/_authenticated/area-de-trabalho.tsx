@@ -54,6 +54,7 @@ import {
   isConcurrentChangeError,
   listarBiblioteca,
   listarWorkspaceCompleto,
+  obterCotaDetalhe,
   moverCardWorkspace,
   moverColunaWorkspace,
   removerCardWorkspace,
@@ -64,6 +65,7 @@ import {
   type WorkspaceColor,
   type WorkspaceColumn,
   type WorkspaceMeta,
+  type CotaDetalhe,
 } from "@/lib/reintegra-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +105,9 @@ import { RenamePanelSheet } from "@/features/work-area/components/RenamePanelShe
 import { ArchivePanelDialog } from "@/features/work-area/components/ArchivePanelDialog";
 import { panelIconComponent } from "@/features/work-area/components/panel-icon";
 import { RequestDefenderAccessSheet } from "@/features/team/components/request-defender-access-sheet";
+import { CotaFormSheet } from "@/components/cota/cota-form-sheet";
+import { CotaDetailSheet } from "@/components/cota/cota-detail-sheet";
+import { cotaKeys } from "@/features/cota/hooks";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
@@ -429,9 +434,7 @@ function PanelBoard({
 // ColumnsBoard — DnD de colunas + cards
 // -----------------------------------------------------------------------------
 type DragActive =
-  | { type: "column"; id: string }
-  | { type: "card"; id: string; card: WorkspaceCardDto }
-  | null;
+  { type: "column"; id: string } | { type: "card"; id: string; card: WorkspaceCardDto } | null;
 
 function ColumnsBoard({
   defensorId,
@@ -695,6 +698,57 @@ function ColumnsBoard({
   // "Adicionar a outro Painel"
   const [copyTarget, setCopyTarget] = useState<WorkspaceCardDto | null>(null);
 
+  // Cota: criar/editar (side sheet) e detalhe expandido (side sheet)
+  const [cotaFormTarget, setCotaFormTarget] = useState<
+    { mode: "create" } | { mode: "edit"; itemId: string; detalhe: CotaDetalhe } | null
+  >(null);
+  const [cotaFormOpen, setCotaFormOpen] = useState(false);
+  const [cotaDetailId, setCotaDetailId] = useState<string | null>(null);
+
+  const firstColumnId = orderedColumns[0]?.id ?? null;
+
+  const criarCotaCard = useMutation({
+    mutationFn: (itemId: string) => {
+      if (!firstColumnId) throw new Error("NO_COLUMN");
+      return adicionarCardWorkspace({
+        columnId: firstColumnId,
+        itemId,
+        expectedWorkspaceVersion: workspace.optimisticVersion,
+      });
+    },
+    onSuccess: () => {
+      announce("Cota adicionada ao Painel");
+      onRefetch();
+    },
+    onError: (e: unknown) => {
+      if (e instanceof Error && e.message === "NO_COLUMN") {
+        toast.success("Cota criada. Crie uma coluna para adicioná-la ao quadro.");
+        return;
+      }
+      toast.error("Cota criada, mas não foi possível adicioná-la automaticamente ao Painel.");
+    },
+  });
+
+  const openEditCota = useCallback((detalhe: CotaDetalhe) => {
+    setCotaFormTarget({ mode: "edit", itemId: detalhe.id, detalhe });
+    setCotaFormOpen(true);
+  }, []);
+
+  const handleEditCota = useCallback(
+    async (card: WorkspaceCardDto) => {
+      try {
+        const detalhe = await qc.fetchQuery({
+          queryKey: cotaKeys.detalhe(card.itemId),
+          queryFn: () => obterCotaDetalhe(card.itemId),
+        });
+        openEditCota(detalhe);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao carregar a cota para edição");
+      }
+    },
+    [qc, openEditCota],
+  );
+
   const totalCards = cards.length;
   const PanelIcon = panelIconComponent(activePanel?.icon ?? null);
 
@@ -743,6 +797,21 @@ function ColumnsBoard({
               <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} aria-hidden />
               Atualizar
             </Button>
+            {access.accessMode === "owner" && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => {
+                  setCotaFormTarget({ mode: "create" });
+                  setCotaFormOpen(true);
+                }}
+              >
+                <Scale className="h-3.5 w-3.5" aria-hidden />
+                Nova cota
+              </Button>
+            )}
             {access.canManageColumns && (
               <Button
                 type="button"
@@ -794,6 +863,8 @@ function ColumnsBoard({
                     moverCard.mutate({ cardId, targetColumnId, newPosition })
                   }
                   onCopyToPanel={(card) => setCopyTarget(card)}
+                  onOpenCota={(card) => setCotaDetailId(card.itemId)}
+                  onEditCota={handleEditCota}
                   onAdded={onRefetch}
                 />
               ))}
@@ -835,6 +906,29 @@ function ColumnsBoard({
         onDone={(panelName) => {
           if (panelName) announce(`Card adicionado ao Painel "${panelName}".`);
           setCopyTarget(null);
+        }}
+      />
+
+      <CotaFormSheet
+        open={cotaFormOpen}
+        onOpenChange={setCotaFormOpen}
+        target={cotaFormTarget}
+        onCreated={(itemId) => criarCotaCard.mutate(itemId)}
+        onSaved={onRefetch}
+      />
+      <CotaDetailSheet
+        itemId={cotaDetailId}
+        onOpenChange={(v) => !v && setCotaDetailId(null)}
+        onEdit={() => {
+          const detalhe = qc.getQueryData<CotaDetalhe>(cotaKeys.detalhe(cotaDetailId ?? ""));
+          if (detalhe) {
+            setCotaDetailId(null);
+            openEditCota(detalhe);
+          }
+        }}
+        onDeleted={() => {
+          setCotaDetailId(null);
+          onRefetch();
         }}
       />
     </>
@@ -967,6 +1061,8 @@ function SortableColumn(props: {
   onRemoveCard: (cardId: string) => void;
   onMoveCard: (cardId: string, targetColumnId: string, newPosition: number) => void;
   onCopyToPanel: (card: WorkspaceCardDto) => void;
+  onOpenCota: (card: WorkspaceCardDto) => void;
+  onEditCota: (card: WorkspaceCardDto) => void;
   onAdded: () => void;
 }) {
   const {
@@ -983,6 +1079,8 @@ function SortableColumn(props: {
     onRemoveCard,
     onMoveCard,
     onCopyToPanel,
+    onOpenCota,
+    onEditCota,
     onAdded,
   } = props;
 
@@ -1129,6 +1227,8 @@ function SortableColumn(props: {
                 onMoveCard(card.cardId, targetId, Number.MAX_SAFE_INTEGER)
               }
               onCopyToPanel={() => onCopyToPanel(card)}
+              onOpenCota={() => onOpenCota(card)}
+              onEditCota={() => onEditCota(card)}
             />
           ))}
         </SortableContext>
@@ -1452,6 +1552,8 @@ function SortableCard(props: {
   onMoveDown: () => void;
   onMoveToColumn: (targetId: string) => void;
   onCopyToPanel: () => void;
+  onOpenCota: () => void;
+  onEditCota: () => void;
 }) {
   const {
     card,
@@ -1464,6 +1566,8 @@ function SortableCard(props: {
     onMoveDown,
     onMoveToColumn,
     onCopyToPanel,
+    onOpenCota,
+    onEditCota,
   } = props;
 
   const sortable = useSortable({
@@ -1545,7 +1649,15 @@ function SortableCard(props: {
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-1">
-        {card.canOpen ? (
+        {isCota ? (
+          <button
+            type="button"
+            onClick={onOpenCota}
+            className="text-[11px] font-medium text-institutional hover:underline"
+          >
+            Abrir cota
+          </button>
+        ) : card.canOpen ? (
           <Link
             to="/biblioteca/$itemId"
             params={{ itemId: card.itemId }}
@@ -1559,46 +1671,75 @@ function SortableCard(props: {
           </span>
         )}
 
-        {access.canMoveCards && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="p-1 text-muted-foreground hover:text-foreground"
-                aria-label="Ações do card"
-              >
-                <MoreVertical className="h-3.5 w-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled={index === 0} onClick={onMoveUp}>
-                <ArrowUp className="mr-2 h-4 w-4" /> Mover para cima
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={index === columnCount - 1} onClick={onMoveDown}>
-                <ArrowDown className="mr-2 h-4 w-4" /> Mover para baixo
-              </DropdownMenuItem>
-              {otherColumns.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                    Mover para outra coluna
-                  </DropdownMenuLabel>
-                  {otherColumns.map((c) => (
-                    <DropdownMenuItem key={c.id} onClick={() => onMoveToColumn(c.id)}>
-                      {c.nome}
+        <div className="flex items-center gap-0.5">
+          {isCota && card.bodyText && (
+            <button
+              type="button"
+              className="rounded p-1 text-muted-foreground hover:text-foreground"
+              aria-label="Copiar texto da cota"
+              title="Copiar texto da cota"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(card.bodyText ?? "");
+                  toast.success("Texto da cota copiado");
+                } catch {
+                  toast.error("Não foi possível copiar o texto");
+                }
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {access.canMoveCards && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="p-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Ações do card"
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isCota && card.canEdit && (
+                  <>
+                    <DropdownMenuItem onClick={onEditCota}>
+                      <Pencil className="mr-2 h-4 w-4" /> Editar cota
                     </DropdownMenuItem>
-                  ))}
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onCopyToPanel}>
-                <Copy className="mr-2 h-4 w-4" /> Adicionar a outro Painel
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" onClick={onRemove}>
-                <X className="mr-2 h-4 w-4" /> Remover deste Painel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem disabled={index === 0} onClick={onMoveUp}>
+                  <ArrowUp className="mr-2 h-4 w-4" /> Mover para cima
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={index === columnCount - 1} onClick={onMoveDown}>
+                  <ArrowDown className="mr-2 h-4 w-4" /> Mover para baixo
+                </DropdownMenuItem>
+                {otherColumns.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                      Mover para outra coluna
+                    </DropdownMenuLabel>
+                    {otherColumns.map((c) => (
+                      <DropdownMenuItem key={c.id} onClick={() => onMoveToColumn(c.id)}>
+                        {c.nome}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onCopyToPanel}>
+                  <Copy className="mr-2 h-4 w-4" /> Adicionar a outro Painel
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={onRemove}>
+                  <X className="mr-2 h-4 w-4" /> Remover deste Painel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     </article>
   );
