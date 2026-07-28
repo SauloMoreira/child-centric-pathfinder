@@ -109,7 +109,7 @@ describe("PanelTabs — renderização", () => {
 });
 
 describe("PanelTabs — permissões", () => {
-  it("owner vê botão 'Novo Painel'", () => {
+  it("owner vê botão 'Criar painel'", () => {
     render(
       <PanelTabs
         defenderUserId={SYN_DEFENDER_A}
@@ -123,10 +123,10 @@ describe("PanelTabs — permissões", () => {
       />,
       { wrapper },
     );
-    expect(screen.getByRole("button", { name: /novo painel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /criar painel/i })).toBeInTheDocument();
   });
 
-  it("team_readonly não vê botão 'Novo Painel' nem menu de ações", () => {
+  it("team_readonly não vê botão 'Criar painel' nem menu de ações", () => {
     render(
       <PanelTabs
         defenderUserId={SYN_DEFENDER_A}
@@ -140,7 +140,7 @@ describe("PanelTabs — permissões", () => {
       />,
       { wrapper },
     );
-    expect(screen.queryByRole("button", { name: /novo painel/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /criar painel/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Ações do Painel/i)).not.toBeInTheDocument();
   });
 });

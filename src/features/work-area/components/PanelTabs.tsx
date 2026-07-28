@@ -150,7 +150,7 @@ export function PanelTabs({
               : "Criar novo Painel"
           }
         >
-          <Plus className="h-3.5 w-3.5" /> Novo Painel
+          <Plus className="h-3.5 w-3.5" /> Criar painel
         </Button>
       )}
     </div>

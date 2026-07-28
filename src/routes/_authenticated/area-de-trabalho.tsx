@@ -754,7 +754,6 @@ function ColumnsBoard({
           {access.accessMode === "owner" && (
             <Button
               type="button"
-              variant="outline"
               size="sm"
               className="h-8 gap-1.5"
               onClick={() => {
@@ -762,20 +761,17 @@ function ColumnsBoard({
                 setCotaFormOpen(true);
               }}
             >
-              <span className="relative inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+              <span className="inline-flex shrink-0 items-center gap-0.5">
                 <StickyNote className="h-3.5 w-3.5" aria-hidden />
-                <Plus
-                  className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full bg-background"
-                  strokeWidth={3}
-                  aria-hidden
-                />
+                <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               </span>
-              Nova cota
+              Criar cota
             </Button>
           )}
           {access.canManageColumns && (
             <Button
               type="button"
+              variant="outline"
               size="sm"
               className="h-8 gap-1.5"
               onClick={() => {
@@ -788,7 +784,7 @@ function ColumnsBoard({
               }}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden />
-              Nova coluna
+              Criar coluna
             </Button>
           )}
         </div>
@@ -928,7 +924,7 @@ function AddColumnCard({
         className="kanban-column group flex h-full min-h-[16rem] flex-col items-center justify-center gap-2 border-dashed bg-surface/40 text-sm text-muted-foreground transition-colors hover:border-institutional/60 hover:bg-institutional/[0.04] hover:text-institutional"
       >
         <Plus className="h-5 w-5" aria-hidden />
-        Nova coluna
+        Criar coluna
       </button>
     );
   }
@@ -945,7 +941,7 @@ function AddColumnCard({
     >
       <div className="flex items-center justify-between">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          Nova coluna
+          Criar coluna
         </span>
         <button
           type="button"
