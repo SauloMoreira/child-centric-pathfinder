@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TecnicoPage } from "@/components/tecnico-guard";
-import { Users, ScrollText, Siren, ShieldCheck, Activity, Lock, Sliders } from "lucide-react";
+import {
+  Users,
+  ScrollText,
+  Siren,
+  ShieldCheck,
+  Activity,
+  Lock,
+  Sliders,
+  Globe2,
+  Tags,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin-tecnico/painel")({
   head: () => ({
@@ -51,6 +61,18 @@ const modulos = [
     label: "Diagnósticos",
     icon: Activity,
     desc: "Saúde do backend e integridade.",
+  },
+  {
+    to: "/admin-tecnico/categorias",
+    label: "Categorias",
+    icon: Tags,
+    desc: "Categorias de Cotas e Atendimentos da Biblioteca.",
+  },
+  {
+    to: "/admin-tecnico/acesso-global",
+    label: "Acesso global",
+    icon: Globe2,
+    desc: "Selecionar Defensor sob análise técnica.",
   },
   {
     to: "/admin-tecnico/acesso-emergencial",
