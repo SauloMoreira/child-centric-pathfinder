@@ -243,17 +243,6 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
 
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
 
-  const contextoLabel =
-    access.accessMode === "owner"
-      ? "Sua área de trabalho pessoal"
-      : access.accessMode === "team_readonly"
-        ? "Somente leitura · Membro da equipe"
-        : access.accessMode === "technical_admin"
-          ? "Modo técnico · Acesso administrativo"
-          : access.accessMode === "technical_readonly"
-            ? "Modo técnico · Somente leitura"
-            : "";
-
   return (
     <div
       className="flex min-h-[100dvh] flex-col bg-canvas"
@@ -262,35 +251,12 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
       {/* Cabeçalho institucional */}
       <header className="border-b border-border bg-surface px-4 py-4 lg:px-8 lg:py-5">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            Ágora · Área de trabalho
-          </p>
-          <h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl">
+          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
             Área de Trabalho
           </h1>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5" aria-hidden />
-              <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
-            </span>
-            {contextoLabel && (
-              <>
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                <span
-                  className={cn(
-                    "font-mono text-[10px] uppercase tracking-[0.18em]",
-                    access.accessMode === "technical_readonly" ||
-                      access.accessMode === "technical_admin"
-                      ? "text-institutional"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {contextoLabel}
-                </span>
-              </>
-            )}
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
           </p>
         </div>
 
