@@ -214,7 +214,7 @@ function SortablePanelTab({
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive" onClick={onArchive}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Arquivar
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -242,7 +242,7 @@ function PanelTabButton({
   return (
     <div
       className={cn(
-        "group relative flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+        "group relative flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
         selected
           ? "bg-muted text-foreground"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",

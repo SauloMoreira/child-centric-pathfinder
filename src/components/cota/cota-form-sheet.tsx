@@ -24,6 +24,8 @@ import type { CotaDetalhe } from "@/lib/reintegra-api";
 
 type CotaFormMode = { mode: "create" } | { mode: "edit"; itemId: string; detalhe: CotaDetalhe };
 
+const RESERVED_CATEGORY_NAME = "Sem categoria";
+
 interface CotaFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,6 +48,9 @@ export function CotaFormSheet({
   onSaved,
 }: CotaFormSheetProps) {
   const categoriasQuery = useCategoriasCota();
+  const categoriasSelecionaveis = (categoriasQuery.data ?? []).filter(
+    (c) => c.nome !== RESERVED_CATEGORY_NAME,
+  );
   const criar = useCriarCota();
   const atualizar = useAtualizarCota();
 
@@ -77,6 +82,14 @@ export function CotaFormSheet({
   const handleSubmit = () => {
     if (!titulo.trim()) {
       toast.error("Informe um título para a cota.");
+      return;
+    }
+    if (!texto.text.trim()) {
+      toast.error("Informe o texto da cota.");
+      return;
+    }
+    if (categoriaIds.length === 0) {
+      toast.error("Selecione ao menos uma categoria.");
       return;
     }
     if (target?.mode === "edit") {
@@ -153,12 +166,13 @@ export function CotaFormSheet({
             <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-input p-2">
               {categoriasQuery.isLoading ? (
                 <p className="p-2 text-xs text-muted-foreground">Carregando categorias…</p>
-              ) : (categoriasQuery.data ?? []).length === 0 ? (
+              ) : categoriasSelecionaveis.length === 0 ? (
                 <p className="p-2 text-xs text-muted-foreground">
-                  Nenhuma categoria criada ainda. A cota usará "Sem categoria".
+                  Nenhuma categoria disponível ainda. Peça ao Admin Técnico para criar uma categoria
+                  antes de cadastrar cotas.
                 </p>
               ) : (
-                (categoriasQuery.data ?? []).map((c) => (
+                categoriasSelecionaveis.map((c) => (
                   <label
                     key={c.id}
                     className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
@@ -173,7 +187,7 @@ export function CotaFormSheet({
               )}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Sem seleção, a cota cai automaticamente em "Sem categoria".
+              Selecione ao menos uma categoria. É obrigatório.
             </p>
           </div>
         </div>
@@ -182,7 +196,10 @@ export function CotaFormSheet({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={pending}>
+          <Button
+            onClick={handleSubmit}
+            disabled={pending || !titulo.trim() || !texto.text.trim() || categoriaIds.length === 0}
+          >
             {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             {isEdit ? "Salvar alterações" : "Criar cota"}
           </Button>

@@ -203,7 +203,7 @@ describe("PanelTabs — menu de ações do owner", () => {
     fireEvent.pointerDown(trigger2, { button: 0 });
     fireEvent.click(trigger2);
     const menu2 = await screen.findByRole("menu");
-    fireEvent.click(within(menu2).getByText(/arquivar/i));
+    fireEvent.click(within(menu2).getByText(/excluir/i));
     expect(onArchive).toHaveBeenCalledWith(panels[1]);
   });
 });

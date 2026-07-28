@@ -33,7 +33,7 @@ export function ArchivePanelDialog({
         panelId: panel.id,
         expectedVersion: panel.optimisticVersion,
       });
-      toast.success("Painel arquivado");
+      toast.success("Painel excluído");
       onArchived?.(res.nextActivePanelId ?? null);
       onOpenChange(false);
     } catch (err) {
@@ -45,10 +45,10 @@ export function ArchivePanelDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Arquivar Painel “{panel?.name}”?</AlertDialogTitle>
+          <AlertDialogTitle>Excluir Painel “{panel?.name}”?</AlertDialogTitle>
           <AlertDialogDescription>
-            Painéis com colunas ou cards não podem ser arquivados. Esvazie o Painel antes de
-            arquivar. O último Painel ativo não pode ser arquivado.
+            Painéis com colunas ou cards não podem ser excluídos. Esvazie o Painel antes de excluir.
+            O último Painel ativo não pode ser excluído.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -60,7 +60,7 @@ export function ArchivePanelDialog({
             }}
             disabled={mut.isPending}
           >
-            {mut.isPending ? "Arquivando…" : "Arquivar"}
+            {mut.isPending ? "Excluindo…" : "Excluir"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

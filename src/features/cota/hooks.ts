@@ -97,6 +97,8 @@ export function mensagemErroCota(e: unknown, fallback: string): string {
   if (msg.includes("COTA_NOT_FOUND")) return "Cota não encontrada.";
   if (msg.includes("FORBIDDEN")) return "Você não tem acesso a esta cota.";
   if (msg.includes("INVALID_TITLE")) return "Informe um título para a cota.";
+  if (msg.includes("INVALID_BODY")) return "Informe o texto da cota.";
+  if (msg.includes("CATEGORY_REQUIRED")) return "Selecione ao menos uma categoria.";
   if (msg.includes("INVALID_CATEGORY")) return "Selecione categorias válidas.";
   if (msg.includes("RESERVED_NAME") || msg.includes("RESERVED_CATEGORY"))
     return '"Sem categoria" é reservado pelo sistema.';

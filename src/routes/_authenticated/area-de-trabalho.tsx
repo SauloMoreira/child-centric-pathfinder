@@ -18,6 +18,7 @@ import {
   User,
   Pencil,
   Check,
+  Search,
 } from "lucide-react";
 
 import {
@@ -29,6 +30,7 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -382,6 +384,24 @@ function PanelBoard({
 type DragActive =
   { type: "column"; id: string } | { type: "card"; id: string; card: WorkspaceCardDto } | null;
 
+/**
+ * Colunas e cards compartilham o mesmo DndContext (colunas em um
+ * SortableContext horizontal, cards em SortableContexts verticais dentro de
+ * cada coluna). Sem esse filtro, `closestCenter` pode escolher um card como
+ * alvo mais próximo ao arrastar uma coluna, fazendo o drag parecer que está
+ * "entrando" no card em vez de trocar de posição com a coluna. Restringe os
+ * candidatos de colisão ao mesmo tipo do item ativo (coluna só colide com
+ * coluna; card colide com card ou com a área de soltura da coluna vazia).
+ */
+const dndCollisionDetection: CollisionDetection = (args) => {
+  const activeType = args.active.data.current?.type;
+  const containers = args.droppableContainers.filter((c) => {
+    const t = c.data.current?.type;
+    return activeType === "column" ? t === "column" : t !== "column";
+  });
+  return closestCenter({ ...args, droppableContainers: containers });
+};
+
 function ColumnsBoard({
   defensorId,
   workspace,
@@ -403,16 +423,26 @@ function ColumnsBoard({
   const panelKey = [...workspaceKeys.byDefender(defensorId), workspace.id] as const;
   const { announce, node: liveNode } = useAnnouncer();
 
+  // Busca de cards no Painel aberto (título + texto da cota).
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const isSearching = normalizedQuery.length > 0;
+
   const cardsByColumn = useMemo(() => {
     const map = new Map<string, WorkspaceCardDto[]>();
     for (const col of columns) map.set(col.id, []);
     for (const card of cards) {
+      if (normalizedQuery) {
+        const haystack = `${card.title} ${card.bodyText ?? ""}`.toLowerCase();
+        if (!haystack.includes(normalizedQuery)) continue;
+      }
       const bucket = map.get(card.columnId);
       if (bucket) bucket.push(card);
     }
     for (const list of map.values()) list.sort((a, b) => a.orderPosition - b.orderPosition);
     return map;
-  }, [columns, cards]);
+  }, [columns, cards, normalizedQuery]);
 
   const handleMutationError = useCallback(
     (e: unknown) => {
@@ -649,30 +679,6 @@ function ColumnsBoard({
   const [cotaFormOpen, setCotaFormOpen] = useState(false);
   const [cotaDetailId, setCotaDetailId] = useState<string | null>(null);
 
-  const firstColumnId = orderedColumns[0]?.id ?? null;
-
-  const criarCotaCard = useMutation({
-    mutationFn: (itemId: string) => {
-      if (!firstColumnId) throw new Error("NO_COLUMN");
-      return adicionarCardWorkspace({
-        columnId: firstColumnId,
-        itemId,
-        expectedWorkspaceVersion: workspace.optimisticVersion,
-      });
-    },
-    onSuccess: () => {
-      announce("Cota adicionada ao Painel");
-      onRefetch();
-    },
-    onError: (e: unknown) => {
-      if (e instanceof Error && e.message === "NO_COLUMN") {
-        toast.success("Cota criada. Crie uma coluna para adicioná-la ao quadro.");
-        return;
-      }
-      toast.error("Cota criada, mas não foi possível adicioná-la automaticamente ao Painel.");
-    },
-  });
-
   const openEditCota = useCallback((detalhe: CotaDetalhe) => {
     setCotaFormTarget({ mode: "edit", itemId: detalhe.id, detalhe });
     setCotaFormOpen(true);
@@ -698,13 +704,53 @@ function ColumnsBoard({
       {liveNode}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={dndCollisionDetection}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragCancel={onDragCancel}
       >
         {/* Barra operacional do painel */}
-        <div className="flex items-center justify-end gap-2 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
+        <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
+          <div className="flex flex-1 items-center">
+            {searchOpen ? (
+              <div className="relative w-full max-w-xs">
+                <Search
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar cota…"
+                  className="h-8 pl-8 pr-8 text-xs"
+                />
+                <button
+                  type="button"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                  aria-label="Fechar busca"
+                  onClick={() => {
+                    setSearchOpen(false);
+                    setSearchQuery("");
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => setSearchOpen(true)}
+              >
+                <Search className="h-3.5 w-3.5" aria-hidden />
+                Buscar
+              </Button>
+            )}
+          </div>
+
           {access.accessMode === "owner" && (
             <Button
               type="button"
@@ -780,6 +826,7 @@ function ColumnsBoard({
                   onOpenCota={(card) => setCotaDetailId(card.itemId)}
                   onEditCota={handleEditCota}
                   onAdded={onRefetch}
+                  isSearching={isSearching}
                 />
               ))}
 
@@ -827,7 +874,6 @@ function ColumnsBoard({
         open={cotaFormOpen}
         onOpenChange={setCotaFormOpen}
         target={cotaFormTarget}
-        onCreated={(itemId) => criarCotaCard.mutate(itemId)}
         onSaved={onRefetch}
       />
       <CotaDetailSheet
@@ -978,6 +1024,7 @@ function SortableColumn(props: {
   onOpenCota: (card: WorkspaceCardDto) => void;
   onEditCota: (card: WorkspaceCardDto) => void;
   onAdded: () => void;
+  isSearching?: boolean;
 }) {
   const {
     column,
@@ -996,6 +1043,7 @@ function SortableColumn(props: {
     onOpenCota,
     onEditCota,
     onAdded,
+    isSearching,
   } = props;
 
   const sortable = useSortable({
@@ -1141,7 +1189,7 @@ function SortableColumn(props: {
         </SortableContext>
         {cards.length === 0 && (
           <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-border/70 text-center text-[11px] text-muted-foreground">
-            Arraste ou adicione um card
+            {isSearching ? "Nenhum resultado encontrado" : "Arraste ou adicione um card"}
           </div>
         )}
       </div>
@@ -1498,7 +1546,27 @@ function SortableCard(props: {
           : card.bodyText
         : null;
 
-    const articleEl = (
+    const copyButton = (
+      <button
+        type="button"
+        className="rounded p-1 text-muted-foreground hover:text-foreground"
+        aria-label="Copiar texto da cota"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={async (e) => {
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(card.bodyText ?? "");
+            toast.success("Texto da cota copiado");
+          } catch {
+            toast.error("Não foi possível copiar o texto");
+          }
+        }}
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </button>
+    );
+
+    return (
       <article
         ref={sortable.setNodeRef}
         style={style}
@@ -1511,28 +1579,19 @@ function SortableCard(props: {
         )}
       >
         <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
-        <p className="min-w-0 flex-1 text-sm font-medium leading-snug">{card.title}</p>
+        <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
         <div className="flex shrink-0 items-center gap-0.5">
-          {card.bodyText && (
-            <button
-              type="button"
-              className="rounded p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Copiar texto da cota"
-              title="Copiar texto da cota"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  await navigator.clipboard.writeText(card.bodyText ?? "");
-                  toast.success("Texto da cota copiado");
-                } catch {
-                  toast.error("Não foi possível copiar o texto");
-                }
-              }}
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-          )}
+          {card.bodyText &&
+            (preview ? (
+              <Tooltip>
+                <TooltipTrigger asChild>{copyButton}</TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-left">
+                  {preview}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              copyButton
+            ))}
 
           {access.canMoveCards && (
             <DropdownMenu>
@@ -1550,13 +1609,24 @@ function SortableCard(props: {
               <DropdownMenuContent align="end">
                 {card.canEdit && (
                   <>
-                    <DropdownMenuItem onClick={onEditCota}>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCota();
+                      }}
+                    >
                       <Pencil className="mr-2 h-4 w-4" /> Editar cota
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
                 )}
-                <DropdownMenuItem className="text-destructive" onClick={onRemove}>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                  }}
+                >
                   <X className="mr-2 h-4 w-4" /> Excluir da coluna
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1564,17 +1634,6 @@ function SortableCard(props: {
           )}
         </div>
       </article>
-    );
-
-    if (!preview) return articleEl;
-
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>{articleEl}</TooltipTrigger>
-        <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-left">
-          {preview}
-        </TooltipContent>
-      </Tooltip>
     );
   }
 
@@ -1631,7 +1690,7 @@ function SortableCard(props: {
               </Badge>
             )}
           </div>
-          <p className="mt-1.5 text-sm font-medium leading-tight">{card.title}</p>
+          <p className="mt-1.5 text-xs font-medium leading-tight">{card.title}</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             {card.categoryNames.join(" · ") || "—"} · {card.ownerDisplayName}
           </p>

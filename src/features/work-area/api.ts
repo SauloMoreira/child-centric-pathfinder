@@ -77,7 +77,7 @@ export type CreatePanelInput = {
 
 export type CreatePanelResponse = {
   panelId: string;
-  initialColumnId: string;
+  initialColumnId: string | null;
   orderPosition: number;
   optimisticVersion: number;
 };
