@@ -22,7 +22,7 @@ export const cotaKeys = {
 export function useCategoriasCota() {
   return useQuery<BibliotecaCategoria[]>({
     queryKey: cotaKeys.categorias,
-    queryFn: () => listarCategoriasBiblioteca("cota"),
+    queryFn: () => listarCategoriasBiblioteca(),
     staleTime: 30_000,
   });
 }

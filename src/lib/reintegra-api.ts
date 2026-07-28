@@ -13,6 +13,7 @@ export type BibliotecaItem = {
   titulo: string;
   categoria_id: string | null;
   categoria_nome: string | null;
+  categorias: { id: string; nome: string }[];
   visibility: ContentVisibility;
   status: ContentStatus;
   owner_user_id: string;
@@ -22,7 +23,6 @@ export type BibliotecaItem = {
 export type BibliotecaCategoria = {
   id: string;
   nome: string;
-  kind: ContentKind;
   cor: string | null;
   order_position: number;
 };
@@ -34,6 +34,7 @@ export type ItemDetalhado = {
   visibility: ContentVisibility;
   categoria_id: string | null;
   categoria_nome: string | null;
+  categorias: { id: string; nome: string }[];
   owner_user_id: string;
   current_version_id: string | null;
   current_published_version_id: string | null;
@@ -127,12 +128,8 @@ export async function obterCotaDetalhe(itemId: string): Promise<CotaDetalhe> {
   return data as CotaDetalhe;
 }
 
-export async function adminCriarCategoriaBiblioteca(params: {
-  kind: ContentKind;
-  nome: string;
-}): Promise<string> {
+export async function adminCriarCategoriaBiblioteca(params: { nome: string }): Promise<string> {
   const { data, error } = await supabase.rpc("admin_criar_categoria_biblioteca", {
-    p_kind: params.kind,
     p_nome: params.nome,
   } as never);
   if (error) throw error;
@@ -171,12 +168,8 @@ export async function listarBiblioteca(params: {
   return (data ?? []) as BibliotecaItem[];
 }
 
-export async function listarCategoriasBiblioteca(
-  kind?: ContentKind,
-): Promise<BibliotecaCategoria[]> {
-  const { data, error } = await supabase.rpc("listar_categorias_biblioteca", {
-    p_kind: kind ?? undefined,
-  } as never);
+export async function listarCategoriasBiblioteca(): Promise<BibliotecaCategoria[]> {
+  const { data, error } = await supabase.rpc("listar_categorias_biblioteca");
   if (error) throw error;
   return (data ?? []) as BibliotecaCategoria[];
 }

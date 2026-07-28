@@ -177,7 +177,7 @@ function ItemEditor() {
       <div className="surface-panel p-6 print:border-none print:p-0 print:shadow-none">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground print:hidden">
           {kindLabel}
-          {item.categoria_nome ? ` · ${item.categoria_nome}` : ""}
+          {item.categorias.length > 0 ? ` · ${item.categorias.map((c) => c.nome).join(", ")}` : ""}
           {" · "}
           {item.status} · v{item.version_number}
         </p>

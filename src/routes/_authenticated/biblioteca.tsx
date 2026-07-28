@@ -53,8 +53,8 @@ function BibliotecaPage() {
   const [apenasMeus, setApenasMeus] = useState(false);
 
   const categoriasQuery = useQuery({
-    queryKey: ["biblioteca-categorias", kind],
-    queryFn: () => listarCategoriasBiblioteca(kind === "todos" ? undefined : kind),
+    queryKey: ["biblioteca-categorias"],
+    queryFn: () => listarCategoriasBiblioteca(),
   });
 
   const itensQuery = useQuery({
@@ -156,7 +156,9 @@ function BibliotecaPage() {
                         <p className="font-medium leading-tight">{it.titulo}</p>
                         <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                           {label}
-                          {it.categoria_nome ? ` · ${it.categoria_nome}` : ""}
+                          {it.categorias.length > 0
+                            ? ` · ${it.categorias.map((c) => c.nome).join(", ")}`
+                            : ""}
                           {" · "}
                           {it.status}
                         </p>
@@ -182,8 +184,8 @@ function NovoItemDialog() {
   const qc = useQueryClient();
 
   const categoriasQuery = useQuery({
-    queryKey: ["biblioteca-categorias", kind],
-    queryFn: () => listarCategoriasBiblioteca(kind),
+    queryKey: ["biblioteca-categorias"],
+    queryFn: () => listarCategoriasBiblioteca(),
     enabled: open,
   });
 

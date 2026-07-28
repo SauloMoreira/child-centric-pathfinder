@@ -16,12 +16,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import {
-  listarCategoriasBiblioteca,
-  type BibliotecaCategoria,
-  type ContentKind,
-} from "@/lib/reintegra-api";
+import { listarCategoriasBiblioteca, type BibliotecaCategoria } from "@/lib/reintegra-api";
 import {
   useAdminCriarCategoriaBiblioteca,
   useAdminRenomearCategoriaBiblioteca,
@@ -36,11 +31,6 @@ export const Route = createFileRoute("/_authenticated/admin-tecnico/categorias")
   }),
   component: CategoriasTecnico,
 });
-
-const KIND_OPTIONS: { value: ContentKind; label: string }[] = [
-  { value: "cota", label: "Cotas" },
-  { value: "atendimento", label: "Atendimentos" },
-];
 
 const RESERVED_NAME = "Sem categoria";
 
@@ -57,43 +47,24 @@ function mensagemErro(e: unknown, fallback: string): string {
 }
 
 function CategoriasTecnico() {
-  const [kind, setKind] = useState<ContentKind>("cota");
   const [criarOpen, setCriarOpen] = useState(false);
   const [renomeando, setRenomeando] = useState<BibliotecaCategoria | null>(null);
 
   const categoriasQ = useQuery({
-    queryKey: ["biblioteca-categorias", kind],
-    queryFn: () => listarCategoriasBiblioteca(kind),
+    queryKey: ["biblioteca-categorias"],
+    queryFn: () => listarCategoriasBiblioteca(),
   });
 
   return (
     <TecnicoPage
       title="Categorias"
-      description="Categorias usadas para organizar Cotas (e, futuramente, Atendimentos) na Biblioteca. Apenas o Admin Técnico pode criá-las ou renomeá-las."
+      description="Categorias usadas para organizar Cotas e Atendimentos na Biblioteca — uma lista única para os dois tipos. Apenas o Admin Técnico pode criá-las ou renomeá-las."
       action={
         <Button size="sm" className="gap-1.5" onClick={() => setCriarOpen(true)}>
           <Plus className="h-4 w-4" aria-hidden /> Nova categoria
         </Button>
       }
     >
-      <div className="mb-4 inline-flex rounded-md border border-border bg-surface p-0.5">
-        {KIND_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setKind(opt.value)}
-            className={cn(
-              "rounded px-3 py-1.5 text-sm font-medium transition-colors",
-              kind === opt.value
-                ? "bg-institutional text-institutional-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
       <div className="surface-panel divide-y divide-border">
         {categoriasQ.isLoading && (
           <div className="p-6">
@@ -103,8 +74,7 @@ function CategoriasTecnico() {
         )}
         {categoriasQ.data && categoriasQ.data.length === 0 && (
           <div className="p-10 text-center text-sm text-muted-foreground">
-            Nenhuma categoria criada ainda para {kind === "cota" ? "Cotas" : "Atendimentos"}.
-            Enquanto isso, novos itens caem em "{RESERVED_NAME}".
+            Nenhuma categoria criada ainda. Enquanto isso, novos itens caem em "{RESERVED_NAME}".
           </div>
         )}
         {categoriasQ.data?.map((c) => {
@@ -134,7 +104,7 @@ function CategoriasTecnico() {
         })}
       </div>
 
-      <DialogCriar open={criarOpen} onOpenChange={setCriarOpen} kind={kind} />
+      <DialogCriar open={criarOpen} onOpenChange={setCriarOpen} />
       {renomeando && <DialogRenomear categoria={renomeando} onClose={() => setRenomeando(null)} />}
     </TecnicoPage>
   );
@@ -143,11 +113,9 @@ function CategoriasTecnico() {
 function DialogCriar({
   open,
   onOpenChange,
-  kind,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  kind: ContentKind;
 }) {
   const [nome, setNome] = useState("");
   const criar = useAdminCriarCategoriaBiblioteca();
@@ -157,7 +125,7 @@ function DialogCriar({
     const trimmed = nome.trim();
     if (!trimmed) return;
     criar.mutate(
-      { kind, nome: trimmed },
+      { nome: trimmed },
       {
         onSuccess: () => {
           toast.success("Categoria criada.");
@@ -182,8 +150,7 @@ function DialogCriar({
           <DialogHeader>
             <DialogTitle>Nova categoria</DialogTitle>
             <DialogDescription>
-              Categoria de {kind === "cota" ? "Cotas" : "Atendimentos"}, disponível para todos os
-              Defensores na hora de categorizar seus itens.
+              Disponível para todos os Defensores, tanto em Cotas quanto em Atendimentos.
             </DialogDescription>
           </DialogHeader>
           <div className="py-3">

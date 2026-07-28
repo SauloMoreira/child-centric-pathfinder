@@ -1875,7 +1875,10 @@ function AddCardDialog({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{i.titulo}</p>
                       <p className="truncate text-[10px] text-muted-foreground">
-                        {i.categoria_nome ?? "Sem categoria"} · {i.status}
+                        {i.categorias.length > 0
+                          ? i.categorias.map((c) => c.nome).join(", ")
+                          : "Sem categoria"}{" "}
+                        · {i.status}
                       </p>
                     </div>
                     {alreadyIn && (
