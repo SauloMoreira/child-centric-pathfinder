@@ -4,10 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   X,
-  BookOpen,
   Trash2,
   FileText,
-  Scale,
+  StickyNote,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
@@ -16,9 +15,7 @@ import {
   Lock,
   GripVertical,
   Copy,
-  RefreshCw,
   User,
-  Layers,
   Pencil,
   Check,
 } from "lucide-react";
@@ -96,6 +93,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useWorkArea, useSelectedPanel, type PanelSummary } from "@/features/work-area";
@@ -186,7 +184,7 @@ function useAnnouncer() {
 function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNome: string }) {
   const workArea = useWorkArea(defensorId);
   const panels = workArea.data?.panels ?? [];
-  const { selectedId, selectedPanel, select } = useSelectedPanel(defensorId, panels);
+  const { selectedId, select } = useSelectedPanel(defensorId, panels);
   const [createOpen, setCreateOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<PanelSummary | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<PanelSummary | null>(null);
@@ -244,7 +242,6 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
   }
 
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
-  const activePanel = selectedPanel ?? panels[0] ?? null;
 
   const contextoLabel =
     access.accessMode === "owner"
@@ -264,53 +261,41 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
     >
       {/* Cabeçalho institucional */}
       <header className="border-b border-border bg-surface px-4 py-4 lg:px-8 lg:py-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-              Ágora · Área de trabalho
-            </p>
-            <h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl">
-              Área de Trabalho
-            </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" aria-hidden />
-                <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
-              </span>
-              {contextoLabel && (
-                <>
-                  <span aria-hidden className="text-muted-foreground/40">
-                    ·
-                  </span>
-                  <span
-                    className={cn(
-                      "font-mono text-[10px] uppercase tracking-[0.18em]",
-                      access.accessMode === "technical_readonly" ||
-                        access.accessMode === "technical_admin"
-                        ? "text-institutional"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {contextoLabel}
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="gap-2">
-              <Link to="/biblioteca">
-                <BookOpen className="h-4 w-4" /> Biblioteca
-              </Link>
-            </Button>
-          </div>
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+            Ágora · Área de trabalho
+          </p>
+          <h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl">
+            Área de Trabalho
+          </h1>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" aria-hidden />
+              <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
+            </span>
+            {contextoLabel && (
+              <>
+                <span aria-hidden className="text-muted-foreground/40">
+                  ·
+                </span>
+                <span
+                  className={cn(
+                    "font-mono text-[10px] uppercase tracking-[0.18em]",
+                    access.accessMode === "technical_readonly" ||
+                      access.accessMode === "technical_admin"
+                      ? "text-institutional"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {contextoLabel}
+                </span>
+              </>
+            )}
+          </p>
         </div>
 
         {/* Barra de Painéis */}
         <div className="mt-4">
-          <p className="mb-1.5 px-1 font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
-            Painéis
-          </p>
           <PanelTabs
             defenderUserId={defensorId}
             panels={panels}
@@ -331,7 +316,6 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
             key={activePanelId}
             defensorId={defensorId}
             panelId={activePanelId}
-            activePanel={activePanel}
             allPanels={panels}
           />
         ) : (
@@ -378,12 +362,10 @@ function PanelHeadingIcon({ iconName }: { iconName: string | null }) {
 function PanelBoard({
   defensorId,
   panelId,
-  activePanel,
   allPanels,
 }: {
   defensorId: string;
   panelId: string;
-  activePanel: PanelSummary | null;
   allPanels: PanelSummary[];
 }) {
   const qc = useQueryClient();
@@ -422,9 +404,7 @@ function PanelBoard({
       access={data.access}
       columns={data.columns}
       cards={data.cards}
-      activePanel={activePanel}
       allPanels={allPanels}
-      isFetching={workspaceQuery.isFetching}
       onRefetch={() => qc.invalidateQueries({ queryKey: key })}
     />
   );
@@ -442,9 +422,7 @@ function ColumnsBoard({
   access,
   columns,
   cards,
-  activePanel,
   allPanels,
-  isFetching,
   onRefetch,
 }: {
   defensorId: string;
@@ -452,9 +430,7 @@ function ColumnsBoard({
   access: WorkspaceAccess;
   columns: WorkspaceColumn[];
   cards: WorkspaceCardDto[];
-  activePanel: PanelSummary | null;
   allPanels: PanelSummary[];
-  isFetching: boolean;
   onRefetch: () => void;
 }) {
   const qc = useQueryClient();
@@ -486,8 +462,10 @@ function ColumnsBoard({
         toast.error("O Painel precisa possuir ao menos uma coluna.");
         return;
       }
-      if (/ITEM_ALREADY_IN_WORKSPACE|DUPLICATE_PANEL_ITEM|23505/i.test(msg)) {
-        toast.error("Este conteúdo já está adicionado ao Painel selecionado.");
+      if (
+        /ITEM_ALREADY_IN_COLUMN|ITEM_ALREADY_IN_WORKSPACE|DUPLICATE_PANEL_ITEM|23505/i.test(msg)
+      ) {
+        toast.error("Este conteúdo já está adicionado a esta coluna.");
         return;
       }
       toast.error(e instanceof Error ? e.message : "Falha ao processar operação");
@@ -749,9 +727,6 @@ function ColumnsBoard({
     [qc, openEditCota],
   );
 
-  const totalCards = cards.length;
-  const PanelIcon = panelIconComponent(activePanel?.icon ?? null);
-
   return (
     <>
       {liveNode}
@@ -763,74 +738,47 @@ function ColumnsBoard({
         onDragCancel={onDragCancel}
       >
         {/* Barra operacional do painel */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2">
-            <PanelIcon className="h-4 w-4 shrink-0 text-institutional" aria-hidden />
-            <span className="truncate text-sm font-semibold text-foreground">
-              {activePanel?.name ?? "Painel"}
-            </span>
-          </div>
-          <span aria-hidden className="text-muted-foreground/40">
-            ·
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            <Layers className="h-3.5 w-3.5" aria-hidden />
-            {orderedColumns.length} {orderedColumns.length === 1 ? "coluna" : "colunas"}
-          </span>
-          <span aria-hidden className="text-muted-foreground/40">
-            ·
-          </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {totalCards} {totalCards === 1 ? "card" : "cards"}
-          </span>
-
-          <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
+          {access.accessMode === "owner" && (
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="h-8 gap-1.5"
-              onClick={() => onRefetch()}
-              disabled={isFetching}
-              title="Atualizar Painel"
+              onClick={() => {
+                setCotaFormTarget({ mode: "create" });
+                setCotaFormOpen(true);
+              }}
             >
-              <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} aria-hidden />
-              Atualizar
+              <span className="relative inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                <StickyNote className="h-3.5 w-3.5" aria-hidden />
+                <Plus
+                  className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full bg-background"
+                  strokeWidth={3}
+                  aria-hidden
+                />
+              </span>
+              Nova cota
             </Button>
-            {access.accessMode === "owner" && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
-                onClick={() => {
-                  setCotaFormTarget({ mode: "create" });
-                  setCotaFormOpen(true);
-                }}
-              >
-                <Scale className="h-3.5 w-3.5" aria-hidden />
-                Nova cota
-              </Button>
-            )}
-            {access.canManageColumns && (
-              <Button
-                type="button"
-                size="sm"
-                className="h-8 gap-1.5"
-                onClick={() => {
-                  setCreatorOpen(true);
-                  // rola para o fim para o input ficar visível
-                  requestAnimationFrame(() => {
-                    const el = boardScrollRef.current;
-                    if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
-                  });
-                }}
-              >
-                <Plus className="h-3.5 w-3.5" aria-hidden />
-                Nova coluna
-              </Button>
-            )}
-          </div>
+          )}
+          {access.canManageColumns && (
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                setCreatorOpen(true);
+                // rola para o fim para o input ficar visível
+                requestAnimationFrame(() => {
+                  const el = boardScrollRef.current;
+                  if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                });
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              Nova coluna
+            </Button>
+          )}
         </div>
 
         {/* Board — altura calculada para permitir rolagem vertical dentro das colunas */}
@@ -1145,18 +1093,11 @@ function SortableColumn(props: {
               </button>
             )}
             <h3
-              className="truncate text-sm font-semibold uppercase tracking-wide"
+              className="truncate text-sm font-semibold"
               style={{ color: "var(--col-accent-strong)" }}
             >
               {column.nome}
             </h3>
-            <span
-              className="ml-auto inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 font-mono text-[10px] font-semibold text-surface"
-              style={{ backgroundColor: "var(--col-accent)" }}
-              aria-label={`${cards.length} cards`}
-            >
-              {cards.length}
-            </span>
           </div>
           {column.descricao && (
             <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
@@ -1416,7 +1357,7 @@ function EditColumnSheet(props: {
                   style={{ backgroundColor: "var(--col-accent-soft)" }}
                 >
                   <h4
-                    className="truncate text-sm font-semibold uppercase tracking-wide"
+                    className="truncate text-sm font-semibold"
                     style={{ color: "var(--col-accent-strong)" }}
                   >
                     {nome.trim() || "Nome da coluna"}
@@ -1462,7 +1403,7 @@ function ColumnDragPreview({ name }: { name: string }) {
 
 function CardDragPreview({ card }: { card: WorkspaceCardDto }) {
   const isCota = card.kind === "cota";
-  const Icon = isCota ? Scale : FileText;
+  const Icon = isCota ? StickyNote : FileText;
   return (
     <div className="w-72 rounded-md border-2 border-institutional bg-card p-3 shadow-lg opacity-90 pointer-events-none">
       <div className="flex items-start gap-2">
@@ -1582,22 +1523,105 @@ function SortableCard(props: {
   };
 
   const isCota = card.kind === "cota";
-  const Icon = isCota ? Scale : FileText;
-  const badgeLabel = isCota ? "Cota" : "Atendimento";
-  const badgeClass = isCota
-    ? "bg-amber-100 text-amber-900 border-amber-200"
-    : "bg-blue-100 text-blue-900 border-blue-200";
+
+  if (isCota) {
+    const preview =
+      card.bodyText && card.bodyText.trim()
+        ? card.bodyText.length > 240
+          ? card.bodyText.slice(0, 240).trimEnd() + "…"
+          : card.bodyText
+        : null;
+
+    const articleEl = (
+      <article
+        ref={sortable.setNodeRef}
+        style={style}
+        {...(access.canMoveCards ? { ...sortable.attributes, ...sortable.listeners } : {})}
+        onClick={() => onOpenCota()}
+        className={cn(
+          "group relative flex items-start gap-2 rounded-md border border-border bg-card p-3 shadow-sm transition hover:border-institutional",
+          access.canMoveCards && "cursor-grab active:cursor-grabbing",
+          !card.canOpen && "opacity-70",
+        )}
+      >
+        <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+        <p className="min-w-0 flex-1 text-sm font-medium leading-snug">{card.title}</p>
+        <div className="flex shrink-0 items-center gap-0.5">
+          {card.bodyText && (
+            <button
+              type="button"
+              className="rounded p-1 text-muted-foreground hover:text-foreground"
+              aria-label="Copiar texto da cota"
+              title="Copiar texto da cota"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  await navigator.clipboard.writeText(card.bodyText ?? "");
+                  toast.success("Texto da cota copiado");
+                } catch {
+                  toast.error("Não foi possível copiar o texto");
+                }
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {access.canMoveCards && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded p-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Ações da cota"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {card.canEdit && (
+                  <>
+                    <DropdownMenuItem onClick={onEditCota}>
+                      <Pencil className="mr-2 h-4 w-4" /> Editar cota
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem className="text-destructive" onClick={onRemove}>
+                  <X className="mr-2 h-4 w-4" /> Excluir da coluna
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </article>
+    );
+
+    if (!preview) return articleEl;
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{articleEl}</TooltipTrigger>
+        <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-left">
+          {preview}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  const badgeClass = "bg-blue-100 text-blue-900 border-blue-200";
   const statusLabel: Record<string, string> = {
     rascunho: "Rascunho",
     publicado: "Publicado",
     arquivado: "Arquivado pelo autor",
   };
   const primaryAction = card.canOpen
-    ? isCota
-      ? "Abrir cota"
-      : card.canEdit && card.status === "rascunho"
-        ? "Editar atendimento"
-        : "Utilizar atendimento"
+    ? card.canEdit && card.status === "rascunho"
+      ? "Editar atendimento"
+      : "Utilizar atendimento"
     : "Disponível após publicação";
 
   return (
@@ -1621,11 +1645,11 @@ function SortableCard(props: {
             <GripVertical className="h-3.5 w-3.5" />
           </button>
         )}
-        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
+        <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1">
             <Badge variant="outline" className={cn("text-[10px]", badgeClass)}>
-              {badgeLabel}
+              Atendimento
             </Badge>
             <Badge variant="outline" className="text-[10px]">
               {statusLabel[card.status] ?? card.status}
@@ -1649,15 +1673,7 @@ function SortableCard(props: {
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-1">
-        {isCota ? (
-          <button
-            type="button"
-            onClick={onOpenCota}
-            className="text-[11px] font-medium text-institutional hover:underline"
-          >
-            Abrir cota
-          </button>
-        ) : card.canOpen ? (
+        {card.canOpen ? (
           <Link
             to="/biblioteca/$itemId"
             params={{ itemId: card.itemId }}
@@ -1672,25 +1688,6 @@ function SortableCard(props: {
         )}
 
         <div className="flex items-center gap-0.5">
-          {isCota && card.bodyText && (
-            <button
-              type="button"
-              className="rounded p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Copiar texto da cota"
-              title="Copiar texto da cota"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(card.bodyText ?? "");
-                  toast.success("Texto da cota copiado");
-                } catch {
-                  toast.error("Não foi possível copiar o texto");
-                }
-              }}
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-          )}
-
           {access.canMoveCards && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1702,14 +1699,6 @@ function SortableCard(props: {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {isCota && card.canEdit && (
-                  <>
-                    <DropdownMenuItem onClick={onEditCota}>
-                      <Pencil className="mr-2 h-4 w-4" /> Editar cota
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
                 <DropdownMenuItem disabled={index === 0} onClick={onMoveUp}>
                   <ArrowUp className="mr-2 h-4 w-4" /> Mover para cima
                 </DropdownMenuItem>
@@ -1796,8 +1785,10 @@ function AddCardDialog({
         return;
       }
       const msg = e instanceof Error ? e.message : String(e);
-      if (/ITEM_ALREADY_IN_WORKSPACE|DUPLICATE_PANEL_ITEM|23505/i.test(msg)) {
-        toast.error("Este conteúdo já está adicionado ao Painel selecionado.");
+      if (
+        /ITEM_ALREADY_IN_COLUMN|ITEM_ALREADY_IN_WORKSPACE|DUPLICATE_PANEL_ITEM|23505/i.test(msg)
+      ) {
+        toast.error("Este conteúdo já está adicionado a esta coluna.");
         return;
       }
       if (/ITEM_NOT_PUBLISHED/i.test(msg)) {
@@ -1844,7 +1835,7 @@ function AddCardDialog({
               </p>
             ) : (
               itens.map((i) => {
-                const Icon = i.kind === "cota" ? Scale : FileText;
+                const Icon = i.kind === "cota" ? StickyNote : FileText;
                 const selected = selecionado === i.id;
                 const alreadyIn = existing.has(i.id);
                 return (
@@ -1970,8 +1961,10 @@ function MoveToPanelDialog({
         return;
       }
       const msg = e instanceof Error ? e.message : String(e);
-      if (/ITEM_ALREADY_IN_WORKSPACE|DUPLICATE_PANEL_ITEM|23505/i.test(msg)) {
-        toast.error("Este conteúdo já está adicionado ao Painel selecionado.");
+      if (
+        /ITEM_ALREADY_IN_COLUMN|ITEM_ALREADY_IN_WORKSPACE|DUPLICATE_PANEL_ITEM|23505/i.test(msg)
+      ) {
+        toast.error("Este conteúdo já está adicionado a esta coluna.");
         return;
       }
       if (/ITEM_NOT_PUBLISHED/i.test(msg)) {
