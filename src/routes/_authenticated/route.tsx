@@ -8,11 +8,17 @@ export const Route = createFileRoute("/_authenticated")({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    // getSession() lê a sessão já restaurada localmente (localStorage +
+    // autoRefreshToken), sem round-trip de rede — ao contrário de getUser().
+    // Usar getUser() aqui fazia o guard depender de uma chamada de rede a
+    // cada carregamento da rota, inclusive no F5 (justamente o momento de
+    // maior contenção de rede/CPU), deslogando o usuário em qualquer falha
+    // ou lentidão transitória dessa chamada.
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
       throw redirect({ to: "/auth", search: {} });
     }
-    return { user: data.user };
+    return { user: data.session.user };
   },
   component: AuthenticatedLayout,
 });

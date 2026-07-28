@@ -668,6 +668,47 @@ function ColumnsBoard({
 
   const [creatorOpen, setCreatorOpen] = useState(false);
   const boardScrollRef = useRef<HTMLDivElement | null>(null);
+  const boardContentRef = useRef<HTMLDivElement | null>(null);
+  const topScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollSyncSource = useRef<"top" | "board" | null>(null);
+  const [boardContentWidth, setBoardContentWidth] = useState(0);
+  const [boardOverflows, setBoardOverflows] = useState(false);
+
+  // Espelha a largura/rolagem do board numa barra fina acima das colunas —
+  // útil quando a barra de baixo sai da área visível da tela.
+  useEffect(() => {
+    const contentEl = boardContentRef.current;
+    const scrollEl = boardScrollRef.current;
+    if (!contentEl || !scrollEl) return;
+    const update = () => {
+      const contentWidth = contentEl.scrollWidth;
+      setBoardContentWidth(contentWidth);
+      setBoardOverflows(contentWidth > scrollEl.clientWidth + 1);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(contentEl);
+    ro.observe(scrollEl);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleTopScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollSyncSource.current === "board") {
+      scrollSyncSource.current = null;
+      return;
+    }
+    scrollSyncSource.current = "top";
+    if (boardScrollRef.current) boardScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+  };
+
+  const handleBoardScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollSyncSource.current === "top") {
+      scrollSyncSource.current = null;
+      return;
+    }
+    scrollSyncSource.current = "board";
+    if (topScrollRef.current) topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+  };
 
   // "Adicionar a outro Painel"
   const [copyTarget, setCopyTarget] = useState<WorkspaceCardDto | null>(null);
@@ -789,16 +830,31 @@ function ColumnsBoard({
           )}
         </div>
 
+        {/* Espelho da barra de rolagem horizontal, acima das colunas — ajuda
+            quando a barra de baixo sai da área visível da tela. */}
+        {boardOverflows && (
+          <div
+            ref={topScrollRef}
+            onScroll={handleTopScroll}
+            className="kanban-scroll overflow-x-auto overflow-y-hidden px-4 lg:px-8"
+            style={{ height: 14 }}
+            aria-hidden="true"
+          >
+            <div style={{ width: boardContentWidth, height: 1 }} />
+          </div>
+        )}
+
         {/* Board — altura calculada para permitir rolagem vertical dentro das colunas */}
         <div
           ref={boardScrollRef}
+          onScroll={handleBoardScroll}
           className="kanban-scroll flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 lg:px-8"
           style={{
             minHeight: 0,
           }}
         >
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-            <div className="flex h-full min-w-max items-stretch gap-4">
+            <div ref={boardContentRef} className="flex h-full min-w-max items-stretch gap-4">
               {orderedColumns.map((c, idx) => (
                 <SortableColumn
                   key={c.id}

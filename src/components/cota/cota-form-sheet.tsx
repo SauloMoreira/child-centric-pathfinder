@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Scale } from "lucide-react";
+import { ChevronDown, Loader2, Scale, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -12,7 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { RichTextEditor, type RichTextValue } from "@/components/cota/rich-text-editor";
 import {
   useCategoriasCota,
@@ -56,6 +63,7 @@ export function CotaFormSheet({
 
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState<RichTextValue>({ html: "", text: "" });
+  const [orientacao, setOrientacao] = useState("");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
 
   const isEdit = target?.mode === "edit";
@@ -67,10 +75,12 @@ export function CotaFormSheet({
       setTitulo(target.detalhe.titulo);
       const bj = target.detalhe.bodyJson as { html?: string } | null;
       setTexto({ html: bj?.html ?? "", text: target.detalhe.bodyText });
+      setOrientacao(target.detalhe.orientacao ?? "");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
     } else {
       setTitulo("");
       setTexto({ html: "", text: "" });
+      setOrientacao("");
       setCategoriaIds([]);
     }
   }, [open, target]);
@@ -101,6 +111,7 @@ export function CotaFormSheet({
           bodyJson: { html: texto.html },
           bodyText: texto.text,
           categoryIds: categoriaIds,
+          orientacao: orientacao.trim(),
         },
         {
           onSuccess: () => {
@@ -118,6 +129,7 @@ export function CotaFormSheet({
           bodyJson: { html: texto.html },
           bodyText: texto.text,
           categoryIds: categoriaIds,
+          orientacao: orientacao.trim(),
         },
         {
           onSuccess: (result) => {
@@ -162,30 +174,80 @@ export function CotaFormSheet({
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="cota-orientacao">Orientação (opcional)</Label>
+            <Textarea
+              id="cota-orientacao"
+              value={orientacao}
+              onChange={(e) => setOrientacao(e.target.value)}
+              placeholder="Alguma orientação para a equipe sobre como/quando usar esta cota…"
+              rows={3}
+              className="resize-none text-sm"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label>Categoria(s)</Label>
-            <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-input p-2">
-              {categoriasQuery.isLoading ? (
-                <p className="p-2 text-xs text-muted-foreground">Carregando categorias…</p>
-              ) : categoriasSelecionaveis.length === 0 ? (
-                <p className="p-2 text-xs text-muted-foreground">
-                  Nenhuma categoria disponível ainda. Peça ao Admin Técnico para criar uma categoria
-                  antes de cadastrar cotas.
-                </p>
-              ) : (
-                categoriasSelecionaveis.map((c) => (
-                  <label
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={categoriasQuery.isLoading || categoriasSelecionaveis.length === 0}
+                  className="w-full justify-between font-normal"
+                >
+                  <span className="text-muted-foreground">
+                    {categoriasQuery.isLoading
+                      ? "Carregando categorias…"
+                      : categoriasSelecionaveis.length === 0
+                        ? "Nenhuma categoria disponível"
+                        : categoriaIds.length === 0
+                          ? "Selecione categoria(s)"
+                          : `${categoriaIds.length} categoria${categoriaIds.length > 1 ? "s" : ""} selecionada${categoriaIds.length > 1 ? "s" : ""}`}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-64 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+              >
+                {categoriasSelecionaveis.map((c) => (
+                  <DropdownMenuCheckboxItem
                     key={c.id}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
+                    checked={categoriaIds.includes(c.id)}
+                    onCheckedChange={() => toggleCategoria(c.id)}
+                    onSelect={(e) => e.preventDefault()}
                   >
-                    <Checkbox
-                      checked={categoriaIds.includes(c.id)}
-                      onCheckedChange={() => toggleCategoria(c.id)}
-                    />
                     {c.nome}
-                  </label>
-                ))
-              )}
-            </div>
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {categoriasSelecionaveis.length === 0 && !categoriasQuery.isLoading && (
+              <p className="text-[11px] text-muted-foreground">
+                Nenhuma categoria disponível ainda. Peça ao Admin Técnico para criar uma categoria
+                antes de cadastrar cotas.
+              </p>
+            )}
+            {categoriaIds.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {categoriasSelecionaveis
+                  .filter((c) => categoriaIds.includes(c.id))
+                  .map((c) => (
+                    <Badge key={c.id} variant="secondary" className="gap-1 pr-1 text-[11px]">
+                      {c.nome}
+                      <button
+                        type="button"
+                        onClick={() => toggleCategoria(c.id)}
+                        className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                        aria-label={`Remover categoria ${c.nome}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+              </div>
+            )}
             <p className="text-[11px] text-muted-foreground">
               Selecione ao menos uma categoria. É obrigatório.
             </p>

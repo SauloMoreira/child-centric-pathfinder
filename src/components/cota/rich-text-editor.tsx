@@ -214,7 +214,7 @@ export function RichTextEditor({
 export function RichTextViewer({ html, className }: { html: string; className?: string }) {
   return (
     <div
-      className={cn("cota-rich-text-content text-sm leading-relaxed", className)}
+      className={cn("cota-rich-text-content text-xs leading-relaxed", className)}
       dangerouslySetInnerHTML={{ __html: sanitizeCotaHtml(html) }}
     />
   );

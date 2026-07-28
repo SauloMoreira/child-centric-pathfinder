@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   adminCriarCategoriaBiblioteca,
+  adminExcluirCategoriaBiblioteca,
   adminRenomearCategoriaBiblioteca,
   atualizarCota,
   criarCota,
@@ -84,6 +85,18 @@ export function useAdminRenomearCategoriaBiblioteca() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: cotaKeys.categorias });
       qc.invalidateQueries({ queryKey: ["biblioteca-categorias"] });
+    },
+  });
+}
+
+export function useAdminExcluirCategoriaBiblioteca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: adminExcluirCategoriaBiblioteca,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: cotaKeys.categorias });
+      qc.invalidateQueries({ queryKey: ["biblioteca-categorias"] });
+      qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
     },
   });
 }

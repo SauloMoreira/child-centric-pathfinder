@@ -64,6 +64,7 @@ export type CotaDetalhe = {
   titulo: string;
   bodyJson: unknown;
   bodyText: string;
+  orientacao: string | null;
   categorias: CotaCategoria[];
   ownerUserId: string;
   ownerDisplayName: string;
@@ -77,12 +78,14 @@ export async function criarCota(params: {
   bodyJson: unknown;
   bodyText: string;
   categoryIds?: string[];
+  orientacao?: string;
 }): Promise<{ item_id: string; version_id: string }> {
   const { data, error } = await supabase.rpc("criar_cota", {
     p_titulo: params.titulo,
     p_body_json: params.bodyJson as never,
     p_body_text: params.bodyText,
     p_category_ids: (params.categoryIds ?? null) as never,
+    p_orientacao: params.orientacao ?? null,
   } as never);
   if (error) throw error;
   return data as { item_id: string; version_id: string };
@@ -95,6 +98,7 @@ export async function atualizarCota(params: {
   bodyJson: unknown;
   bodyText: string;
   categoryIds?: string[];
+  orientacao?: string;
 }): Promise<{ optimisticVersion: number; versionId: string; versionNumber: number }> {
   const { data, error } = await supabase.rpc("atualizar_cota", {
     p_item_id: params.itemId,
@@ -104,6 +108,7 @@ export async function atualizarCota(params: {
     p_body_json: params.bodyJson as never,
     p_body_text: params.bodyText,
     p_category_ids: (params.categoryIds ?? null) as never,
+    p_orientacao: params.orientacao ?? null,
   } as never);
   if (error) throw error;
   return data as { optimisticVersion: number; versionId: string; versionNumber: number };
@@ -143,6 +148,13 @@ export async function adminRenomearCategoriaBiblioteca(params: {
   const { error } = await supabase.rpc("admin_renomear_categoria_biblioteca", {
     p_category_id: params.categoryId,
     p_nome: params.nome,
+  } as never);
+  if (error) throw error;
+}
+
+export async function adminExcluirCategoriaBiblioteca(params: { categoryId: string }): Promise<void> {
+  const { error } = await supabase.rpc("admin_excluir_categoria_biblioteca", {
+    p_category_id: params.categoryId,
   } as never);
   if (error) throw error;
 }

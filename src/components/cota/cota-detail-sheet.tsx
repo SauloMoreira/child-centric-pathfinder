@@ -78,7 +78,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
       <Sheet open={!!itemId} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg"
+          className="flex h-full w-full flex-col gap-0 overflow-hidden sm:max-w-lg"
         >
           {detalhe.isLoading ? (
             <p className="p-4 text-sm text-muted-foreground">Carregando…</p>
@@ -86,21 +86,21 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
             <p className="p-4 text-sm text-muted-foreground">Cota não encontrada.</p>
           ) : (
             <>
-              <SheetHeader>
-                <SheetTitle className="flex items-start gap-2 pr-6">
-                  <Scale className="mt-0.5 h-4 w-4 shrink-0 text-institutional" />
+              <SheetHeader className="shrink-0">
+                <SheetTitle className="flex items-start gap-2 pr-6 text-base">
+                  <Scale className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
                   <span className="break-words">{detalhe.data.titulo}</span>
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="mt-4 flex-1 space-y-4">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+                <div className="shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                   <span>{detalhe.data.ownerDisplayName}</span>
                   <span aria-hidden>·</span>
                   <span>Editado em {formatDate(detalhe.data.updatedAt)}</span>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="shrink-0 flex flex-wrap gap-1.5">
                   {detalhe.data.categorias.length === 0 ? (
                     <Badge variant="outline" className="text-[10px]">
                       Sem categoria
@@ -114,28 +114,39 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
                   )}
                 </div>
 
-                <div className="rounded-md border border-border bg-muted/30 p-3">
+                <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
+                  {detalhe.data.orientacao && (
+                    <div className="mb-3 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-institutional">
+                        Orientação
+                      </p>
+                      <p className="whitespace-pre-wrap text-xs text-foreground">
+                        {detalhe.data.orientacao}
+                      </p>
+                    </div>
+                  )}
                   <RichTextViewer
                     html={(detalhe.data.bodyJson as { html?: string } | null)?.html ?? ""}
                   />
                 </div>
               </div>
 
-              <SheetFooter className="mt-6 sm:justify-between">
-                <Button variant="outline" className="gap-2" onClick={handleCopy}>
-                  <Copy className="h-4 w-4" /> Copiar texto
+              <SheetFooter className="mt-3 shrink-0 sm:justify-between">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopy}>
+                  <Copy className="h-3.5 w-3.5" /> Copiar texto
                 </Button>
                 {detalhe.data.canEdit && (
                   <div className="flex gap-2">
-                    <Button variant="outline" className="gap-2" onClick={onEdit}>
-                      <Pencil className="h-4 w-4" /> Editar
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
+                      <Pencil className="h-3.5 w-3.5" /> Editar
                     </Button>
                     <Button
                       variant="outline"
-                      className="gap-2 text-destructive hover:text-destructive"
+                      size="sm"
+                      className="gap-1.5 text-destructive hover:text-destructive"
                       onClick={() => setConfirmDelete(true)}
                     >
-                      <Trash2 className="h-4 w-4" /> Excluir
+                      <Trash2 className="h-3.5 w-3.5" /> Excluir
                     </Button>
                   </div>
                 )}

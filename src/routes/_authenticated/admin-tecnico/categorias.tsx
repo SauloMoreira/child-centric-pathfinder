@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Pencil, Loader2, Tags } from "lucide-react";
+import { Plus, Pencil, Loader2, Tags, Trash2 } from "lucide-react";
 import { TecnicoPage } from "@/components/tecnico-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,20 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { listarCategoriasBiblioteca, type BibliotecaCategoria } from "@/lib/reintegra-api";
 import {
   useAdminCriarCategoriaBiblioteca,
+  useAdminExcluirCategoriaBiblioteca,
   useAdminRenomearCategoriaBiblioteca,
 } from "@/features/cota/hooks";
 
@@ -49,6 +60,7 @@ function mensagemErro(e: unknown, fallback: string): string {
 function CategoriasTecnico() {
   const [criarOpen, setCriarOpen] = useState(false);
   const [renomeando, setRenomeando] = useState<BibliotecaCategoria | null>(null);
+  const [excluindo, setExcluindo] = useState<BibliotecaCategoria | null>(null);
 
   const categoriasQ = useQuery({
     queryKey: ["biblioteca-categorias"],
@@ -90,15 +102,26 @@ function CategoriasTecnico() {
                   </Badge>
                 )}
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="shrink-0 gap-1.5"
-                disabled={isReserved}
-                onClick={() => setRenomeando(c)}
-              >
-                <Pencil className="h-3.5 w-3.5" aria-hidden /> Renomear
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1.5"
+                  disabled={isReserved}
+                  onClick={() => setRenomeando(c)}
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden /> Renomear
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1.5 text-destructive hover:text-destructive"
+                  disabled={isReserved}
+                  onClick={() => setExcluindo(c)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Excluir
+                </Button>
+              </div>
             </article>
           );
         })}
@@ -106,6 +129,7 @@ function CategoriasTecnico() {
 
       <DialogCriar open={criarOpen} onOpenChange={setCriarOpen} />
       {renomeando && <DialogRenomear categoria={renomeando} onClose={() => setRenomeando(null)} />}
+      {excluindo && <DialogExcluir categoria={excluindo} onClose={() => setExcluindo(null)} />}
     </TecnicoPage>
   );
 }
@@ -234,5 +258,59 @@ function DialogRenomear({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DialogExcluir({
+  categoria,
+  onClose,
+}: {
+  categoria: BibliotecaCategoria;
+  onClose: () => void;
+}) {
+  const excluir = useAdminExcluirCategoriaBiblioteca();
+
+  const handleConfirm = () => {
+    excluir.mutate(
+      { categoryId: categoria.id },
+      {
+        onSuccess: () => {
+          toast.success("Categoria excluída.");
+          onClose();
+        },
+        onError: (e) => {
+          toast.error(mensagemErro(e, "Falha ao excluir categoria."));
+          onClose();
+        },
+      },
+    );
+  };
+
+  return (
+    <AlertDialog open onOpenChange={(v) => !v && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir categoria "{categoria.nome}"?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Cotas e atendimentos que usam esta categoria serão recategorizados automaticamente
+            para "{RESERVED_NAME}". Esta ação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={excluir.isPending}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={(e) => {
+              e.preventDefault();
+              handleConfirm();
+            }}
+            disabled={excluir.isPending}
+          >
+            {excluir.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
