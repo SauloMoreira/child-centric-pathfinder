@@ -66,6 +66,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -192,6 +193,17 @@ export function AtendimentoFormSheet({
   const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
   const addOrientacao = () => setCampos((prev) => [...prev, novaOrientacao()]);
   const addChecklist = () => setCampos((prev) => [...prev, novoChecklist()]);
+
+  // Ajuste doc — inserção rápida entre campos: quando os botões "Adicionar
+  // pergunta/seção/orientação/checklist" do topo saem da tela pela rolagem,
+  // passar o mouse entre dois campos revela um botão de "+" para inserir
+  // diretamente naquele ponto, sem precisar rolar de volta ao topo.
+  const insertCampoAt = (index: number, campo: AtendimentoFormField) =>
+    setCampos((prev) => {
+      const next = [...prev];
+      next.splice(index, 0, campo);
+      return next;
+    });
 
   // Ajuste doc — reordenar campos por arrastar e soltar, além das setas.
   const dragSensors = useSensors(
@@ -398,7 +410,8 @@ export function AtendimentoFormSheet({
 
         <div className="mt-6 flex-1 space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="atendimento-titulo">Título</Label>
+            {/* Ajuste doc — fonte no mesmo tamanho do formulário de atendimento (text-xs). */}
+            <Label htmlFor="atendimento-titulo" className="text-xs">Título</Label>
             <Input
               id="atendimento-titulo"
               className="bg-surface text-xs"
@@ -410,7 +423,7 @@ export function AtendimentoFormSheet({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="atendimento-descricao">Descrição (opcional)</Label>
+            <Label htmlFor="atendimento-descricao" className="text-xs">Descrição (opcional)</Label>
             <Textarea
               id="atendimento-descricao"
               value={descricao}
@@ -422,7 +435,7 @@ export function AtendimentoFormSheet({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Categoria(s)</Label>
+            <Label className="text-xs">Categoria(s)</Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -485,7 +498,7 @@ export function AtendimentoFormSheet({
 
           <div className="space-y-2 border-t border-border pt-4">
             <div className="flex items-center justify-between gap-2">
-              <Label>Campos do formulário</Label>
+              <Label className="text-xs">Campos do formulário</Label>
               <div className="flex flex-wrap gap-1.5">
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
                   <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
@@ -508,19 +521,23 @@ export function AtendimentoFormSheet({
             ) : (
               <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndCampos}>
                 <SortableContext items={campos.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-3">
+                  <div>
                     {campos.map((campo, index) => (
-                      <FieldEditor
-                        key={campo.id}
-                        campo={campo}
-                        campos={campos}
-                        index={index}
-                        total={campos.length}
-                        onChange={(patch) => updateCampo(campo.id, patch)}
-                        onChangeType={(type) => changeCampoType(campo.id, type)}
-                        onRemove={() => removeCampo(campo.id)}
-                        onMove={(dir) => moveCampo(index, dir)}
-                      />
+                      <div key={campo.id} className="pb-3">
+                        {index > 0 && (
+                          <InsertFieldHere onInsert={(novo) => insertCampoAt(index, novo)} />
+                        )}
+                        <FieldEditor
+                          campo={campo}
+                          campos={campos}
+                          index={index}
+                          total={campos.length}
+                          onChange={(patch) => updateCampo(campo.id, patch)}
+                          onChangeType={(type) => changeCampoType(campo.id, type)}
+                          onRemove={() => removeCampo(campo.id)}
+                          onMove={(dir) => moveCampo(index, dir)}
+                        />
+                      </div>
                     ))}
                   </div>
                 </SortableContext>
@@ -566,6 +583,52 @@ export function AtendimentoFormSheet({
       </AlertDialogContent>
     </AlertDialog>
     </>
+  );
+}
+
+/** Ajuste doc — botão de inserção rápida entre dois campos: aparece só ao
+ *  passar o mouse na faixa entre um campo e outro (ou clicando, no toque),
+ *  para que o Defensor Público não precise rolar de volta ao topo até os
+ *  botões "Adicionar pergunta/seção/orientação/checklist" quando o
+ *  formulário já tem muitos campos. Exportado junto com FieldEditor para
+ *  reaproveitar no editor inline do Atendimento IA. */
+export function InsertFieldHere({
+  onInsert,
+}: {
+  onInsert: (campo: AtendimentoFormField) => void;
+}) {
+  return (
+    <div className="group/insert relative -my-1.5 h-4">
+      <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border opacity-0 transition-opacity group-hover/insert:opacity-100" />
+      <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-4 w-4 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground opacity-0 shadow-sm transition-opacity hover:border-institutional hover:text-institutional focus-visible:opacity-100 group-hover/insert:opacity-100"
+              aria-label="Inserir campo aqui"
+              title="Inserir campo aqui"
+            >
+              <Plus className="h-2.5 w-2.5" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center">
+            <DropdownMenuItem onClick={() => onInsert(novoCampo())}>
+              <MessageSquare className="mr-2 h-3.5 w-3.5" aria-hidden /> Pergunta
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onInsert(novaSecao())}>
+              <SeparatorHorizontal className="mr-2 h-3.5 w-3.5" aria-hidden /> Seção
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onInsert(novaOrientacao())}>
+              <Info className="mr-2 h-3.5 w-3.5" aria-hidden /> Orientação
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onInsert(novoChecklist())}>
+              <ListChecks className="mr-2 h-3.5 w-3.5" aria-hidden /> Checklist
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }
 
@@ -700,17 +763,19 @@ export function FieldEditor({
 
   if (isOrientation) {
     return (
+      // Ajuste doc — caixa âmbar (não mais verde/institucional), igual à
+      // cor do campo Orientação no formulário preenchível.
       <div
         ref={sortable.setNodeRef}
         style={sortableStyle}
-        className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3"
+        className="rounded-md border border-dashed border-warning/40 bg-warning/[0.06] p-3"
       >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-center gap-2">
-              <Info className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
-              <p className="text-xs font-medium text-institutional">Orientação</p>
+              <Info className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+              <p className="text-xs font-medium text-warning">Orientação</p>
             </div>
             <Textarea
               value={campo.label}
@@ -722,6 +787,14 @@ export function FieldEditor({
             <p className="text-[10px] text-muted-foreground">
               Aparece em destaque no formulário. Não entra no resumo por IA nem nos PDFs gerados.
             </p>
+            {/* Ajuste doc — a Orientação também pode ser condicionada,
+                tal como já funciona para o Checklist. */}
+            <ConditionEditor
+              titulo="Mostrar apenas se…"
+              condicao={campo.visibleIf}
+              elegiveis={camposElegiveisParaCondicao(campos, index)}
+              onChange={(visibleIf) => onChange({ visibleIf })}
+            />
           </div>
           {removeButton}
         </div>
@@ -731,12 +804,17 @@ export function FieldEditor({
 
   if (isChecklist) {
     return (
-      <div ref={sortable.setNodeRef} style={sortableStyle} className="rounded-md border border-border p-3">
+      // Ajuste doc — mesmo fundo âmbar do campo Orientação.
+      <div
+        ref={sortable.setNodeRef}
+        style={sortableStyle}
+        className="rounded-md border border-dashed border-warning/40 bg-warning/[0.06] p-3"
+      >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-center gap-2">
-              <ListChecks className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+              <ListChecks className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
               <Input
                 value={campo.label}
                 onChange={(e) => onChange({ label: e.target.value })}

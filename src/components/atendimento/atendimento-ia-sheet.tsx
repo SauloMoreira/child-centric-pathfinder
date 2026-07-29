@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FormRenderer } from "@/components/atendimento/form-renderer";
-import { FieldEditor } from "@/components/atendimento/atendimento-form-sheet";
+import { FieldEditor, InsertFieldHere } from "@/components/atendimento/atendimento-form-sheet";
 import {
   campoVisivel,
   fieldHasOptions,
@@ -140,6 +140,13 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
   const addOrientacao = () => setCampos((prev) => [...prev, novaOrientacao()]);
   const addChecklist = () => setCampos((prev) => [...prev, novoChecklist()]);
+  // Ajuste doc — mesma inserção rápida entre campos do builder normal.
+  const insertCampoAt = (index: number, campo: AtendimentoFormField) =>
+    setCampos((prev) => {
+      const next = [...prev];
+      next.splice(index, 0, campo);
+      return next;
+    });
   const removeCampo = (id: string) =>
     setCampos((prev) =>
       prev
@@ -307,15 +314,9 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
             </p>
           )}
 
+          {/* Ajuste doc — "Imprimir formulário" alinhado à direita, na
+              lateral direita da caixa. */}
           <div className="mt-2 flex shrink-0 flex-wrap items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 text-[11px] text-muted-foreground"
-              onClick={handleImprimirBranco}
-            >
-              <Printer className="h-3.5 w-3.5" /> Imprimir formulário
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -324,6 +325,14 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
             >
               <Pencil className="h-3.5 w-3.5" />
               {editando ? "Concluir edição das perguntas" : "Editar perguntas"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 gap-1.5 text-[11px] text-muted-foreground"
+              onClick={handleImprimirBranco}
+            >
+              <Printer className="h-3.5 w-3.5" /> Imprimir formulário
             </Button>
           </div>
 
@@ -356,19 +365,23 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                       onDragEnd={handleDragEndCampos}
                     >
                       <SortableContext items={campos.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                        <div className="space-y-3">
+                        <div>
                           {campos.map((campo, index) => (
-                            <FieldEditor
-                              key={campo.id}
-                              campo={campo}
-                              campos={campos}
-                              index={index}
-                              total={campos.length}
-                              onChange={(patch) => updateCampo(campo.id, patch)}
-                              onChangeType={(type) => changeCampoType(campo.id, type)}
-                              onRemove={() => removeCampo(campo.id)}
-                              onMove={(dir) => moveCampo(index, dir)}
-                            />
+                            <div key={campo.id} className="pb-3">
+                              {index > 0 && (
+                                <InsertFieldHere onInsert={(novo) => insertCampoAt(index, novo)} />
+                              )}
+                              <FieldEditor
+                                campo={campo}
+                                campos={campos}
+                                index={index}
+                                total={campos.length}
+                                onChange={(patch) => updateCampo(campo.id, patch)}
+                                onChangeType={(type) => changeCampoType(campo.id, type)}
+                                onRemove={() => removeCampo(campo.id)}
+                                onMove={(dir) => moveCampo(index, dir)}
+                              />
+                            </div>
                           ))}
                         </div>
                       </SortableContext>

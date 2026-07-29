@@ -82,6 +82,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -430,11 +440,25 @@ function ColumnsBoard({
   const panelKey = [...workspaceKeys.byDefender(defensorId), workspace.id] as const;
   const { announce, node: liveNode } = useAnnouncer();
 
-  // Busca de cards no Painel aberto (título + texto da cota).
+  // Busca de cards no Painel aberto (apenas pelo título).
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const isSearching = normalizedQuery.length > 0;
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+
+  // Ajuste doc — ao clicar fora do motor de busca, ele fecha sozinho.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [searchOpen]);
 
   // Compactar/expandir colunas (Ajuste doc) — estado só de exibição, local
   // à sessão do navegador (não é salvo no Painel), já que o pedido é sobre
@@ -454,8 +478,9 @@ function ColumnsBoard({
     for (const col of columns) map.set(col.id, []);
     for (const card of cards) {
       if (normalizedQuery) {
-        const haystack = `${card.title} ${card.bodyText ?? ""}`.toLowerCase();
-        if (!haystack.includes(normalizedQuery)) continue;
+        // Ajuste doc — a busca deve considerar apenas o título do card, não
+        // o texto/corpo da cota ou atendimento.
+        if (!card.title.toLowerCase().includes(normalizedQuery)) continue;
       }
       const bucket = map.get(card.columnId);
       if (bucket) bucket.push(card);
@@ -832,7 +857,7 @@ function ColumnsBoard({
         <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 lg:px-8">
           <div className="flex flex-1 items-center">
             {searchOpen ? (
-              <div className="relative w-full max-w-xs">
+              <div ref={searchBoxRef} className="relative w-full max-w-xs">
                 <Search
                   className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
                   aria-hidden
@@ -893,10 +918,7 @@ function ColumnsBoard({
                 setAtendimentoFormOpen(true);
               }}
             >
-              <span className="inline-flex shrink-0 items-center gap-0.5">
-                <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-                <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-              </span>
+              <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               Criar atendimento
             </Button>
           )}
@@ -910,10 +932,7 @@ function ColumnsBoard({
                 setCotaFormOpen(true);
               }}
             >
-              <span className="inline-flex shrink-0 items-center gap-0.5">
-                <StickyNote className="h-3.5 w-3.5" aria-hidden />
-                <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-              </span>
+              <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               Criar cota
             </Button>
           )}
@@ -932,7 +951,7 @@ function ColumnsBoard({
                 });
               }}
             >
-              <Plus className="h-3.5 w-3.5" aria-hidden />
+              <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               Criar coluna
             </Button>
           )}
@@ -1325,7 +1344,9 @@ function SortableColumn(props: {
         // impedia a coluna compactada de encolher de verdade (ficava presa
         // em 280px). Aqui reaplicamos só o visual (borda/fundo/raio) sem essa
         // classe, para que a largura mínima seja mesmo a do título rotacionado.
-        className="relative flex h-full min-h-0 w-7 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface"
+        // Ajuste doc — um pouco mais de largura/altura e respiro para além do
+        // texto, tornando a coluna compactada visualmente mais agradável.
+        className="relative flex h-full min-h-0 w-9 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface"
       >
         <span
           aria-hidden
@@ -1334,20 +1355,20 @@ function SortableColumn(props: {
         />
         <button
           type="button"
-          className="flex w-full shrink-0 items-center justify-center py-1.5 text-muted-foreground hover:text-foreground"
+          className="flex w-full shrink-0 items-center justify-center py-2 text-muted-foreground hover:text-foreground"
           style={{ backgroundColor: "var(--col-accent-soft)" }}
           aria-label={`Expandir coluna ${column.nome}`}
           title="Expandir coluna"
           onClick={onToggleCollapsed}
         >
-          <ChevronsRight className="h-3 w-3" />
+          <ChevronsRight className="h-3.5 w-3.5" />
         </button>
         <div
-          className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-1.5"
+          className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-2.5"
           title={column.nome}
         >
           <span
-            className="truncate text-[11px] font-semibold"
+            className="truncate text-xs font-semibold"
             style={{
               color: "var(--col-accent-strong)",
               writingMode: "vertical-rl",
@@ -1510,11 +1531,11 @@ function SortableColumn(props: {
       {confirmDelete && (
         <DeleteColumnDialog
           column={column}
-          cards={cards}
-          otherColumns={otherColumns}
           onClose={() => setConfirmDelete(false)}
-          onConfirm={(destId) => {
-            onDeleteCol(destId);
+          onConfirm={() => {
+            // Ajuste doc — excluir a coluna não remaneja mais os cards para
+            // outra coluna: eles são descartados junto com ela.
+            onDeleteCol(null);
             setConfirmDelete(false);
           }}
         />
@@ -1732,65 +1753,40 @@ function CardDragPreview({ card }: { card: WorkspaceCardDto }) {
 // -----------------------------------------------------------------------------
 // DeleteColumnDialog
 // -----------------------------------------------------------------------------
+// Ajuste doc — deve ser permitido excluir a coluna mesmo que tenha cards, sem
+// a necessidade de movê-los para outra coluna antes. Por isso, virou uma
+// simples caixa de confirmação (texto fixo definido no doc), sem seletor de
+// coluna de destino: ao confirmar, a coluna e os cards nela são excluídos
+// juntos, sem remanejamento.
 function DeleteColumnDialog({
   column,
-  cards,
-  otherColumns,
   onClose,
   onConfirm,
 }: {
   column: WorkspaceColumn;
-  cards: WorkspaceCardDto[];
-  otherColumns: WorkspaceColumn[];
   onClose: () => void;
-  onConfirm: (destinationId: string | null) => void;
+  onConfirm: () => void;
 }) {
-  const [destId, setDestId] = useState<string>(otherColumns[0]?.id ?? "");
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Excluir coluna “{column.nome}”</DialogTitle>
-        </DialogHeader>
-        {cards.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            A coluna está vazia e será removida do Painel.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Esta coluna possui {cards.length} card(s). Selecione outra coluna do mesmo Painel para
-              recebê-los antes da exclusão.
-            </p>
-            <Label htmlFor="dest">Coluna de destino</Label>
-            <select
-              id="dest"
-              value={destId}
-              onChange={(e) => setDestId(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            >
-              {otherColumns.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={cards.length > 0 && !destId}
-            onClick={() => onConfirm(cards.length === 0 ? null : destId)}
+    <AlertDialog open onOpenChange={(o) => !o && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza que deseja excluir a coluna?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Ao excluir a coluna, os cards adicionados não serão remanejados.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={onConfirm}
           >
-            Excluir
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            Excluir coluna “{column.nome}”
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -2095,7 +2091,9 @@ function AddCardDialog({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-muted-foreground"
+          // Ajuste doc — hover em cor neutra, igual ao das abas de Painel
+          // (hover:bg-muted), em vez do tom esverdeado padrão do ghost.
+          className="w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <Plus className="h-4 w-4" /> Adicionar conteúdo
         </Button>

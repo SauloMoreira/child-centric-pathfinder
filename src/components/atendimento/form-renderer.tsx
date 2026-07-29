@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -177,9 +178,10 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
  *  Atendimento). Não é um campo de resposta: sem Label/FieldInput. */
 function OrientacaoBox({ texto }: { texto: string }) {
   if (!texto) return null;
+  // Ajuste doc — caixinha âmbar, não mais verde/institucional.
   return (
-    <div className="flex items-start gap-2 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
-      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+    <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/[0.1] p-2.5">
+      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
       <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
     </div>
   );
@@ -205,33 +207,44 @@ function ChecklistField({
   const items = field.checklistItems ?? [];
   const selected = Array.isArray(value) ? (value as string[]) : [];
   return (
-    <div className="space-y-1.5 rounded-md border border-border p-2.5">
+    // Ajuste doc — mesmo fundo âmbar do campo Orientação, layout mais discreto.
+    <div className="space-y-1 rounded-md border border-warning/30 bg-warning/[0.1] p-2.5">
       {field.label && (
         <div className="flex items-center gap-2">
-          <ListChecks className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+          <ListChecks className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
           <p className="text-xs font-medium text-foreground">
             {field.label}
             {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
           </p>
         </div>
       )}
-      <div className="space-y-1.5 pt-0.5">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Checkbox
-              id={`${field.id}-${i}`}
-              checked={selected.includes(item)}
-              disabled={disabled}
-              onCheckedChange={(checked) => {
-                const next = checked ? [...selected, item] : selected.filter((v) => v !== item);
-                onChange(field.id, next);
-              }}
-            />
-            <Label htmlFor={`${field.id}-${i}`} className="text-xs font-normal">
-              {item}
-            </Label>
-          </div>
-        ))}
+      <div className="space-y-1 pt-0.5">
+        {items.map((item, i) => {
+          const checked = selected.includes(item);
+          return (
+            <div key={i} className="flex items-center gap-2">
+              <Checkbox
+                id={`${field.id}-${i}`}
+                className="h-3.5 w-3.5"
+                checked={checked}
+                disabled={disabled}
+                onCheckedChange={(v) => {
+                  const next = v ? [...selected, item] : selected.filter((x) => x !== item);
+                  onChange(field.id, next);
+                }}
+              />
+              <Label
+                htmlFor={`${field.id}-${i}`}
+                className={cn(
+                  "text-xs font-normal",
+                  checked && "text-muted-foreground line-through",
+                )}
+              >
+                {item}
+              </Label>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

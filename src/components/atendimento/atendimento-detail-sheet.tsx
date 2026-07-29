@@ -281,7 +281,8 @@ export function AtendimentoDetailSheet({
               )}
 
               {temCampos && (
-                <div className="mt-2 shrink-0">
+                // Ajuste doc — alinhado à direita, na lateral direita da caixa.
+                <div className="mt-2 flex shrink-0 justify-end">
                   <Button
                     variant="ghost"
                     size="sm"

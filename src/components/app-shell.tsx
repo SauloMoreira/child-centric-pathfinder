@@ -11,8 +11,7 @@ import {
   Terminal,
   UsersRound,
   Siren,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
   Menu,
   BookOpen,
 } from "lucide-react";
@@ -75,7 +74,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
     () => [
       {
         id: "operacional",
-        label: "Trabalho",
+        label: null,
         items: [
           {
             to: "/area-de-trabalho",
@@ -248,20 +247,20 @@ function DesktopSidebar({ children }: { children: ReactNode }) {
     >
       {children}
       {/* Ajuste doc — botão de recolher/expandir sobreposto à borda do menu
-          lateral, sem tooltip/texto ao passar o mouse. */}
+          lateral, sem tooltip/texto ao passar o mouse. Ícone único (setinha)
+          que gira 180° conforme o estado, em vez de trocar de ícone. */}
       <button
         type="button"
         onClick={toggleCollapsed}
         aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
         aria-expanded={!collapsed}
         aria-controls="sidebar-nav"
-        className="absolute right-0 top-14 z-10 inline-flex h-6 w-6 translate-x-1/2 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-muted shadow-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="absolute right-0 top-8 z-10 inline-flex h-5 w-5 translate-x-1/2 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-muted shadow-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
-        {collapsed ? (
-          <PanelLeftOpen className="h-3 w-3" aria-hidden />
-        ) : (
-          <PanelLeftClose className="h-3 w-3" aria-hidden />
-        )}
+        <ChevronLeft
+          className={cn("h-3 w-3 transition-transform duration-200", collapsed && "rotate-180")}
+          aria-hidden
+        />
       </button>
     </aside>
   );
@@ -370,7 +369,7 @@ function SidebarNavItem({
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={cn(
-        "group relative flex items-center rounded-md text-sm transition-colors",
+        "group relative flex items-center rounded-md text-xs transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -388,7 +387,7 @@ function SidebarNavItem({
       {!collapsed && (
         <>
           <span className="flex-1 truncate">{item.label}</span>
-          {active && <ChevronRight className="h-4 w-4" aria-hidden />}
+          {active && <ChevronRight className="h-3.5 w-3.5" aria-hidden />}
         </>
       )}
     </Link>
