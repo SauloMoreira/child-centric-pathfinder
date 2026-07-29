@@ -11,6 +11,8 @@ import {
   MoreVertical,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   GripVertical,
   Copy,
   User,
@@ -431,6 +433,19 @@ function ColumnsBoard({
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const isSearching = normalizedQuery.length > 0;
 
+  // Compactar/expandir colunas (Ajuste doc) — estado só de exibição, local
+  // à sessão do navegador (não é salvo no Painel), já que o pedido é sobre
+  // ganhar espaço horizontal na tela, não sobre uma preferência persistente.
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+  const toggleColumnCollapsed = useCallback((columnId: string) => {
+    setCollapsedColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(columnId)) next.delete(columnId);
+      else next.add(columnId);
+      return next;
+    });
+  }, []);
+
   const cardsByColumn = useMemo(() => {
     const map = new Map<string, WorkspaceCardDto[]>();
     for (const col of columns) map.set(col.id, []);
@@ -591,6 +606,13 @@ function ColumnsBoard({
   }, [columns, columnOrderOverride]);
 
   const columnIds = useMemo(() => orderedColumns.map((c) => `column:${c.id}`), [orderedColumns]);
+
+  const collapseAllColumns = useCallback(() => {
+    setCollapsedColumns(new Set(orderedColumns.map((c) => c.id)));
+  }, [orderedColumns]);
+  const expandAllColumns = useCallback(() => {
+    setCollapsedColumns(new Set());
+  }, []);
 
   const onDragStart = (e: DragStartEvent) => {
     const raw = String(e.active.id);
@@ -901,6 +923,28 @@ function ColumnsBoard({
         >
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
             <div ref={boardContentRef} className="flex h-full min-w-max items-stretch gap-4">
+              {orderedColumns.length > 0 && (
+                <div className="flex shrink-0 flex-col items-center justify-start gap-1 pt-1">
+                  <button
+                    type="button"
+                    className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                    aria-label="Compactar todas as colunas"
+                    title="Compactar todas as colunas"
+                    onClick={collapseAllColumns}
+                  >
+                    <ChevronsLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                    aria-label="Expandir todas as colunas"
+                    title="Expandir todas as colunas"
+                    onClick={expandAllColumns}
+                  >
+                    <ChevronsRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
               {orderedColumns.map((c, idx) => (
                 <SortableColumn
                   key={c.id}
@@ -927,6 +971,8 @@ function ColumnsBoard({
                   onEditAtendimento={handleEditAtendimento}
                   onAdded={onRefetch}
                   isSearching={isSearching}
+                  collapsed={collapsedColumns.has(c.id)}
+                  onToggleCollapsed={() => toggleColumnCollapsed(c.id)}
                 />
               ))}
 
@@ -1151,6 +1197,8 @@ function SortableColumn(props: {
   onEditAtendimento: (card: WorkspaceCardDto) => void;
   onAdded: () => void;
   isSearching?: boolean;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const {
     column,
@@ -1172,6 +1220,8 @@ function SortableColumn(props: {
     onEditAtendimento,
     onAdded,
     isSearching,
+    collapsed,
+    onToggleCollapsed,
   } = props;
 
   const sortable = useSortable({
@@ -1200,6 +1250,51 @@ function SortableColumn(props: {
     data: { type: "column-drop", panelId: workspace.id, columnId: column.id },
   });
 
+  // Ajuste doc — coluna compactada: faixa estreita identificável pela cor,
+  // com botão para expandir de volta. Mantém a posição no arrastamento
+  // (o nó continua no mesmo lugar da SortableContext, só muda a largura).
+  if (collapsed) {
+    return (
+      <div
+        ref={sortable.setNodeRef}
+        style={style}
+        data-col-color={colorToken}
+        className="kanban-column relative flex h-full min-h-0 w-11 shrink-0 flex-col items-center overflow-hidden"
+      >
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[3px]"
+          style={{ backgroundColor: column.corCustom ?? "var(--col-accent)" }}
+        />
+        <button
+          type="button"
+          className="flex w-full shrink-0 items-center justify-center py-2 text-muted-foreground hover:text-foreground"
+          style={{ backgroundColor: "var(--col-accent-soft)" }}
+          aria-label={`Expandir coluna ${column.nome}`}
+          title="Expandir coluna"
+          onClick={onToggleCollapsed}
+        >
+          <ChevronsRight className="h-3.5 w-3.5" />
+        </button>
+        <div
+          className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-2"
+          title={column.nome}
+        >
+          <span
+            className="truncate text-xs font-semibold"
+            style={{
+              color: "var(--col-accent-strong)",
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+            }}
+          >
+            {column.nome}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={sortable.setNodeRef}
@@ -1216,43 +1311,52 @@ function SortableColumn(props: {
         }}
       />
 
-      {/* cabeçalho colorido */}
+      {/* cabeçalho colorido — arrastável por clique/segurar, como os cards
+          (sem ícone de grip dedicado: o PointerSensor já exige ~5px de
+          movimento antes de iniciar o drag, então um clique simples no
+          menu de ações continua funcionando normalmente). */}
       <header
-        className="flex shrink-0 items-start justify-between gap-2 border-b border-border pl-4 pr-2 py-2.5"
+        className={cn(
+          "flex shrink-0 items-start justify-between gap-2 border-b border-border pl-4 pr-2 py-2.5",
+          access.canManageColumns && "cursor-grab touch-none active:cursor-grabbing",
+        )}
         style={{ backgroundColor: "var(--col-accent-soft)" }}
+        {...(access.canManageColumns ? { ...sortable.attributes, ...sortable.listeners } : {})}
       >
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            {access.canManageColumns && (
-              <button
-                type="button"
-                className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
-                aria-label={`Arrastar coluna ${column.nome}`}
-                {...sortable.attributes}
-                {...sortable.listeners}
-              >
-                <GripVertical className="h-3.5 w-3.5" />
-              </button>
-            )}
-            <h3
-              className="truncate text-sm font-semibold"
-              style={{ color: "var(--col-accent-strong)" }}
-            >
-              {column.nome}
-            </h3>
-          </div>
+          <h3
+            className="truncate text-sm font-semibold"
+            style={{ color: "var(--col-accent-strong)" }}
+          >
+            {column.nome}
+          </h3>
           {column.descricao && (
             <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
               {column.descricao}
             </p>
           )}
         </div>
+        <button
+          type="button"
+          className="shrink-0 rounded p-1 text-muted-foreground hover:bg-surface/60 hover:text-foreground"
+          aria-label="Compactar coluna"
+          title="Compactar coluna"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCollapsed();
+          }}
+        >
+          <ChevronsLeft className="h-3.5 w-3.5" />
+        </button>
         {access.canManageColumns && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 className="rounded p-1 text-muted-foreground hover:bg-surface/60 hover:text-foreground"
                 aria-label="Ações da coluna"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="h-3.5 w-3.5" />
               </button>
