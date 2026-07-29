@@ -12,13 +12,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,13 +82,15 @@ interface AtendimentoFormSheetProps {
 }
 
 /**
- * Camada lateral de criação/edição de Atendimento: título, descrição
- * (opcional), categoria(s) — múltiplas — e o construtor de campos do
- * formulário (tipos de campo, obrigatoriedade, opções). Fase 2: lógica
- * condicional — cada campo/seção pode ter uma condição "mostrar apenas
- * se" referenciando um campo de escolha (radio/checkbox/dropdown)
- * anterior na lista, e seções inteiras podem ser puladas assim. Autor é
- * sempre implícito (o Defensor autenticado).
+ * Caixa sobreposta (Dialog centralizado, largo) de criação/edição de
+ * Atendimento: título, descrição (opcional), categoria(s) — múltiplas —
+ * e o construtor de campos do formulário (tipos de campo, obrigatoriedade,
+ * opções). A criação/edição de Atendimento usa Dialog (não Sheet lateral,
+ * como a Cota) porque demanda mais dedicação, tempo e espaço na tela.
+ * Fase 2: lógica condicional — cada campo/seção pode ter uma condição
+ * "mostrar apenas se" referenciando um campo de escolha (radio/checkbox/
+ * dropdown) anterior na lista, e seções inteiras podem ser puladas assim.
+ * Autor é sempre implícito (o Defensor autenticado).
  */
 export function AtendimentoFormSheet({
   open,
@@ -300,17 +302,17 @@ export function AtendimentoFormSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-3xl flex-col gap-0 overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-institutional" />
             {isEdit ? "Editar atendimento" : "Novo atendimento"}
-          </SheetTitle>
-          <SheetDescription>
+          </DialogTitle>
+          <DialogDescription>
             Modelo de formulário reutilizável para orientar sua equipe no atendimento presencial.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="mt-6 flex-1 space-y-5">
           <div className="space-y-1.5">
@@ -434,7 +436,7 @@ export function AtendimentoFormSheet({
           </div>
         </div>
 
-        <SheetFooter className="mt-6">
+        <DialogFooter className="mt-6 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Cancelar
           </Button>
@@ -445,9 +447,9 @@ export function AtendimentoFormSheet({
             {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             {isEdit ? "Salvar alterações" : "Criar atendimento"}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

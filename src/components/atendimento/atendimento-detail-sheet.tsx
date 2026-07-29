@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Copy, Loader2, MessageSquare, Pencil, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -75,15 +75,17 @@ function mensagemErroResumoIA(e: unknown): string {
 }
 
 /**
- * Camada lateral expandida de detalhe do Atendimento: título, autor,
- * categoria(s), descrição e o formulário (preenchível em memória — nada é
- * persistido). Editar/excluir permanentemente ficam restritos ao autor.
+ * Caixa sobreposta (Dialog centralizado, largo) de detalhe do Atendimento:
+ * título, autor, categoria(s), descrição e o formulário (preenchível em
+ * memória — nada é persistido). Editar/excluir permanentemente ficam
+ * restritos ao autor. Usa Dialog (não Sheet lateral, como a Cota) porque
+ * a execução do formulário demanda mais dedicação, tempo e espaço na tela.
  *
  * Fase 3 — execução: "Concluir" valida os campos obrigatórios, gera um
  * resumo narrativo por IA (Lovable AI) e libera a impressão/PDF do
  * formulário preenchido. Editar respostas depois de concluir NÃO
  * regenera o resumo automaticamente — aparece "Atualizar conclusão".
- * Fechar a layer com alguma resposta já preenchida pede confirmação.
+ * Fechar a caixa com alguma resposta já preenchida pede confirmação.
  */
 export function AtendimentoDetailSheet({
   itemId,
@@ -238,23 +240,20 @@ export function AtendimentoDetailSheet({
 
   return (
     <>
-      <Sheet open={!!itemId} onOpenChange={handleSheetOpenChange}>
-        <SheetContent
-          side="right"
-          className="flex h-full w-full flex-col gap-0 overflow-hidden sm:max-w-xl"
-        >
+      <Dialog open={!!itemId} onOpenChange={handleSheetOpenChange}>
+        <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-3xl flex-col gap-0 overflow-hidden">
           {detalhe.isLoading ? (
             <p className="p-4 text-sm text-muted-foreground">Carregando…</p>
           ) : !detalhe.data ? (
             <p className="p-4 text-sm text-muted-foreground">Atendimento não encontrado.</p>
           ) : (
             <>
-              <SheetHeader className="shrink-0">
-                <SheetTitle className="flex items-start gap-2 pr-6 text-base">
+              <DialogHeader className="shrink-0">
+                <DialogTitle className="flex items-start gap-2 pr-6 text-base">
                   <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
                   <span className="break-words">{detalhe.data.titulo}</span>
-                </SheetTitle>
-              </SheetHeader>
+                </DialogTitle>
+              </DialogHeader>
 
               {temCampos && (
                 <div className="mt-2 shrink-0">
@@ -360,7 +359,7 @@ export function AtendimentoDetailSheet({
                 </div>
               )}
 
-              <SheetFooter className="mt-3 shrink-0 sm:justify-between">
+              <DialogFooter className="mt-3 shrink-0 sm:justify-between">
                 <p className="text-[10px] text-muted-foreground">
                   As respostas preenchidas aqui não são salvas.
                 </p>
@@ -379,11 +378,11 @@ export function AtendimentoDetailSheet({
                     </Button>
                   </div>
                 )}
-              </SheetFooter>
+              </DialogFooter>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
         <AlertDialogContent>
