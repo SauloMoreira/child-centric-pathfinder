@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -160,7 +160,8 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
 function OrientacaoBox({ texto }: { texto: string }) {
   if (!texto) return null;
   return (
-    <div className="rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
+    <div className="flex items-start gap-2 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
+      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
       <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
     </div>
   );

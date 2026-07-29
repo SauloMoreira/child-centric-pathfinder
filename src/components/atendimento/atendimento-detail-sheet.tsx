@@ -45,7 +45,7 @@ interface AtendimentoDetailSheetProps {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    return new Date(iso).toLocaleDateString("pt-BR", { dateStyle: "short" });
   } catch {
     return iso;
   }
@@ -251,7 +251,10 @@ export function AtendimentoDetailSheet({
               </DialogHeader>
 
               <div className="mt-2 shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span>{detalhe.data.ownerDisplayName}</span>
+                <span>
+                  <span className="font-semibold text-foreground">Autor(a):</span>{" "}
+                  {detalhe.data.ownerDisplayName}
+                </span>
                 <span aria-hidden>·</span>
                 <span>Editado em {formatDate(detalhe.data.updatedAt)}</span>
                 <span aria-hidden>·</span>
@@ -269,7 +272,8 @@ export function AtendimentoDetailSheet({
               </div>
 
               {detalhe.data.descricao && (
-                <p className="mt-2 shrink-0 whitespace-pre-wrap text-xs text-muted-foreground">
+                <p className="mt-2 shrink-0 whitespace-pre-wrap text-[11px] text-muted-foreground">
+                  <span className="font-semibold text-foreground">Descrição:</span>{" "}
                   {detalhe.data.descricao}
                 </p>
               )}
@@ -314,7 +318,7 @@ export function AtendimentoDetailSheet({
 
               {(temCampos || detalhe.data.canEdit) && (
                 <DialogFooter className="mt-3 shrink-0 sm:justify-between">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {temCampos && (
                       <Button
                         size="sm"
@@ -327,15 +331,12 @@ export function AtendimentoDetailSheet({
                         {resumo ? (resumoDesatualizado ? "Atualizar conclusão" : "Concluído") : "Concluir"}
                       </Button>
                     )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
                     {temCampos && hasRespostaPreenchida(values) && (
                       <Button
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
                         onClick={handleCopiarTextoExpandido}
-                        title="Gerado localmente — nenhuma resposta é enviada pela rede"
                       >
                         <Copy className="h-3.5 w-3.5" /> Copiar
                       </Button>
@@ -350,6 +351,8 @@ export function AtendimentoDetailSheet({
                         <Printer className="h-3.5 w-3.5" /> Imprimir
                       </Button>
                     )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
                     {detalhe.data.canEdit && (
                       <>
                         <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>

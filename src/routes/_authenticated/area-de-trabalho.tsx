@@ -904,7 +904,7 @@ function ColumnsBoard({
           <div
             ref={topScrollRef}
             onScroll={handleTopScroll}
-            className="kanban-scroll overflow-x-auto overflow-y-hidden px-4 lg:px-8"
+            className="kanban-scroll overflow-x-auto overflow-y-hidden pl-2 pr-4 lg:pl-3 lg:pr-8"
             style={{ height: 14 }}
             aria-hidden="true"
           >
@@ -916,7 +916,7 @@ function ColumnsBoard({
         <div
           ref={boardScrollRef}
           onScroll={handleBoardScroll}
-          className="kanban-scroll flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 lg:px-8"
+          className="kanban-scroll flex-1 overflow-x-auto overflow-y-hidden pl-2 pr-4 py-4 lg:pl-3 lg:pr-8"
           style={{
             minHeight: 0,
           }}
@@ -924,7 +924,7 @@ function ColumnsBoard({
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
             <div ref={boardContentRef} className="flex h-full min-w-max items-stretch gap-4">
               {orderedColumns.length > 0 && (
-                <div className="flex shrink-0 flex-col items-center justify-start gap-1 pt-1">
+                <div className="-mr-2.5 flex shrink-0 flex-col items-center justify-start gap-1 pt-1">
                   <button
                     type="button"
                     className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
@@ -1259,7 +1259,7 @@ function SortableColumn(props: {
         ref={sortable.setNodeRef}
         style={style}
         data-col-color={colorToken}
-        className="kanban-column relative flex h-full min-h-0 w-11 shrink-0 flex-col items-center overflow-hidden"
+        className="kanban-column relative flex h-full min-h-0 w-7 shrink-0 flex-col items-center overflow-hidden"
       >
         <span
           aria-hidden
@@ -1268,20 +1268,20 @@ function SortableColumn(props: {
         />
         <button
           type="button"
-          className="flex w-full shrink-0 items-center justify-center py-2 text-muted-foreground hover:text-foreground"
+          className="flex w-full shrink-0 items-center justify-center py-1.5 text-muted-foreground hover:text-foreground"
           style={{ backgroundColor: "var(--col-accent-soft)" }}
           aria-label={`Expandir coluna ${column.nome}`}
           title="Expandir coluna"
           onClick={onToggleCollapsed}
         >
-          <ChevronsRight className="h-3.5 w-3.5" />
+          <ChevronsRight className="h-3 w-3" />
         </button>
         <div
-          className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-2"
+          className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-1.5"
           title={column.nome}
         >
           <span
-            className="truncate text-xs font-semibold"
+            className="truncate text-[11px] font-semibold"
             style={{
               color: "var(--col-accent-strong)",
               writingMode: "vertical-rl",
@@ -1900,7 +1900,11 @@ function SortableCard(props: {
         !card.canOpen && "opacity-70",
       )}
     >
-      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--col-accent)]" aria-hidden />
+      <MessageSquare
+        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--col-accent)]"
+        fill="currentColor"
+        aria-hidden
+      />
       <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
       <div className="flex shrink-0 items-center gap-0.5">
         {access.canMoveCards && (
