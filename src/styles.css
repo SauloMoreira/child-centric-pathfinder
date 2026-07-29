@@ -90,6 +90,12 @@
   --institutional: oklch(0.38 0.07 155);
   --institutional-foreground: oklch(0.985 0.003 95);
 
+  /* Verde vivo — usado para diferenciar Atendimentos de Cotas (cards,
+     botão "Adicionar conteúdo") e para a opção "Verde" de cor de coluna,
+     que antes reaproveitava o institucional escuro e ficava opaca demais. */
+  --accent-green: oklch(0.62 0.15 150);
+  --accent-green-foreground: oklch(0.985 0.003 95);
+
   --primary: var(--institutional);
   --primary-foreground: var(--institutional-foreground);
 
@@ -247,7 +253,7 @@
   --col-accent-strong: color-mix(in oklab, var(--col-accent) 78%, black 6%);
 }
 [data-col-color="neutral"]  { --col-accent: oklch(0.55 0.02 150); }
-[data-col-color="green"]    { --col-accent: var(--institutional); }
+[data-col-color="green"]    { --col-accent: var(--accent-green); }
 [data-col-color="blue"]     { --col-accent: oklch(0.55 0.14 250); }
 [data-col-color="amber"]    { --col-accent: oklch(0.68 0.14 75); }
 [data-col-color="burgundy"] { --col-accent: oklch(0.44 0.14 20); }

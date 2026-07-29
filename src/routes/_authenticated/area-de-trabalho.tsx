@@ -824,44 +824,45 @@ function ColumnsBoard({
           {access.accessMode === "owner" && (
             <Button
               type="button"
-              size="sm"
-              className="h-8 gap-1.5"
-              onClick={() => {
-                setCotaFormTarget({ mode: "create" });
-                setCotaFormOpen(true);
-              }}
-            >
-              <span className="inline-flex shrink-0 items-center gap-0.5">
-                <StickyNote className="h-3.5 w-3.5" aria-hidden />
-                <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-              </span>
-              Criar cota
-            </Button>
-          )}
-          {access.accessMode === "owner" && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5"
+              size="icon"
+              className="h-8 w-8 shrink-0"
               onClick={() => {
                 setAtendimentoFormTarget({ mode: "create" });
                 setAtendimentoFormOpen(true);
               }}
+              aria-label="Criar atendimento"
+              title="Criar atendimento"
             >
               <span className="inline-flex shrink-0 items-center gap-0.5">
                 <MessageSquare className="h-3.5 w-3.5" aria-hidden />
                 <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               </span>
-              Criar atendimento
+            </Button>
+          )}
+          {access.accessMode === "owner" && (
+            <Button
+              type="button"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={() => {
+                setCotaFormTarget({ mode: "create" });
+                setCotaFormOpen(true);
+              }}
+              aria-label="Criar cota"
+              title="Criar cota"
+            >
+              <span className="inline-flex shrink-0 items-center gap-0.5">
+                <StickyNote className="h-3.5 w-3.5" aria-hidden />
+                <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
+              </span>
             </Button>
           )}
           {access.canManageColumns && (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-8 gap-1.5"
+              className="h-8 shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => {
                 setCreatorOpen(true);
                 // rola para o fim para o input ficar visível
@@ -1775,16 +1776,16 @@ function SortableCard(props: {
   return (
     <article
       ref={sortable.setNodeRef}
-      style={style}
+      style={{ ...style, borderLeftColor: "var(--accent-green)" }}
       {...(access.canMoveCards ? { ...sortable.attributes, ...sortable.listeners } : {})}
       onClick={() => onOpenAtendimento()}
       className={cn(
-        "group relative flex items-start gap-2 rounded-md border border-border bg-card p-3 shadow-sm transition hover:border-institutional",
+        "group relative flex items-start gap-2 rounded-md border border-l-[3px] border-border bg-card p-3 shadow-sm transition hover:border-[var(--accent-green)]",
         access.canMoveCards && "cursor-grab active:cursor-grabbing",
         !card.canOpen && "opacity-70",
       )}
     >
-      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-green)]" aria-hidden />
       <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
       <div className="flex shrink-0 items-center gap-0.5">
         {access.canMoveCards && (
@@ -1909,7 +1910,7 @@ function AddCardDialog({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-muted-foreground"
+          className="w-full justify-start gap-2 text-[var(--accent-green)] hover:text-[var(--accent-green)]"
         >
           <Plus className="h-4 w-4" /> Adicionar conteúdo
         </Button>
