@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -1128,7 +1128,7 @@ const COLUMN_COLOR_OPTIONS: { token: WorkspaceColor; label: string }[] = [
   { token: "rose", label: "Rosa" },
   { token: "amber", label: "Âmbar" },
   { token: "burgundy", label: "Bordô" },
-  { token: "slate", label: "Cinza" },
+  { token: "slate", label: "Marrom" },
 ];
 
 function SortableColumn(props: {
@@ -1300,6 +1300,7 @@ function SortableColumn(props: {
               access={access}
               index={ci}
               columnCount={cards.length}
+              columnColor={colorToken}
               otherColumns={otherColumns}
               onRemove={() => onRemoveCard(card.cardId)}
               onMoveUp={() => onMoveCard(card.cardId, column.id, Math.max(0, ci - 1))}
@@ -1631,6 +1632,7 @@ function SortableCard(props: {
   access: WorkspaceAccess;
   index: number;
   columnCount: number;
+  columnColor: WorkspaceColor;
   otherColumns: WorkspaceColumn[];
   onRemove: () => void;
   onMoveUp: () => void;
@@ -1647,6 +1649,7 @@ function SortableCard(props: {
     access,
     index,
     columnCount,
+    columnColor,
     otherColumns,
     onRemove,
     onMoveUp,
@@ -1771,19 +1774,29 @@ function SortableCard(props: {
     );
   }
 
+  // Ajuste doc — o card de Atendimento acompanha a cor atribuída à coluna
+  // (mesma variável --col-accent que colore a faixa lateral e o cabeçalho
+  // da coluna); na coluna neutra, mantém o verde vivo original em vez do
+  // cinza neutro. O override só afeta este elemento e seus descendentes,
+  // não o resto da coluna.
+  const atendimentoStyle =
+    columnColor === "neutral"
+      ? ({ ...style, "--col-accent": "var(--accent-green)" } as CSSProperties)
+      : style;
+
   return (
     <article
       ref={sortable.setNodeRef}
-      style={{ ...style, borderLeftColor: "var(--accent-green)" }}
+      style={{ ...atendimentoStyle, borderLeftColor: "var(--col-accent)" }}
       {...(access.canMoveCards ? { ...sortable.attributes, ...sortable.listeners } : {})}
       onClick={() => onOpenAtendimento()}
       className={cn(
-        "group relative flex items-start gap-2 rounded-md border border-l-[3px] border-border bg-card p-3 shadow-sm transition hover:border-[var(--accent-green)]",
+        "group relative flex items-start gap-2 rounded-md border border-l-[3px] border-border bg-card p-3 shadow-sm transition hover:border-[var(--col-accent)]",
         access.canMoveCards && "cursor-grab active:cursor-grabbing",
         !card.canOpen && "opacity-70",
       )}
     >
-      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent-green)]" aria-hidden />
+      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--col-accent)]" aria-hidden />
       <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
       <div className="flex shrink-0 items-center gap-0.5">
         {access.canMoveCards && (
