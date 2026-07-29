@@ -115,3 +115,40 @@ export function camposElegiveisParaCondicao(
 ): AtendimentoFormField[] {
   return campos.slice(0, index).filter((f) => isChoiceField(f.type) && (f.options ?? []).length > 0);
 }
+
+function valorVazio(valor: string | string[] | undefined): boolean {
+  return valor === undefined || (Array.isArray(valor) ? valor.length === 0 : !valor.trim());
+}
+
+/** Fase 3 — execução: rótulos dos campos obrigatórios (e visíveis) que
+ *  ainda não foram respondidos. Vazio = pode concluir. */
+export function obrigatoriosFaltando(
+  campos: AtendimentoFormField[],
+  values: AtendimentoFormValues,
+): string[] {
+  return campos
+    .filter((f) => f.type !== "section" && f.required && campoVisivel(f, values))
+    .filter((f) => valorVazio(values[f.id]))
+    .map((f) => f.label || "(sem rótulo)");
+}
+
+/** Fase 3 — execução: transforma o preenchimento em pares label/valor
+ *  (só campos visíveis e respondidos) para enviar ao resumo por IA. */
+export function montarRespostasParaResumo(
+  campos: AtendimentoFormField[],
+  values: AtendimentoFormValues,
+): { label: string; valor: string }[] {
+  return campos
+    .filter((f) => f.type !== "section" && campoVisivel(f, values))
+    .map((f) => {
+      const v = values[f.id];
+      return { label: f.label || "(sem rótulo)", valor: Array.isArray(v) ? v.join(", ") : (v ?? "") };
+    })
+    .filter((r) => r.valor.trim().length > 0);
+}
+
+/** Fase 3 — execução: true se ao menos uma resposta já foi preenchida
+ *  (usado para o aviso de perda de dados ao fechar a layer). */
+export function hasRespostaPreenchida(values: AtendimentoFormValues): boolean {
+  return Object.values(values).some((v) => !valorVazio(v));
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { Copy, Loader2, MessageSquare, Pencil, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,18 @@ import {
 import { FormRenderer } from "@/components/atendimento/form-renderer";
 import {
   campoVisivel,
+  hasRespostaPreenchida,
+  montarRespostasParaResumo,
+  obrigatoriosFaltando,
   valorInicial,
   type AtendimentoFormValues,
 } from "@/components/atendimento/form-field-types";
+import {
+  abrirImpressao,
+  montarFormularioBrancoHtml,
+  montarFormularioPreenchidoHtml,
+} from "@/components/atendimento/print";
+import { gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
 import {
   useAtendimentoDetalhe,
   useExcluirAtendimento,
@@ -41,12 +50,28 @@ function formatDate(iso: string): string {
   }
 }
 
+/** Mensagens amigáveis para os códigos de erro do resumo por IA. */
+function mensagemErroResumoIA(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e ?? "");
+  if (msg.includes("NO_ANSWERS")) return "Preencha ao menos uma resposta antes de concluir.";
+  if (msg.includes("RATE_LIMITED"))
+    return "Muitas solicitações agora. Aguarde um instante e tente novamente.";
+  if (msg.includes("AI_CREDITS_EXHAUSTED"))
+    return "O saldo de IA do projeto no Lovable acabou. Verifique em Configurações → Cloud & AI balance.";
+  if (msg.includes("UNAUTHENTICATED")) return "Sua sessão expirou. Recarregue a página.";
+  return "Não foi possível gerar o resumo agora. Tente novamente em instantes.";
+}
+
 /**
  * Camada lateral expandida de detalhe do Atendimento: título, autor,
  * categoria(s), descrição e o formulário (preenchível em memória — nada é
  * persistido). Editar/excluir permanentemente ficam restritos ao autor.
- * A conclusão do atendimento (resumo por IA + PDF) chega em uma fase
- * seguinte; aqui o formulário serve apenas para consulta/preenchimento.
+ *
+ * Fase 3 — execução: "Concluir" valida os campos obrigatórios, gera um
+ * resumo narrativo por IA (Lovable AI) e libera a impressão/PDF do
+ * formulário preenchido. Editar respostas depois de concluir NÃO
+ * regenera o resumo automaticamente — aparece "Atualizar conclusão".
+ * Fechar a layer com alguma resposta já preenchida pede confirmação.
  */
 export function AtendimentoDetailSheet({
   itemId,
@@ -57,7 +82,11 @@ export function AtendimentoDetailSheet({
   const detalhe = useAtendimentoDetalhe(itemId);
   const excluir = useExcluirAtendimento();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [values, setValues] = useState<AtendimentoFormValues>({});
+  const [resumo, setResumo] = useState<string | null>(null);
+  const [resumoDesatualizado, setResumoDesatualizado] = useState(false);
+  const [gerandoResumo, setGerandoResumo] = useState(false);
 
   useEffect(() => {
     if (!detalhe.data) return;
@@ -66,6 +95,8 @@ export function AtendimentoDetailSheet({
       initial[field.id] = valorInicial(field);
     }
     setValues(initial);
+    setResumo(null);
+    setResumoDesatualizado(false);
   }, [detalhe.data]);
 
   const handleChange = (fieldId: string, value: string | string[]) => {
@@ -82,6 +113,9 @@ export function AtendimentoDetailSheet({
       }
       return next;
     });
+    // Fase 3: editar uma resposta depois de já ter concluído não regenera
+    // o resumo sozinho — só marca que ele ficou desatualizado.
+    if (resumo) setResumoDesatualizado(true);
   };
 
   const handleDelete = () => {
@@ -103,9 +137,80 @@ export function AtendimentoDetailSheet({
     );
   };
 
+  const handleConcluir = async () => {
+    if (!detalhe.data) return;
+    const faltando = obrigatoriosFaltando(detalhe.data.formSchema, values);
+    if (faltando.length > 0) {
+      toast.error(`Preencha os campos obrigatórios: ${faltando.join(", ")}`);
+      return;
+    }
+    setGerandoResumo(true);
+    try {
+      const respostas = montarRespostasParaResumo(detalhe.data.formSchema, values);
+      const texto = await gerarResumoAtendimentoIA({
+        titulo: detalhe.data.titulo,
+        descricao: detalhe.data.descricao,
+        respostas,
+      });
+      setResumo(texto);
+      setResumoDesatualizado(false);
+      toast.success("Resumo gerado");
+    } catch (e) {
+      toast.error(mensagemErroResumoIA(e));
+    } finally {
+      setGerandoResumo(false);
+    }
+  };
+
+  const handleCopiarResumo = async () => {
+    if (!resumo) return;
+    try {
+      await navigator.clipboard.writeText(resumo);
+      toast.success("Resumo copiado");
+    } catch {
+      toast.error("Não foi possível copiar o resumo");
+    }
+  };
+
+  const handleImprimirBranco = () => {
+    if (!detalhe.data) return;
+    const html = montarFormularioBrancoHtml(
+      detalhe.data.titulo,
+      detalhe.data.descricao,
+      detalhe.data.formSchema,
+    );
+    if (!abrirImpressao(detalhe.data.titulo, html)) {
+      toast.error("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
+    }
+  };
+
+  const handleImprimirPreenchido = () => {
+    if (!detalhe.data) return;
+    const html = montarFormularioPreenchidoHtml(
+      detalhe.data.titulo,
+      detalhe.data.descricao,
+      detalhe.data.formSchema,
+      values,
+      resumo,
+    );
+    if (!abrirImpressao(detalhe.data.titulo, html)) {
+      toast.error("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
+    }
+  };
+
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open && hasRespostaPreenchida(values)) {
+      setConfirmClose(true);
+      return;
+    }
+    onOpenChange(open);
+  };
+
+  const temCampos = (detalhe.data?.formSchema ?? []).some((f) => f.type !== "section");
+
   return (
     <>
-      <Sheet open={!!itemId} onOpenChange={onOpenChange}>
+      <Sheet open={!!itemId} onOpenChange={handleSheetOpenChange}>
         <SheetContent
           side="right"
           className="flex h-full w-full flex-col gap-0 overflow-hidden sm:max-w-xl"
@@ -123,7 +228,20 @@ export function AtendimentoDetailSheet({
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+              {temCampos && (
+                <div className="mt-2 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 text-[11px] text-muted-foreground"
+                    onClick={handleImprimirBranco}
+                  >
+                    <Printer className="h-3.5 w-3.5" /> Imprimir formulário em branco
+                  </Button>
+                </div>
+              )}
+
+              <div className="mt-1 flex min-h-0 flex-1 flex-col gap-3">
                 <div className="shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                   <span>{detalhe.data.ownerDisplayName}</span>
                   <span aria-hidden>·</span>
@@ -156,8 +274,52 @@ export function AtendimentoDetailSheet({
                     </div>
                   )}
                   <FormRenderer fields={detalhe.data.formSchema} values={values} onChange={handleChange} />
+
+                  {resumo && (
+                    <div className="mt-4 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-institutional">
+                          Resumo {resumoDesatualizado && "(desatualizado)"}
+                        </p>
+                        <button
+                          type="button"
+                          className="rounded p-1 text-muted-foreground hover:text-foreground"
+                          aria-label="Copiar resumo"
+                          onClick={handleCopiarResumo}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="whitespace-pre-wrap text-xs text-foreground">{resumo}</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {temCampos && (
+                <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={resumo && !resumoDesatualizado ? "outline" : "default"}
+                    className="gap-1.5"
+                    onClick={handleConcluir}
+                    disabled={gerandoResumo || (!!resumo && !resumoDesatualizado)}
+                  >
+                    {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
+                    {resumo ? (resumoDesatualizado ? "Atualizar conclusão" : "Concluído") : "Concluir"}
+                  </Button>
+                  {resumo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={handleImprimirPreenchido}
+                    >
+                      <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
+                    </Button>
+                  )}
+                </div>
+              )}
 
               <SheetFooter className="mt-3 shrink-0 sm:justify-between">
                 <p className="text-[10px] text-muted-foreground">
@@ -183,6 +345,30 @@ export function AtendimentoDetailSheet({
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Fechar sem salvar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              As respostas preenchidas neste atendimento não são salvas em nenhum lugar. Ao fechar
+              agora, elas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar preenchendo</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                setConfirmClose(false);
+                onOpenChange(false);
+              }}
+            >
+              Fechar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

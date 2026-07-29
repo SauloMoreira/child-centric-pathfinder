@@ -279,6 +279,42 @@ export async function obterAtendimentoDetalhe(itemId: string): Promise<Atendimen
   return data as AtendimentoDetalhe;
 }
 
+/**
+ * Fase 3 (execução): gera o resumo narrativo em terceira pessoa via
+ * Edge Function `atendimento-resumo-ia` (conector de IA embutido do
+ * Lovable). As respostas preenchidas trafegam só nessa chamada — nunca
+ * são salvas em nenhuma tabela.
+ */
+export async function gerarResumoAtendimentoIA(params: {
+  titulo: string;
+  descricao?: string | null;
+  respostas: { label: string; valor: string }[];
+}): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("atendimento-resumo-ia", {
+    body: {
+      titulo: params.titulo,
+      descricao: params.descricao ?? null,
+      respostas: params.respostas,
+    },
+  });
+  if (error) {
+    // Em respostas non-2xx, o supabase-js não repassa o corpo JSON em
+    // `data` — o código de erro estruturado (RATE_LIMITED, AI_CREDITS_
+    // EXHAUSTED, etc.) precisa ser lido de error.context (o Response cru).
+    let code: string | undefined;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx) code = (await ctx.clone().json())?.error;
+    } catch {
+      // corpo não era JSON (ou já foi consumido) — segue com o fallback abaixo
+    }
+    throw new Error(code ?? error.message ?? "AI_GATEWAY_ERROR");
+  }
+  const resumo = (data as { resumo?: string } | null)?.resumo;
+  if (!resumo) throw new Error("EMPTY_AI_RESPONSE");
+  return resumo;
+}
+
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
   kind?: ContentKind;
