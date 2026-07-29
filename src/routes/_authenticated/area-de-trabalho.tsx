@@ -824,37 +824,35 @@ function ColumnsBoard({
           {access.accessMode === "owner" && (
             <Button
               type="button"
-              size="icon"
-              className="h-8 w-8 shrink-0"
+              size="sm"
+              className="h-8 shrink-0 gap-1.5"
               onClick={() => {
                 setAtendimentoFormTarget({ mode: "create" });
                 setAtendimentoFormOpen(true);
               }}
-              aria-label="Criar atendimento"
-              title="Criar atendimento"
             >
               <span className="inline-flex shrink-0 items-center gap-0.5">
                 <MessageSquare className="h-3.5 w-3.5" aria-hidden />
                 <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               </span>
+              Criar atendimento
             </Button>
           )}
           {access.accessMode === "owner" && (
             <Button
               type="button"
-              size="icon"
-              className="h-8 w-8 shrink-0"
+              size="sm"
+              className="h-8 shrink-0 gap-1.5"
               onClick={() => {
                 setCotaFormTarget({ mode: "create" });
                 setCotaFormOpen(true);
               }}
-              aria-label="Criar cota"
-              title="Criar cota"
             >
               <span className="inline-flex shrink-0 items-center gap-0.5">
                 <StickyNote className="h-3.5 w-3.5" aria-hidden />
                 <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               </span>
+              Criar cota
             </Button>
           )}
           {access.canManageColumns && (
@@ -1910,7 +1908,7 @@ function AddCardDialog({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 text-[var(--accent-green)] hover:text-[var(--accent-green)]"
+          className="w-full justify-start gap-2 text-muted-foreground"
         >
           <Plus className="h-4 w-4" /> Adicionar conteúdo
         </Button>
