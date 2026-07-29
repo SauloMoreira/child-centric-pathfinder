@@ -44,7 +44,6 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          kind: Database["public"]["Enums"]["content_kind"]
           nome: string
           nome_normalizado: string
           order_position: number
@@ -55,7 +54,6 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          kind: Database["public"]["Enums"]["content_kind"]
           nome: string
           nome_normalizado: string
           order_position?: number
@@ -66,7 +64,6 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          kind?: Database["public"]["Enums"]["content_kind"]
           nome?: string
           nome_normalizado?: string
           order_position?: number
@@ -74,12 +71,46 @@ export type Database = {
         }
         Relationships: []
       }
+      content_item_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          item_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          item_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_item_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_item_categories_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_items: {
         Row: {
           category_id: string | null
           created_at: string
           current_published_version_id: string | null
           current_version_id: string | null
+          deleted_at: string | null
           id: string
           kind: Database["public"]["Enums"]["content_kind"]
           optimistic_version: number
@@ -94,6 +125,7 @@ export type Database = {
           created_at?: string
           current_published_version_id?: string | null
           current_version_id?: string | null
+          deleted_at?: string | null
           id?: string
           kind: Database["public"]["Enums"]["content_kind"]
           optimistic_version?: number
@@ -108,6 +140,7 @@ export type Database = {
           created_at?: string
           current_published_version_id?: string | null
           current_version_id?: string | null
+          deleted_at?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["content_kind"]
           optimistic_version?: number
@@ -158,6 +191,7 @@ export type Database = {
           id: string
           is_published: boolean
           item_id: string
+          orientacao: string | null
           published_at: string | null
           title: string
           version_number: number
@@ -171,6 +205,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           item_id: string
+          orientacao?: string | null
           published_at?: string | null
           title: string
           version_number: number
@@ -184,6 +219,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           item_id?: string
+          orientacao?: string | null
           published_at?: string | null
           title?: string
           version_number?: number
@@ -633,6 +669,7 @@ export type Database = {
           p_idempotency_key?: string
           p_justificativa?: string
           p_matricula?: string
+          p_orgao_execucao_id: string
           p_target_user_id: string
         }
         Returns: Json
@@ -640,6 +677,10 @@ export type Database = {
       admin_create_orgao_execucao: {
         Args: { p_comarca: string; p_idempotency_key?: string; p_nome: string }
         Returns: Json
+      }
+      admin_criar_categoria_biblioteca: {
+        Args: { p_nome: string }
+        Returns: string
       }
       admin_detalhar_usuario: { Args: { p_user_id: string }; Returns: Json }
       admin_end_defensor_org_membership: {
@@ -649,6 +690,10 @@ export type Database = {
           p_motivo?: string
         }
         Returns: Json
+      }
+      admin_excluir_categoria_biblioteca: {
+        Args: { p_category_id: string }
+        Returns: undefined
       }
       admin_list_defensor_memberships: {
         Args: { p_user_id: string }
@@ -678,12 +723,19 @@ export type Database = {
           vinculado_em: string
         }[]
       }
+      admin_renomear_categoria_biblioteca: {
+        Args: { p_category_id: string; p_nome: string }
+        Returns: undefined
+      }
       admin_update_orgao_execucao: {
         Args: { p_comarca: string; p_id: string; p_nome: string }
         Returns: Json
       }
       aprovar_solicitacao_acesso: {
         Args: {
+          p_criar_novo?: boolean
+          p_novo_orgao?: Json
+          p_orgao_final_id: string
           p_request_id: string
           p_version: number
         }
@@ -713,6 +765,18 @@ export type Database = {
         }
         Returns: Json
       }
+      atualizar_atendimento: {
+        Args: {
+          p_category_ids?: string[]
+          p_descricao: string
+          p_expected_version: number
+          p_form_schema: Json
+          p_idempotency_key: string
+          p_item_id: string
+          p_titulo: string
+        }
+        Returns: Json
+      }
       atualizar_coluna_workspace: {
         Args: {
           p_column_id: string
@@ -724,6 +788,19 @@ export type Database = {
           p_nome: string
         }
         Returns: number
+      }
+      atualizar_cota: {
+        Args: {
+          p_body_json: Json
+          p_body_text: string
+          p_category_ids?: string[]
+          p_expected_version: number
+          p_idempotency_key: string
+          p_item_id: string
+          p_orientacao?: string
+          p_titulo: string
+        }
+        Returns: Json
       }
       atualizar_membro_equipe: {
         Args: {
@@ -776,6 +853,15 @@ export type Database = {
         Args: { p_aceite_termos: boolean }
         Returns: Json
       }
+      criar_atendimento: {
+        Args: {
+          p_category_ids?: string[]
+          p_descricao: string
+          p_form_schema: Json
+          p_titulo: string
+        }
+        Returns: Json
+      }
       criar_coluna_workspace: {
         Args: {
           p_cor_custom?: string
@@ -797,50 +883,6 @@ export type Database = {
         }
         Returns: string
       }
-      criar_cota: {
-        Args: {
-          p_body_json: Json
-          p_body_text: string
-          p_category_ids?: string[]
-          p_titulo: string
-        }
-        Returns: Json
-      }
-      atualizar_cota: {
-        Args: {
-          p_body_json: Json
-          p_body_text: string
-          p_category_ids?: string[]
-          p_expected_version: number
-          p_idempotency_key: string
-          p_item_id: string
-          p_titulo: string
-        }
-        Returns: Json
-      }
-      excluir_cota: {
-        Args: {
-          p_expected_version: number
-          p_idempotency_key: string
-          p_item_id: string
-        }
-        Returns: Json
-      }
-      obter_cota_detalhe: {
-        Args: { p_item_id: string }
-        Returns: Json
-      }
-      admin_criar_categoria_biblioteca: {
-        Args: {
-          p_kind: Database["public"]["Enums"]["content_kind"]
-          p_nome: string
-        }
-        Returns: string
-      }
-      admin_renomear_categoria_biblioteca: {
-        Args: { p_category_id: string; p_nome: string }
-        Returns: undefined
-      }
       criar_convite_equipe: {
         Args: {
           p_email: string
@@ -852,6 +894,16 @@ export type Database = {
           p_orgao_id: string
           p_outra_funcao: string
           p_telefone: string
+        }
+        Returns: Json
+      }
+      criar_cota: {
+        Args: {
+          p_body_json: Json
+          p_body_text: string
+          p_category_ids?: string[]
+          p_orientacao?: string
+          p_titulo: string
         }
         Returns: Json
       }
@@ -893,6 +945,14 @@ export type Database = {
         Args: { p_defensor_user_id: string; p_idempotency_key?: string }
         Returns: Json
       }
+      excluir_atendimento: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key: string
+          p_item_id: string
+        }
+        Returns: Json
+      }
       excluir_coluna_workspace: {
         Args: {
           p_column_id: string
@@ -901,6 +961,14 @@ export type Database = {
           p_idempotency_key: string
         }
         Returns: number
+      }
+      excluir_cota: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key: string
+          p_item_id: string
+        }
+        Returns: Json
       }
       listar_area_trabalho_defensor: {
         Args: { p_defensor_user_id: string }
@@ -918,6 +986,7 @@ export type Database = {
         Returns: {
           categoria_id: string
           categoria_nome: string
+          categorias: Json
           id: string
           kind: Database["public"]["Enums"]["content_kind"]
           owner_user_id: string
@@ -928,11 +997,10 @@ export type Database = {
         }[]
       }
       listar_categorias_biblioteca: {
-        Args: { p_kind?: Database["public"]["Enums"]["content_kind"] }
+        Args: never
         Returns: {
           cor: string
           id: string
-          kind: Database["public"]["Enums"]["content_kind"]
           nome: string
           order_position: number
         }[]
@@ -996,6 +1064,12 @@ export type Database = {
           id: string
           matricula: string
           nome_completo: string
+          orgao_id: string
+          orgao_nome: string
+          proposta_novo_orgao_cidade: string
+          proposta_novo_orgao_comarca: string
+          proposta_novo_orgao_nome: string
+          proposta_novo_orgao_sigla: string
           status: Database["public"]["Enums"]["access_request_status"]
           telefone: string
           user_id: string
@@ -1036,12 +1110,15 @@ export type Database = {
         }
         Returns: number
       }
+      obter_atendimento_detalhe: { Args: { p_item_id: string }; Returns: Json }
+      obter_cota_detalhe: { Args: { p_item_id: string }; Returns: Json }
       obter_item_biblioteca: {
         Args: { p_item_id: string }
         Returns: {
           body_json: Json
           categoria_id: string
           categoria_nome: string
+          categorias: Json
           current_published_version_id: string
           current_version_id: string
           form_schema: Json
@@ -1086,19 +1163,15 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: Json
       }
-      registrar_acesso_defensor_externo: {
-        Args: {
-          p_defensor_user_id: string
-          p_finalidade?: string | null
-          p_modulo: string
-        }
+      registrar_acesso_orgao_externo: {
+        Args: { p_finalidade?: string; p_modulo: string; p_orgao_id: string }
         Returns: Json
       }
       registrar_break_glass: {
         Args: {
           p_chamado: string
-          p_defensor_user_id: string | null
           p_justificativa: string
+          p_orgao_id: string
           p_prazo_minutos?: number
         }
         Returns: Json
@@ -1179,6 +1252,8 @@ export type Database = {
           p_cargo: string
           p_matricula: string
           p_nome_completo: string
+          p_novo_orgao: Json
+          p_orgao_id: string
           p_telefone: string
         }
         Returns: Json
