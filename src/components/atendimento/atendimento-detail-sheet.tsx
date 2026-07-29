@@ -59,7 +59,18 @@ function mensagemErroResumoIA(e: unknown): string {
   if (msg.includes("AI_CREDITS_EXHAUSTED"))
     return "O saldo de IA do projeto no Lovable acabou. Verifique em Configurações → Cloud & AI balance.";
   if (msg.includes("UNAUTHENTICATED")) return "Sua sessão expirou. Recarregue a página.";
-  return "Não foi possível gerar o resumo agora. Tente novamente em instantes.";
+  if (msg.includes("AI_GATEWAY_UNREACHABLE"))
+    return "Não foi possível contatar o serviço de IA (função indisponível ou não publicada). Detalhe técnico: " + msg;
+  if (msg.includes("AI_GATEWAY_ERROR"))
+    return "O serviço de IA retornou um erro. Detalhe técnico: " + msg;
+  if (msg.includes("EMPTY_AI_RESPONSE"))
+    return "O serviço de IA não retornou nenhum texto. Tente novamente.";
+  if (msg.includes("INVALID_PAYLOAD") || msg.includes("INVALID_JSON"))
+    return "Dados do formulário inválidos ao enviar para o resumo. Detalhe técnico: " + msg;
+  // Código não mapeado (ex.: função não encontrada/não implantada, erro de rede) —
+  // mostra o detalhe bruto em vez de esconder atrás de uma mensagem genérica,
+  // para que o erro real seja visível sem precisar de acesso aos logs do Lovable.
+  return "Não foi possível gerar o resumo agora. Detalhe técnico: " + (msg || "erro desconhecido");
 }
 
 /**
