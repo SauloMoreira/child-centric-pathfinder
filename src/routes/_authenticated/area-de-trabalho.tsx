@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -7,12 +7,10 @@ import {
   Trash2,
   FileText,
   StickyNote,
+  MessageSquare,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
-  ArrowUp,
-  ArrowDown,
-  Lock,
   GripVertical,
   Copy,
   User,
@@ -54,6 +52,7 @@ import {
   listarBiblioteca,
   listarWorkspaceCompleto,
   obterCotaDetalhe,
+  obterAtendimentoDetalhe,
   moverCardWorkspace,
   moverColunaWorkspace,
   removerCardWorkspace,
@@ -65,10 +64,10 @@ import {
   type WorkspaceColumn,
   type WorkspaceMeta,
   type CotaDetalhe,
+  type AtendimentoDetalhe,
 } from "@/lib/reintegra-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -108,6 +107,9 @@ import { RequestDefenderAccessSheet } from "@/features/team/components/request-d
 import { CotaFormSheet } from "@/components/cota/cota-form-sheet";
 import { CotaDetailSheet } from "@/components/cota/cota-detail-sheet";
 import { cotaKeys } from "@/features/cota/hooks";
+import { AtendimentoFormSheet } from "@/components/atendimento/atendimento-form-sheet";
+import { AtendimentoDetailSheet } from "@/components/atendimento/atendimento-detail-sheet";
+import { atendimentoKeys } from "@/features/atendimento/hooks";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
@@ -740,6 +742,33 @@ function ColumnsBoard({
     [qc, openEditCota],
   );
 
+  // Atendimento: criar/editar (side sheet) e detalhe expandido (side sheet)
+  const [atendimentoFormTarget, setAtendimentoFormTarget] = useState<
+    { mode: "create" } | { mode: "edit"; itemId: string; detalhe: AtendimentoDetalhe } | null
+  >(null);
+  const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
+  const [atendimentoDetailId, setAtendimentoDetailId] = useState<string | null>(null);
+
+  const openEditAtendimento = useCallback((detalhe: AtendimentoDetalhe) => {
+    setAtendimentoFormTarget({ mode: "edit", itemId: detalhe.id, detalhe });
+    setAtendimentoFormOpen(true);
+  }, []);
+
+  const handleEditAtendimento = useCallback(
+    async (card: WorkspaceCardDto) => {
+      try {
+        const detalhe = await qc.fetchQuery({
+          queryKey: atendimentoKeys.detalhe(card.itemId),
+          queryFn: () => obterAtendimentoDetalhe(card.itemId),
+        });
+        openEditAtendimento(detalhe);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao carregar o atendimento para edição");
+      }
+    },
+    [qc, openEditAtendimento],
+  );
+
   return (
     <>
       {liveNode}
@@ -763,7 +792,7 @@ function ColumnsBoard({
                   autoFocus
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar cota…"
+                  placeholder="Buscar cota ou atendimento…"
                   className="h-8 pl-8 pr-8 text-xs"
                 />
                 <button
@@ -807,6 +836,24 @@ function ColumnsBoard({
                 <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               </span>
               Criar cota
+            </Button>
+          )}
+          {access.accessMode === "owner" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                setAtendimentoFormTarget({ mode: "create" });
+                setAtendimentoFormOpen(true);
+              }}
+            >
+              <span className="inline-flex shrink-0 items-center gap-0.5">
+                <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+                <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
+              </span>
+              Criar atendimento
             </Button>
           )}
           {access.canManageColumns && (
@@ -877,6 +924,8 @@ function ColumnsBoard({
                   onCopyToPanel={(card) => setCopyTarget(card)}
                   onOpenCota={(card) => setCotaDetailId(card.itemId)}
                   onEditCota={handleEditCota}
+                  onOpenAtendimento={(card) => setAtendimentoDetailId(card.itemId)}
+                  onEditAtendimento={handleEditAtendimento}
                   onAdded={onRefetch}
                   isSearching={isSearching}
                 />
@@ -940,6 +989,30 @@ function ColumnsBoard({
         }}
         onDeleted={() => {
           setCotaDetailId(null);
+          onRefetch();
+        }}
+      />
+
+      <AtendimentoFormSheet
+        open={atendimentoFormOpen}
+        onOpenChange={setAtendimentoFormOpen}
+        target={atendimentoFormTarget}
+        onSaved={onRefetch}
+      />
+      <AtendimentoDetailSheet
+        itemId={atendimentoDetailId}
+        onOpenChange={(v) => !v && setAtendimentoDetailId(null)}
+        onEdit={() => {
+          const detalhe = qc.getQueryData<AtendimentoDetalhe>(
+            atendimentoKeys.detalhe(atendimentoDetailId ?? ""),
+          );
+          if (detalhe) {
+            setAtendimentoDetailId(null);
+            openEditAtendimento(detalhe);
+          }
+        }}
+        onDeleted={() => {
+          setAtendimentoDetailId(null);
           onRefetch();
         }}
       />
@@ -1075,6 +1148,8 @@ function SortableColumn(props: {
   onCopyToPanel: (card: WorkspaceCardDto) => void;
   onOpenCota: (card: WorkspaceCardDto) => void;
   onEditCota: (card: WorkspaceCardDto) => void;
+  onOpenAtendimento: (card: WorkspaceCardDto) => void;
+  onEditAtendimento: (card: WorkspaceCardDto) => void;
   onAdded: () => void;
   isSearching?: boolean;
 }) {
@@ -1094,6 +1169,8 @@ function SortableColumn(props: {
     onCopyToPanel,
     onOpenCota,
     onEditCota,
+    onOpenAtendimento,
+    onEditAtendimento,
     onAdded,
     isSearching,
   } = props;
@@ -1236,6 +1313,8 @@ function SortableColumn(props: {
               onCopyToPanel={() => onCopyToPanel(card)}
               onOpenCota={() => onOpenCota(card)}
               onEditCota={() => onEditCota(card)}
+              onOpenAtendimento={() => onOpenAtendimento(card)}
+              onEditAtendimento={() => onEditAtendimento(card)}
             />
           ))}
         </SortableContext>
@@ -1561,6 +1640,8 @@ function SortableCard(props: {
   onCopyToPanel: () => void;
   onOpenCota: () => void;
   onEditCota: () => void;
+  onOpenAtendimento: () => void;
+  onEditAtendimento: () => void;
 }) {
   const {
     card,
@@ -1575,6 +1656,8 @@ function SortableCard(props: {
     onCopyToPanel,
     onOpenCota,
     onEditCota,
+    onOpenAtendimento,
+    onEditAtendimento,
   } = props;
 
   const sortable = useSortable({
@@ -1689,123 +1772,60 @@ function SortableCard(props: {
     );
   }
 
-  const badgeClass = "bg-blue-100 text-blue-900 border-blue-200";
-  const statusLabel: Record<string, string> = {
-    rascunho: "Rascunho",
-    publicado: "Publicado",
-    arquivado: "Arquivado pelo autor",
-  };
-  const primaryAction = card.canOpen
-    ? card.canEdit && card.status === "rascunho"
-      ? "Editar atendimento"
-      : "Utilizar atendimento"
-    : "Disponível após publicação";
-
   return (
     <article
       ref={sortable.setNodeRef}
       style={style}
+      {...(access.canMoveCards ? { ...sortable.attributes, ...sortable.listeners } : {})}
+      onClick={() => onOpenAtendimento()}
       className={cn(
-        "group relative rounded-md border border-border bg-card p-3 shadow-sm transition hover:border-institutional",
+        "group relative flex items-start gap-2 rounded-md border border-border bg-card p-3 shadow-sm transition hover:border-institutional",
+        access.canMoveCards && "cursor-grab active:cursor-grabbing",
         !card.canOpen && "opacity-70",
       )}
     >
-      <div className="flex items-start gap-2">
+      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+      <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
+      <div className="flex shrink-0 items-center gap-0.5">
         {access.canMoveCards && (
-          <button
-            type="button"
-            className="mt-0.5 cursor-grab touch-none text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
-            aria-label="Arrastar card"
-            {...sortable.attributes}
-            {...sortable.listeners}
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="rounded p-1 text-muted-foreground hover:text-foreground"
+                aria-label="Ações do atendimento"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {card.canEdit && (
+                <>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditAtendimento();
+                    }}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" /> Editar atendimento
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+              >
+                <X className="mr-2 h-4 w-4" /> Excluir da coluna
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-        <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1">
-            <Badge variant="outline" className={cn("text-[10px]", badgeClass)}>
-              Atendimento
-            </Badge>
-            <Badge variant="outline" className="text-[10px]">
-              {statusLabel[card.status] ?? card.status}
-            </Badge>
-            {card.placement === "imported" && (
-              <Badge variant="outline" className="text-[10px]">
-                Importado
-              </Badge>
-            )}
-            {card.placement === "owned" && (
-              <Badge variant="outline" className="text-[10px]">
-                Meu
-              </Badge>
-            )}
-          </div>
-          <p className="mt-1.5 text-xs font-medium leading-tight">{card.title}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {card.categoryNames.join(" · ") || "—"} · {card.ownerDisplayName}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-1">
-        {card.canOpen ? (
-          <Link
-            to="/biblioteca/$itemId"
-            params={{ itemId: card.itemId }}
-            className="text-[11px] font-medium text-institutional hover:underline"
-          >
-            {primaryAction}
-          </Link>
-        ) : (
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Lock className="h-3 w-3" /> {primaryAction}
-          </span>
-        )}
-
-        <div className="flex items-center gap-0.5">
-          {access.canMoveCards && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="p-1 text-muted-foreground hover:text-foreground"
-                  aria-label="Ações do card"
-                >
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled={index === 0} onClick={onMoveUp}>
-                  <ArrowUp className="mr-2 h-4 w-4" /> Mover para cima
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled={index === columnCount - 1} onClick={onMoveDown}>
-                  <ArrowDown className="mr-2 h-4 w-4" /> Mover para baixo
-                </DropdownMenuItem>
-                {otherColumns.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                      Mover para outra coluna
-                    </DropdownMenuLabel>
-                    {otherColumns.map((c) => (
-                      <DropdownMenuItem key={c.id} onClick={() => onMoveToColumn(c.id)}>
-                        {c.nome}
-                      </DropdownMenuItem>
-                    ))}
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onCopyToPanel}>
-                  <Copy className="mr-2 h-4 w-4" /> Adicionar a outro Painel
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={onRemove}>
-                  <X className="mr-2 h-4 w-4" /> Remover deste Painel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
       </div>
     </article>
   );

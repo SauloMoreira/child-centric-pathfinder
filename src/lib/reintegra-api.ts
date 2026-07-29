@@ -159,6 +159,108 @@ export async function adminExcluirCategoriaBiblioteca(params: { categoryId: stri
   if (error) throw error;
 }
 
+// -------- ATENDIMENTO --------
+// Modelo de formulário reutilizável criado por um Defensor Público para
+// orientar a equipe sobre o que perguntar durante o atendimento presencial.
+// Mesmo modelo de publicação imediata da Cota (visibility "equipe", sem
+// rascunho separado); cada edição gera uma nova versão imutável. Apenas o
+// Defensor autor edita ou exclui. Dados preenchidos durante a execução do
+// atendimento NUNCA são enviados/persistidos — apenas o "molde" (form_schema)
+// vive no banco.
+export type AtendimentoFieldType =
+  | "text_short"
+  | "text_long"
+  | "radio"
+  | "checkbox"
+  | "dropdown"
+  | "email"
+  | "phone"
+  | "cpf_cnpj"
+  | "date"
+  | "time"
+  | "number";
+
+export type AtendimentoFormField = {
+  id: string;
+  type: AtendimentoFieldType;
+  label: string;
+  required: boolean;
+  placeholder?: string | null;
+  /** Apenas para radio/checkbox/dropdown. */
+  options?: string[] | null;
+};
+
+export type AtendimentoDetalhe = {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  formSchema: AtendimentoFormField[];
+  categorias: CotaCategoria[];
+  ownerUserId: string;
+  ownerDisplayName: string;
+  updatedAt: string;
+  optimisticVersion: number;
+  canEdit: boolean;
+};
+
+export async function criarAtendimento(params: {
+  titulo: string;
+  descricao?: string;
+  formSchema: AtendimentoFormField[];
+  categoryIds?: string[];
+}): Promise<{ item_id: string; version_id: string }> {
+  const { data, error } = await supabase.rpc("criar_atendimento", {
+    p_titulo: params.titulo,
+    p_descricao: params.descricao ?? null,
+    p_form_schema: params.formSchema as never,
+    p_category_ids: (params.categoryIds ?? null) as never,
+  } as never);
+  if (error) throw error;
+  return data as { item_id: string; version_id: string };
+}
+
+export async function atualizarAtendimento(params: {
+  itemId: string;
+  expectedVersion: number;
+  titulo: string;
+  descricao?: string;
+  formSchema: AtendimentoFormField[];
+  categoryIds?: string[];
+}): Promise<{ optimisticVersion: number; versionId: string; versionNumber: number }> {
+  const { data, error } = await supabase.rpc("atualizar_atendimento", {
+    p_item_id: params.itemId,
+    p_expected_version: params.expectedVersion,
+    p_idempotency_key: uuid(),
+    p_titulo: params.titulo,
+    p_descricao: params.descricao ?? null,
+    p_form_schema: params.formSchema as never,
+    p_category_ids: (params.categoryIds ?? null) as never,
+  } as never);
+  if (error) throw error;
+  return data as { optimisticVersion: number; versionId: string; versionNumber: number };
+}
+
+export async function excluirAtendimento(params: {
+  itemId: string;
+  expectedVersion: number;
+}): Promise<{ deleted: boolean }> {
+  const { data, error } = await supabase.rpc("excluir_atendimento", {
+    p_item_id: params.itemId,
+    p_expected_version: params.expectedVersion,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return data as { deleted: boolean };
+}
+
+export async function obterAtendimentoDetalhe(itemId: string): Promise<AtendimentoDetalhe> {
+  const { data, error } = await supabase.rpc("obter_atendimento_detalhe", {
+    p_item_id: itemId,
+  } as never);
+  if (error) throw error;
+  return data as AtendimentoDetalhe;
+}
+
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
   kind?: ContentKind;
