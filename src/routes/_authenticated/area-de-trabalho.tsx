@@ -1280,7 +1280,13 @@ function SortableColumn(props: {
         ref={sortable.setNodeRef}
         style={style}
         data-col-color={colorToken}
-        className="kanban-column relative flex h-full min-h-0 w-7 shrink-0 flex-col items-center overflow-hidden"
+        // Ajuste doc — a classe utilitária "kanban-column" define width/
+        // min-width/max-width fixos (320/280/360px) para a coluna expandida;
+        // como min-width sempre vence sobre width quando este é menor, ela
+        // impedia a coluna compactada de encolher de verdade (ficava presa
+        // em 280px). Aqui reaplicamos só o visual (borda/fundo/raio) sem essa
+        // classe, para que a largura mínima seja mesmo a do título rotacionado.
+        className="relative flex h-full min-h-0 w-7 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface"
       >
         <span
           aria-hidden

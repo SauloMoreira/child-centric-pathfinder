@@ -235,32 +235,44 @@ function AppShellInner({ children }: { children: ReactNode }) {
 }
 
 function DesktopSidebar({ children }: { children: ReactNode }) {
-  const { collapsed } = useSidebarState();
+  const { collapsed, toggleCollapsed } = useSidebarState();
   return (
     <aside
       aria-label="Navegação principal"
       data-collapsed={collapsed ? "true" : "false"}
       className={cn(
-        "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex",
+        "relative hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex",
         "transition-[width] duration-[160ms] ease-out motion-reduce:transition-none",
         collapsed ? "w-[68px]" : "w-[232px]",
       )}
     >
       {children}
+      {/* Ajuste doc — botão de recolher/expandir sobreposto à borda do menu
+          lateral, sem tooltip/texto ao passar o mouse. */}
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+        aria-expanded={!collapsed}
+        aria-controls="sidebar-nav"
+        className="absolute right-0 top-14 z-10 inline-flex h-6 w-6 translate-x-1/2 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-muted shadow-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        {collapsed ? (
+          <PanelLeftOpen className="h-3 w-3" aria-hidden />
+        ) : (
+          <PanelLeftClose className="h-3 w-3" aria-hidden />
+        )}
+      </button>
     </aside>
   );
 }
 
-function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobile?: boolean }) {
-  const { toggleCollapsed } = useSidebarState();
-  const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-  const shortcut = isMac ? "⌘B" : "Ctrl+B";
-  const tooltip = collapsed ? "Expandir menu lateral" : "Recolher menu lateral";
+function SidebarHeader({ collapsed }: { collapsed: boolean; mobile?: boolean }) {
   return (
     <div
       className={cn(
         "flex h-16 items-center border-b border-sidebar-border",
-        collapsed ? "justify-center px-2" : "justify-between gap-2 px-4",
+        collapsed ? "justify-center px-2" : "gap-2 px-4",
       )}
     >
       <Link
@@ -268,10 +280,11 @@ function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobi
         className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}
         aria-label="Ágora"
       >
-        <span
+        <img
+          src="/dpe-rs-logo-branco.png"
+          alt=""
           aria-hidden
-          className="h-7 w-7 shrink-0 rounded-md bg-sidebar-accent"
-          style={{ boxShadow: "inset 0 0 0 2px var(--color-institutional)" }}
+          className="h-7 w-7 shrink-0 object-contain"
         />
         {!collapsed && (
           <span className="min-w-0 leading-tight">
@@ -282,32 +295,6 @@ function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobi
           </span>
         )}
       </Link>
-      {!mobile && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label={tooltip}
-              aria-expanded={!collapsed}
-              aria-controls="sidebar-nav"
-              className={cn(
-                "inline-flex h-7 w-7 items-center justify-center rounded-full border border-sidebar-border/60 bg-sidebar-accent/30 text-sidebar-muted transition-colors hover:border-sidebar-accent hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                collapsed && "mt-2",
-              )}
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden />
-              ) : (
-                <PanelLeftClose className="h-3.5 w-3.5" aria-hidden />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {tooltip} — {shortcut}
-          </TooltipContent>
-        </Tooltip>
-      )}
     </div>
   );
 }
