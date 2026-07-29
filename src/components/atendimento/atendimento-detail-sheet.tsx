@@ -67,11 +67,11 @@ function mensagemErroResumoIA(e: unknown): string {
   if (msg.includes("EMPTY_AI_RESPONSE"))
     return "O serviço de IA não retornou nenhum texto. Tente novamente.";
   if (msg.includes("INVALID_PAYLOAD") || msg.includes("INVALID_JSON"))
-    return "Dados do formulário inválidos ao enviar para o resumo. Detalhe técnico: " + msg;
+    return "Dados do formulário inválidos ao enviar para o relato. Detalhe técnico: " + msg;
   // Código não mapeado (ex.: função não encontrada/não implantada, erro de rede) —
   // mostra o detalhe bruto em vez de esconder atrás de uma mensagem genérica,
   // para que o erro real seja visível sem precisar de acesso aos logs do Lovable.
-  return "Não foi possível gerar o resumo agora. Detalhe técnico: " + (msg || "erro desconhecido");
+  return "Não foi possível gerar o relato agora. Detalhe técnico: " + (msg || "erro desconhecido");
 }
 
 /**
@@ -168,7 +168,7 @@ export function AtendimentoDetailSheet({
       });
       setResumo(texto);
       setResumoDesatualizado(false);
-      toast.success("Resumo gerado");
+      toast.success("Relato do atendimento gerado");
     } catch (e) {
       toast.error(mensagemErroResumoIA(e));
     } finally {
@@ -178,12 +178,7 @@ export function AtendimentoDetailSheet({
 
   const handleCopiarTextoExpandido = async () => {
     if (!detalhe.data) return;
-    const texto = montarTextoExpandido(
-      detalhe.data.titulo,
-      detalhe.data.descricao,
-      detalhe.data.formSchema,
-      values,
-    );
+    const texto = montarTextoExpandido(detalhe.data.formSchema, values);
     try {
       await navigator.clipboard.writeText(texto);
       toast.success("Texto copiado — gerado localmente, nenhuma resposta trafegou pela rede");
@@ -196,9 +191,9 @@ export function AtendimentoDetailSheet({
     if (!resumo) return;
     try {
       await navigator.clipboard.writeText(resumo);
-      toast.success("Resumo copiado");
+      toast.success("Relato copiado");
     } catch {
-      toast.error("Não foi possível copiar o resumo");
+      toast.error("Não foi possível copiar o relato");
     }
   };
 
@@ -300,12 +295,12 @@ export function AtendimentoDetailSheet({
                     <div className="mt-4 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-institutional">
-                          Resumo {resumoDesatualizado && "(desatualizado)"}
+                          Relato do atendimento {resumoDesatualizado && "(desatualizado)"}
                         </p>
                         <button
                           type="button"
                           className="rounded p-1 text-muted-foreground hover:text-foreground"
-                          aria-label="Copiar resumo"
+                          aria-label="Copiar relato do atendimento"
                           onClick={handleCopiarResumo}
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -342,7 +337,7 @@ export function AtendimentoDetailSheet({
                         onClick={handleCopiarTextoExpandido}
                         title="Gerado localmente — nenhuma resposta é enviada pela rede"
                       >
-                        <Copy className="h-3.5 w-3.5" /> Copiar texto (sem IA)
+                        <Copy className="h-3.5 w-3.5" /> Copiar
                       </Button>
                     )}
                     {temCampos && resumo && (
@@ -352,7 +347,7 @@ export function AtendimentoDetailSheet({
                         className="gap-1.5"
                         onClick={handleImprimirPreenchido}
                       >
-                        <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
+                        <Printer className="h-3.5 w-3.5" /> Imprimir
                       </Button>
                     )}
                     {detalhe.data.canEdit && (
@@ -381,10 +376,9 @@ export function AtendimentoDetailSheet({
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Fechar sem salvar?</AlertDialogTitle>
+            <AlertDialogTitle>Tem certeza que deseja fechar?</AlertDialogTitle>
             <AlertDialogDescription>
-              As respostas preenchidas neste atendimento não são salvas em nenhum lugar. Ao fechar
-              agora, elas serão perdidas.
+              Ao fechar, as respostas preenchidas neste atendimento serão perdidas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

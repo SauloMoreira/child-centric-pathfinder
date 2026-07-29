@@ -450,24 +450,20 @@ export function montarRespostasParaResumo(
 }
 
 /** Fase 6 — saída local determinística (sem IA, sem chamada de rede):
- *  texto corrido combinando pergunta e resposta, respeitando seções e
- *  visibilidade condicional atual. Alternativa ao resumo por IA para
- *  quando não se quer que as respostas trafeguem para fora do navegador. */
+ *  texto corrido combinando pergunta e resposta, respeitando visibilidade
+ *  condicional atual. Ajuste doc — limitado a perguntas e respostas: não
+ *  inclui título, descrição, cabeçalhos de seção nem orientações (são
+ *  metadados/instruções, não fazem parte do relato do atendimento em si).
+ *  Alternativa ao resumo por IA para quando não se quer que as respostas
+ *  trafeguem para fora do navegador. */
 export function montarTextoExpandido(
-  titulo: string,
-  descricao: string | null | undefined,
   campos: AtendimentoFormField[],
   values: AtendimentoFormValues,
 ): string {
-  const linhas: string[] = [titulo];
-  if (descricao) linhas.push(descricao);
+  const linhas: string[] = [];
   for (const campo of campos) {
     if (!campoVisivel(campo, values)) continue;
-    if (campo.type === "section") {
-      if (campo.label) linhas.push("", campo.label.toUpperCase());
-      continue;
-    }
-    if (campo.type === "orientation") continue;
+    if (campo.type === "section" || campo.type === "orientation") continue;
     const valor = textoDaResposta(campo, values[campo.id], campos, values);
     if (!valor.trim()) continue;
     linhas.push(`${campo.label || "(sem rótulo)"}: ${valor}`);
