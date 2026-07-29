@@ -19,6 +19,7 @@ import {
   campoVisivel,
   hasRespostaPreenchida,
   montarRespostasParaResumo,
+  montarTextoExpandido,
   obrigatoriosFaltando,
   valorInicial,
   type AtendimentoFormValues,
@@ -173,6 +174,22 @@ export function AtendimentoDetailSheet({
     }
   };
 
+  const handleCopiarTextoExpandido = async () => {
+    if (!detalhe.data) return;
+    const texto = montarTextoExpandido(
+      detalhe.data.titulo,
+      detalhe.data.descricao,
+      detalhe.data.formSchema,
+      values,
+    );
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success("Texto copiado — gerado localmente, nenhuma resposta trafegou pela rede");
+    } catch {
+      toast.error("Não foi possível copiar o texto");
+    }
+  };
+
   const handleCopiarResumo = async () => {
     if (!resumo) return;
     try {
@@ -309,6 +326,17 @@ export function AtendimentoDetailSheet({
 
               {temCampos && (
                 <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2">
+                  {hasRespostaPreenchida(values) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={handleCopiarTextoExpandido}
+                      title="Gerado localmente — nenhuma resposta é enviada pela rede"
+                    >
+                      <Copy className="h-3.5 w-3.5" /> Copiar texto (sem IA)
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant={resumo && !resumoDesatualizado ? "outline" : "default"}

@@ -50,10 +50,19 @@ import {
   FIELD_TYPE_ORDER,
   fieldHasOptions,
   isChoiceField,
+  normalizarCondicao,
   novaSecao,
   novoCampo,
+  removerReferenciaDaCondicao,
+  validarCondicaoParaSubmissao,
 } from "@/components/atendimento/form-field-types";
-import type { AtendimentoDetalhe, AtendimentoFieldType, AtendimentoFormField } from "@/lib/reintegra-api";
+import type {
+  AtendimentoConditionRule,
+  AtendimentoDetalhe,
+  AtendimentoFieldCondition,
+  AtendimentoFieldType,
+  AtendimentoFormField,
+} from "@/lib/reintegra-api";
 
 type AtendimentoFormMode =
   | { mode: "create" }
@@ -125,9 +134,14 @@ export function AtendimentoFormSheet({
     setCampos((prev) =>
       prev
         .filter((f) => f.id !== id)
-        // Remove condições que apontavam para o campo excluído — evita
-        // referência pendente ("mostrar apenas se" de um campo que não existe mais).
-        .map((f) => (f.visibleIf?.fieldId === id ? { ...f, visibleIf: null } : f)),
+        // Remove regras de condição que apontavam para o campo excluído —
+        // evita referência pendente ("mostrar/obrigatório apenas se" de um
+        // campo que não existe mais).
+        .map((f) => ({
+          ...f,
+          visibleIf: removerReferenciaDaCondicao(f.visibleIf, id),
+          requiredIf: removerReferenciaDaCondicao(f.requiredIf, id),
+        })),
     );
   const moveCampo = (index: number, dir: -1 | 1) => {
     setCampos((prev) => {
@@ -149,12 +163,17 @@ export function AtendimentoFormSheet({
             ...f,
             type,
             options: fieldHasOptions(type) ? (f.options?.length ? f.options : ["Opção 1"]) : null,
+            allowOther: fieldHasOptions(type) ? f.allowOther : false,
           };
         }
         // Se o campo deixou de ser de escolha, condições que dependiam
         // dele deixam de fazer sentido.
-        if (!isChoiceField(type) && f.visibleIf?.fieldId === id) {
-          return { ...f, visibleIf: null };
+        if (!isChoiceField(type)) {
+          return {
+            ...f,
+            visibleIf: removerReferenciaDaCondicao(f.visibleIf, id),
+            requiredIf: removerReferenciaDaCondicao(f.requiredIf, id),
+          };
         }
         return f;
       }),
@@ -180,21 +199,17 @@ export function AtendimentoFormSheet({
     }
 
     const schema = campos.map((f, i) => {
-      // Descarta condições que ficaram órfãs (campo referenciado removido,
-      // deixou de ser de escolha, ou a opção referenciada foi apagada) —
-      // melhor cair para "sempre visível" do que salvar uma condição que
-      // nunca vai bater com nada.
-      let visibleIf = f.visibleIf ?? null;
-      if (visibleIf) {
-        const ref = campos.slice(0, i).find((c) => c.id === visibleIf!.fieldId);
-        const refValido = ref && isChoiceField(ref.type) && (ref.options ?? []).includes(visibleIf.value);
-        if (!refValido) visibleIf = null;
-      }
+      // Descarta regras de condição que ficaram órfãs (campo referenciado
+      // removido, deixou de ser de escolha, ou a opção referenciada foi
+      // apagada) — melhor cair para "sem condição" do que salvar uma regra
+      // que nunca vai bater com nada.
+      const anteriores = campos.slice(0, i);
       return {
         ...f,
         label: f.label.trim(),
         options: fieldHasOptions(f.type) ? (f.options ?? []).map((o) => o.trim()).filter(Boolean) : null,
-        visibleIf,
+        visibleIf: validarCondicaoParaSubmissao(f.visibleIf, anteriores),
+        requiredIf: f.type === "section" ? null : validarCondicaoParaSubmissao(f.requiredIf, anteriores),
       };
     });
 
@@ -468,7 +483,12 @@ function FieldEditor({
                 className="text-sm font-medium"
               />
             </div>
-            <ConditionEditor campo={campo} campos={campos} index={index} onChange={onChange} />
+            <ConditionEditor
+              titulo="Mostrar apenas se…"
+              condicao={campo.visibleIf}
+              elegiveis={camposElegiveisParaCondicao(campos, index)}
+              onChange={(visibleIf) => onChange({ visibleIf })}
+            />
           </div>
           {removeButton}
         </div>
@@ -540,10 +560,31 @@ function FieldEditor({
               <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-[11px]" onClick={addOption}>
                 <Plus className="h-3 w-3" aria-hidden /> Adicionar opção
               </Button>
+              <div className="flex items-center gap-2 pt-1">
+                <Switch
+                  id={`outro-${campo.id}`}
+                  checked={!!campo.allowOther}
+                  onCheckedChange={(v) => onChange({ allowOther: v })}
+                />
+                <Label htmlFor={`outro-${campo.id}`} className="text-[11px] font-normal">
+                  Permitir opção "Outro" (texto livre)
+                </Label>
+              </div>
             </div>
           )}
 
-          <ConditionEditor campo={campo} campos={campos} index={index} onChange={onChange} />
+          <ConditionEditor
+            titulo="Mostrar apenas se…"
+            condicao={campo.visibleIf}
+            elegiveis={camposElegiveisParaCondicao(campos, index)}
+            onChange={(visibleIf) => onChange({ visibleIf })}
+          />
+          <ConditionEditor
+            titulo="Obrigatório apenas se…"
+            condicao={campo.requiredIf}
+            elegiveis={camposElegiveisParaCondicao(campos, index)}
+            onChange={(requiredIf) => onChange({ requiredIf })}
+          />
         </div>
 
         {removeButton}
@@ -553,90 +594,134 @@ function FieldEditor({
 }
 
 /**
- * Editor da condição de visibilidade (Fase 2): "mostrar apenas se" um
- * campo de escolha anterior tiver uma resposta específica. Só oferece
- * campos de escolha (radio/checkbox/dropdown) que aparecem ANTES deste
- * na lista, evitando referências circulares ou "para frente".
+ * Editor de condição (Fase 2: visibilidade; Fase 4: robustecido com
+ * múltiplas regras E/OU, reutilizado tanto para "mostrar apenas se…"
+ * quanto para "obrigatório apenas se…"). Só oferece campos de escolha
+ * (radio/checkbox/dropdown) que aparecem ANTES deste na lista, o que
+ * evita referências circulares ou "para frente" por construção.
  */
 function ConditionEditor({
-  campo,
-  campos,
-  index,
+  titulo,
+  condicao,
+  elegiveis,
   onChange,
 }: {
-  campo: AtendimentoFormField;
-  campos: AtendimentoFormField[];
-  index: number;
-  onChange: (patch: Partial<AtendimentoFormField>) => void;
+  titulo: string;
+  condicao: AtendimentoFieldCondition | null | undefined;
+  elegiveis: AtendimentoFormField[];
+  onChange: (condicao: AtendimentoFieldCondition | null) => void;
 }) {
-  const elegiveis = camposElegiveisParaCondicao(campos, index);
-  const hasCondition = !!campo.visibleIf;
-  const referenciado = elegiveis.find((c) => c.id === campo.visibleIf?.fieldId);
+  const norm = normalizarCondicao(condicao);
+  const hasCondition = !!norm;
+  const rules = norm?.rules ?? [];
+  const operator = norm?.operator ?? "AND";
+  const controleId = `condicao-${titulo}-${elegiveis[0]?.id ?? "x"}`;
 
   if (elegiveis.length === 0 && !hasCondition) {
-    return (
-      <p className="text-[10px] text-muted-foreground">
-        Adicione um campo de escolha (opções) antes deste para poder condicionar a exibição.
-      </p>
-    );
+    return null;
   }
+
+  const referenciado = (fieldId: string) => elegiveis.find((c) => c.id === fieldId);
+
+  const setRule = (i: number, patch: Partial<AtendimentoConditionRule>) => {
+    onChange({ operator, rules: rules.map((r, ri) => (ri === i ? { ...r, ...patch } : r)) });
+  };
+  const addRule = () => {
+    const first = elegiveis[0];
+    onChange({ operator, rules: [...rules, { fieldId: first.id, value: (first.options ?? [])[0] ?? "" }] });
+  };
+  const removeRule = (i: number) => {
+    const next = rules.filter((_, ri) => ri !== i);
+    onChange(next.length > 0 ? { operator, rules: next } : null);
+  };
 
   return (
     <div className="space-y-1.5 rounded-md bg-muted/20 p-2">
       <div className="flex items-center gap-2">
         <Switch
-          id={`condicao-${campo.id}`}
+          id={controleId}
           checked={hasCondition}
           disabled={elegiveis.length === 0}
           onCheckedChange={(v) => {
             if (v && elegiveis.length > 0) {
               const first = elegiveis[0];
-              onChange({ visibleIf: { fieldId: first.id, value: (first.options ?? [])[0] ?? "" } });
+              onChange({ operator: "AND", rules: [{ fieldId: first.id, value: (first.options ?? [])[0] ?? "" }] });
             } else {
-              onChange({ visibleIf: null });
+              onChange(null);
             }
           }}
         />
-        <Label htmlFor={`condicao-${campo.id}`} className="text-xs font-normal">
-          Mostrar apenas se…
+        <Label htmlFor={controleId} className="text-xs font-normal">
+          {titulo}
         </Label>
       </div>
-      {hasCondition && campo.visibleIf && (
-        <div className="flex flex-wrap items-center gap-2 pl-1">
-          <Select
-            value={campo.visibleIf.fieldId}
-            onValueChange={(fieldId) => {
-              const ref = elegiveis.find((c) => c.id === fieldId);
-              onChange({ visibleIf: { fieldId, value: (ref?.options ?? [])[0] ?? "" } });
-            }}
-          >
-            <SelectTrigger className="h-7 w-[180px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {elegiveis.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.label || "(sem rótulo)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-xs text-muted-foreground">for</span>
-          <Select
-            value={campo.visibleIf.value}
-            onValueChange={(value) => onChange({ visibleIf: { fieldId: campo.visibleIf!.fieldId, value } })}
-          >
-            <SelectTrigger className="h-7 w-[160px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(referenciado?.options ?? []).map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {hasCondition && (
+        <div className="space-y-1.5 pl-1">
+          {rules.length > 1 && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span>Combinar regras com</span>
+              <Select value={operator} onValueChange={(v) => onChange({ operator: v as "AND" | "OR", rules })}>
+                <SelectTrigger className="h-6 w-[68px] text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AND">E</SelectItem>
+                  <SelectItem value="OR">OU</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {rules.map((rule, i) => {
+            const ref = referenciado(rule.fieldId);
+            return (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <Select
+                  value={rule.fieldId}
+                  onValueChange={(fieldId) => {
+                    const r = referenciado(fieldId);
+                    setRule(i, { fieldId, value: (r?.options ?? [])[0] ?? "" });
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-[160px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {elegiveis.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.label || "(sem rótulo)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">for</span>
+                <Select value={rule.value} onValueChange={(value) => setRule(i, { value })}>
+                  <SelectTrigger className="h-7 w-[140px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(ref?.options ?? []).map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {rules.length > 1 && (
+                  <button
+                    type="button"
+                    className="rounded p-1 text-muted-foreground hover:text-destructive"
+                    aria-label="Remover regra"
+                    onClick={() => removeRule(i)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-[11px]" onClick={addRule}>
+            <Plus className="h-3 w-3" aria-hidden /> Adicionar condição
+          </Button>
         </div>
       )}
     </div>

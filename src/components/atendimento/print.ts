@@ -8,7 +8,12 @@
 // funciona de forma consistente com o botão "Salvar como PDF" do próprio
 // diálogo de impressão do navegador.
 import type { AtendimentoFormField } from "@/lib/reintegra-api";
-import { campoVisivel, type AtendimentoFormValues } from "@/components/atendimento/form-field-types";
+import {
+  campoVisivel,
+  formatarMoedaExibicao,
+  valorParaExibicao,
+  type AtendimentoFormValues,
+} from "@/components/atendimento/form-field-types";
 
 export function escapeHtml(s: string): string {
   return s
@@ -133,7 +138,8 @@ function formatarResposta(campo: AtendimentoFormField, valor: string | string[] 
   if (valor === undefined || (Array.isArray(valor) ? valor.length === 0 : !valor.trim())) {
     return `<p class="resposta vazia">Não respondido</p>`;
   }
-  const texto = Array.isArray(valor) ? valor.join(", ") : valor;
+  const exibir = (v: string) => (campo.type === "currency" ? formatarMoedaExibicao(v) : valorParaExibicao(v));
+  const texto = Array.isArray(valor) ? valor.map(exibir).join(", ") : exibir(valor);
   return `<p class="resposta">${escapeHtml(texto)}</p>`;
 }
 

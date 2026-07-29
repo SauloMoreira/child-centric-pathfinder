@@ -179,22 +179,32 @@ export type AtendimentoFieldType =
   | "date"
   | "time"
   | "number"
+  /** Fase 7: valor monetário (R$) — texto livre com formatação de exibição. */
+  | "currency"
   /** Marcador estrutural (título de seção) — não coleta resposta. Fase 2:
    *  lógica condicional. Pode ter sua própria visibleIf para "pular" a
-   *  seção inteira conforme uma escolha anterior. */
+   *  seção inteira conforme uma escolha anterior. Fase 5: cada seção
+   *  também delimita uma etapa quando o formulário usa navegação por
+   *  etapas. */
   | "section";
 
-/**
- * Condição de visibilidade (Fase 2 — lógica condicional/branching): o
- * campo/seção só aparece se o campo referenciado (sempre um campo de
- * escolha — radio/checkbox/dropdown — anterior na lista) tiver `value`
- * entre suas respostas atuais. Sem condição (null/undefined) = sempre
- * visível.
- */
-export type AtendimentoFieldCondition = {
+/** Uma regra individual de condição: campo de escolha (sempre anterior na
+ *  lista) e o valor esperado entre as respostas atuais. */
+export type AtendimentoConditionRule = {
   fieldId: string;
   value: string;
 };
+
+/**
+ * Condição (Fase 2 — visibilidade; Fase 4 — robustecida com múltiplas
+ * regras combinadas por E/OU). `operator: "AND"` exige todas as regras;
+ * `"OR"` exige ao menos uma. Sem condição (null/undefined) = sempre
+ * satisfeita. Dados legados (pré-Fase 4) armazenam `{ fieldId, value }`
+ * diretamente — o frontend normaliza esse formato ao ler.
+ */
+export type AtendimentoFieldCondition =
+  | { operator: "AND" | "OR"; rules: AtendimentoConditionRule[] }
+  | { fieldId: string; value: string };
 
 export type AtendimentoFormField = {
   id: string;
@@ -204,8 +214,15 @@ export type AtendimentoFormField = {
   placeholder?: string | null;
   /** Apenas para radio/checkbox/dropdown. */
   options?: string[] | null;
-  /** Fase 2: visibilidade condicional. */
+  /** Fase 2/4: visibilidade condicional. */
   visibleIf?: AtendimentoFieldCondition | null;
+  /** Fase 4: obrigatoriedade condicional — quando presente, substitui o
+   *  `required` estático: o campo só é exigido se esta condição for
+   *  satisfeita pelas respostas já dadas. */
+  requiredIf?: AtendimentoFieldCondition | null;
+  /** Fase 7: para radio/checkbox/dropdown — acrescenta a opção "Outro",
+   *  com um campo de texto livre associado à escolha. */
+  allowOther?: boolean;
 };
 
 export type AtendimentoDetalhe = {
