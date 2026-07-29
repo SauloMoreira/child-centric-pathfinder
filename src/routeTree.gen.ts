@@ -9,53 +9,39 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AtivarConviteRouteImport } from './routes/ativar-convite'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as McpRouteImport } from './routes/mcp'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
-import { Route as AuthenticatedAreaDeTrabalhoRouteImport } from './routes/_authenticated/area-de-trabalho'
-import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
-import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
-import { Route as AuthenticatedMinhaEquipeRouteImport } from './routes/_authenticated/minha-equipe'
-import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AtivarConviteRouteImport } from './routes/ativar-convite'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSolicitarAcessoRouteImport } from './routes/_authenticated/solicitar-acesso'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
-import { Route as AuthenticatedAdminTecnicoAcessoEmergencialRouteImport } from './routes/_authenticated/admin-tecnico/acesso-emergencial'
-import { Route as AuthenticatedAdminTecnicoAcessoGlobalRouteImport } from './routes/_authenticated/admin-tecnico/acesso-global'
-import { Route as AuthenticatedAdminTecnicoAdministradoresRouteImport } from './routes/_authenticated/admin-tecnico/administradores'
-import { Route as AuthenticatedAdminTecnicoAuditoriaRouteImport } from './routes/_authenticated/admin-tecnico/auditoria'
-import { Route as AuthenticatedAdminTecnicoCategoriasRouteImport } from './routes/_authenticated/admin-tecnico/categorias'
-import { Route as AuthenticatedAdminTecnicoConfiguracoesRouteImport } from './routes/_authenticated/admin-tecnico/configuracoes'
-import { Route as AuthenticatedAdminTecnicoDiagnosticosRouteImport } from './routes/_authenticated/admin-tecnico/diagnosticos'
-import { Route as AuthenticatedAdminTecnicoPainelRouteImport } from './routes/_authenticated/admin-tecnico/painel'
-import { Route as AuthenticatedAdminTecnicoSegurancaRouteImport } from './routes/_authenticated/admin-tecnico/seguranca'
-import { Route as AuthenticatedAdminTecnicoUsuariosRouteImport } from './routes/_authenticated/admin-tecnico/usuarios'
-import { Route as AuthenticatedAdminTecnicoVinculosRouteImport } from './routes/_authenticated/admin-tecnico/vinculos'
-import { Route as AuthenticatedAdminSolicitacoesRouteImport } from './routes/_authenticated/admin/solicitacoes'
+import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedMinhaEquipeRouteImport } from './routes/_authenticated/minha-equipe'
+import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
+import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
+import { Route as AuthenticatedAreaDeTrabalhoRouteImport } from './routes/_authenticated/area-de-trabalho'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedBibliotecaItemIdRouteImport } from './routes/_authenticated/biblioteca.$itemId'
+import { Route as AuthenticatedAdminSolicitacoesRouteImport } from './routes/_authenticated/admin/solicitacoes'
+import { Route as AuthenticatedAdminTecnicoVinculosRouteImport } from './routes/_authenticated/admin-tecnico/vinculos'
+import { Route as AuthenticatedAdminTecnicoUsuariosRouteImport } from './routes/_authenticated/admin-tecnico/usuarios'
+import { Route as AuthenticatedAdminTecnicoSegurancaRouteImport } from './routes/_authenticated/admin-tecnico/seguranca'
+import { Route as AuthenticatedAdminTecnicoPainelRouteImport } from './routes/_authenticated/admin-tecnico/painel'
+import { Route as AuthenticatedAdminTecnicoDiagnosticosRouteImport } from './routes/_authenticated/admin-tecnico/diagnosticos'
+import { Route as AuthenticatedAdminTecnicoConfiguracoesRouteImport } from './routes/_authenticated/admin-tecnico/configuracoes'
+import { Route as AuthenticatedAdminTecnicoCategoriasRouteImport } from './routes/_authenticated/admin-tecnico/categorias'
+import { Route as AuthenticatedAdminTecnicoAuditoriaRouteImport } from './routes/_authenticated/admin-tecnico/auditoria'
+import { Route as AuthenticatedAdminTecnicoAdministradoresRouteImport } from './routes/_authenticated/admin-tecnico/administradores'
+import { Route as AuthenticatedAdminTecnicoAcessoGlobalRouteImport } from './routes/_authenticated/admin-tecnico/acesso-global'
+import { Route as AuthenticatedAdminTecnicoAcessoEmergencialRouteImport } from './routes/_authenticated/admin-tecnico/acesso-emergencial'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AtivarConviteRoute = AtivarConviteRouteImport.update({
-  id: '/ativar-convite',
-  path: '/ativar-convite',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -63,37 +49,34 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
-  id: '/redefinir-senha',
-  path: '/redefinir-senha',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedAreaDeTrabalhoRoute =
-  AuthenticatedAreaDeTrabalhoRouteImport.update({
-    id: '/area-de-trabalho',
-    path: '/area-de-trabalho',
+const AtivarConviteRoute = AtivarConviteRouteImport.update({
+  id: '/ativar-convite',
+  path: '/ativar-convite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSolicitarAcessoRoute =
+  AuthenticatedSolicitarAcessoRouteImport.update({
+    id: '/solicitar-acesso',
+    path: '/solicitar-acesso',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedBibliotecaRoute = AuthenticatedBibliotecaRouteImport.update({
-  id: '/biblioteca',
-  path: '/biblioteca',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
-  id: '/conta',
-  path: '/conta',
+const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMinhaEquipeRoute =
@@ -102,86 +85,44 @@ const AuthenticatedMinhaEquipeRoute =
     path: '/minha-equipe',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
-  id: '/painel',
-  path: '/painel',
+const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSolicitarAcessoRoute =
-  AuthenticatedSolicitarAcessoRouteImport.update({
-    id: '/solicitar-acesso',
-    path: '/solicitar-acesso',
+const AuthenticatedBibliotecaRoute = AuthenticatedBibliotecaRouteImport.update({
+  id: '/biblioteca',
+  path: '/biblioteca',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAreaDeTrabalhoRoute =
+  AuthenticatedAreaDeTrabalhoRouteImport.update({
+    id: '/area-de-trabalho',
+    path: '/area-de-trabalho',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAdminTecnicoAcessoEmergencialRoute =
-  AuthenticatedAdminTecnicoAcessoEmergencialRouteImport.update({
-    id: '/admin-tecnico/acesso-emergencial',
-    path: '/admin-tecnico/acesso-emergencial',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAdminTecnicoAcessoGlobalRoute =
-  AuthenticatedAdminTecnicoAcessoGlobalRouteImport.update({
-    id: '/admin-tecnico/acesso-global',
-    path: '/admin-tecnico/acesso-global',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedBibliotecaItemIdRoute =
+  AuthenticatedBibliotecaItemIdRouteImport.update({
+    id: '/$itemId',
+    path: '/$itemId',
+    getParentRoute: () => AuthenticatedBibliotecaRoute,
   } as any)
-const AuthenticatedAdminTecnicoAdministradoresRoute =
-  AuthenticatedAdminTecnicoAdministradoresRouteImport.update({
-    id: '/admin-tecnico/administradores',
-    path: '/admin-tecnico/administradores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoAuditoriaRoute =
-  AuthenticatedAdminTecnicoAuditoriaRouteImport.update({
-    id: '/admin-tecnico/auditoria',
-    path: '/admin-tecnico/auditoria',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoCategoriasRoute =
-  AuthenticatedAdminTecnicoCategoriasRouteImport.update({
-    id: '/admin-tecnico/categorias',
-    path: '/admin-tecnico/categorias',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoConfiguracoesRoute =
-  AuthenticatedAdminTecnicoConfiguracoesRouteImport.update({
-    id: '/admin-tecnico/configuracoes',
-    path: '/admin-tecnico/configuracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoDiagnosticosRoute =
-  AuthenticatedAdminTecnicoDiagnosticosRouteImport.update({
-    id: '/admin-tecnico/diagnosticos',
-    path: '/admin-tecnico/diagnosticos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoPainelRoute =
-  AuthenticatedAdminTecnicoPainelRouteImport.update({
-    id: '/admin-tecnico/painel',
-    path: '/admin-tecnico/painel',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoSegurancaRoute =
-  AuthenticatedAdminTecnicoSegurancaRouteImport.update({
-    id: '/admin-tecnico/seguranca',
-    path: '/admin-tecnico/seguranca',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTecnicoUsuariosRoute =
-  AuthenticatedAdminTecnicoUsuariosRouteImport.update({
-    id: '/admin-tecnico/usuarios',
-    path: '/admin-tecnico/usuarios',
+const AuthenticatedAdminSolicitacoesRoute =
+  AuthenticatedAdminSolicitacoesRouteImport.update({
+    id: '/admin/solicitacoes',
+    path: '/admin/solicitacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminTecnicoVinculosRoute =
@@ -190,18 +131,77 @@ const AuthenticatedAdminTecnicoVinculosRoute =
     path: '/admin-tecnico/vinculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminSolicitacoesRoute =
-  AuthenticatedAdminSolicitacoesRouteImport.update({
-    id: '/admin/solicitacoes',
-    path: '/admin/solicitacoes',
+const AuthenticatedAdminTecnicoUsuariosRoute =
+  AuthenticatedAdminTecnicoUsuariosRouteImport.update({
+    id: '/admin-tecnico/usuarios',
+    path: '/admin-tecnico/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedBibliotecaItemIdRoute =
-  AuthenticatedBibliotecaItemIdRouteImport.update({
-    id: '/$itemId',
-    path: '/$itemId',
-    getParentRoute: () => AuthenticatedBibliotecaRoute,
+const AuthenticatedAdminTecnicoSegurancaRoute =
+  AuthenticatedAdminTecnicoSegurancaRouteImport.update({
+    id: '/admin-tecnico/seguranca',
+    path: '/admin-tecnico/seguranca',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminTecnicoPainelRoute =
+  AuthenticatedAdminTecnicoPainelRouteImport.update({
+    id: '/admin-tecnico/painel',
+    path: '/admin-tecnico/painel',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoDiagnosticosRoute =
+  AuthenticatedAdminTecnicoDiagnosticosRouteImport.update({
+    id: '/admin-tecnico/diagnosticos',
+    path: '/admin-tecnico/diagnosticos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoConfiguracoesRoute =
+  AuthenticatedAdminTecnicoConfiguracoesRouteImport.update({
+    id: '/admin-tecnico/configuracoes',
+    path: '/admin-tecnico/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoCategoriasRoute =
+  AuthenticatedAdminTecnicoCategoriasRouteImport.update({
+    id: '/admin-tecnico/categorias',
+    path: '/admin-tecnico/categorias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAuditoriaRoute =
+  AuthenticatedAdminTecnicoAuditoriaRouteImport.update({
+    id: '/admin-tecnico/auditoria',
+    path: '/admin-tecnico/auditoria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAdministradoresRoute =
+  AuthenticatedAdminTecnicoAdministradoresRouteImport.update({
+    id: '/admin-tecnico/administradores',
+    path: '/admin-tecnico/administradores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAcessoGlobalRoute =
+  AuthenticatedAdminTecnicoAcessoGlobalRouteImport.update({
+    id: '/admin-tecnico/acesso-global',
+    path: '/admin-tecnico/acesso-global',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTecnicoAcessoEmergencialRoute =
+  AuthenticatedAdminTecnicoAcessoEmergencialRouteImport.update({
+    id: '/admin-tecnico/acesso-emergencial',
+    path: '/admin-tecnico/acesso-emergencial',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -404,32 +404,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ativar-convite': {
-      id: '/ativar-convite'
-      path: '/ativar-convite'
-      fullPath: '/ativar-convite'
-      preLoaderRoute: typeof AtivarConviteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -439,53 +418,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/redefinir-senha': {
-      id: '/redefinir-senha'
-      path: '/redefinir-senha'
-      fullPath: '/redefinir-senha'
-      preLoaderRoute: typeof RedefinirSenhaRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+    '/ativar-convite': {
+      id: '/ativar-convite'
+      path: '/ativar-convite'
+      fullPath: '/ativar-convite'
+      preLoaderRoute: typeof AtivarConviteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/area-de-trabalho': {
-      id: '/_authenticated/area-de-trabalho'
-      path: '/area-de-trabalho'
-      fullPath: '/area-de-trabalho'
-      preLoaderRoute: typeof AuthenticatedAreaDeTrabalhoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/biblioteca': {
-      id: '/_authenticated/biblioteca'
-      path: '/biblioteca'
-      fullPath: '/biblioteca'
-      preLoaderRoute: typeof AuthenticatedBibliotecaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/conta': {
-      id: '/_authenticated/conta'
-      path: '/conta'
-      fullPath: '/conta'
-      preLoaderRoute: typeof AuthenticatedContaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/minha-equipe': {
-      id: '/_authenticated/minha-equipe'
-      path: '/minha-equipe'
-      fullPath: '/minha-equipe'
-      preLoaderRoute: typeof AuthenticatedMinhaEquipeRouteImport
+    '/_authenticated/solicitar-acesso': {
+      id: '/_authenticated/solicitar-acesso'
+      path: '/solicitar-acesso'
+      fullPath: '/solicitar-acesso'
+      preLoaderRoute: typeof AuthenticatedSolicitarAcessoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/painel': {
@@ -495,95 +460,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/solicitar-acesso': {
-      id: '/_authenticated/solicitar-acesso'
-      path: '/solicitar-acesso'
-      fullPath: '/solicitar-acesso'
-      preLoaderRoute: typeof AuthenticatedSolicitarAcessoRouteImport
+    '/_authenticated/minha-equipe': {
+      id: '/_authenticated/minha-equipe'
+      path: '/minha-equipe'
+      fullPath: '/minha-equipe'
+      preLoaderRoute: typeof AuthenticatedMinhaEquipeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+    '/_authenticated/conta': {
+      id: '/_authenticated/conta'
+      path: '/conta'
+      fullPath: '/conta'
+      preLoaderRoute: typeof AuthenticatedContaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/biblioteca': {
+      id: '/_authenticated/biblioteca'
+      path: '/biblioteca'
+      fullPath: '/biblioteca'
+      preLoaderRoute: typeof AuthenticatedBibliotecaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/area-de-trabalho': {
+      id: '/_authenticated/area-de-trabalho'
+      path: '/area-de-trabalho'
+      fullPath: '/area-de-trabalho'
+      preLoaderRoute: typeof AuthenticatedAreaDeTrabalhoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin-tecnico/acesso-emergencial': {
-      id: '/_authenticated/admin-tecnico/acesso-emergencial'
-      path: '/admin-tecnico/acesso-emergencial'
-      fullPath: '/admin-tecnico/acesso-emergencial'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoAcessoEmergencialRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated/biblioteca/$itemId': {
+      id: '/_authenticated/biblioteca/$itemId'
+      path: '/$itemId'
+      fullPath: '/biblioteca/$itemId'
+      preLoaderRoute: typeof AuthenticatedBibliotecaItemIdRouteImport
+      parentRoute: typeof AuthenticatedBibliotecaRoute
     }
-    '/_authenticated/admin-tecnico/acesso-global': {
-      id: '/_authenticated/admin-tecnico/acesso-global'
-      path: '/admin-tecnico/acesso-global'
-      fullPath: '/admin-tecnico/acesso-global'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoAcessoGlobalRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/administradores': {
-      id: '/_authenticated/admin-tecnico/administradores'
-      path: '/admin-tecnico/administradores'
-      fullPath: '/admin-tecnico/administradores'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoAdministradoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/auditoria': {
-      id: '/_authenticated/admin-tecnico/auditoria'
-      path: '/admin-tecnico/auditoria'
-      fullPath: '/admin-tecnico/auditoria'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoAuditoriaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/categorias': {
-      id: '/_authenticated/admin-tecnico/categorias'
-      path: '/admin-tecnico/categorias'
-      fullPath: '/admin-tecnico/categorias'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoCategoriasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/configuracoes': {
-      id: '/_authenticated/admin-tecnico/configuracoes'
-      path: '/admin-tecnico/configuracoes'
-      fullPath: '/admin-tecnico/configuracoes'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/diagnosticos': {
-      id: '/_authenticated/admin-tecnico/diagnosticos'
-      path: '/admin-tecnico/diagnosticos'
-      fullPath: '/admin-tecnico/diagnosticos'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoDiagnosticosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/painel': {
-      id: '/_authenticated/admin-tecnico/painel'
-      path: '/admin-tecnico/painel'
-      fullPath: '/admin-tecnico/painel'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoPainelRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/seguranca': {
-      id: '/_authenticated/admin-tecnico/seguranca'
-      path: '/admin-tecnico/seguranca'
-      fullPath: '/admin-tecnico/seguranca'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoSegurancaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin-tecnico/usuarios': {
-      id: '/_authenticated/admin-tecnico/usuarios'
-      path: '/admin-tecnico/usuarios'
-      fullPath: '/admin-tecnico/usuarios'
-      preLoaderRoute: typeof AuthenticatedAdminTecnicoUsuariosRouteImport
+    '/_authenticated/admin/solicitacoes': {
+      id: '/_authenticated/admin/solicitacoes'
+      path: '/admin/solicitacoes'
+      fullPath: '/admin/solicitacoes'
+      preLoaderRoute: typeof AuthenticatedAdminSolicitacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin-tecnico/vinculos': {
@@ -593,19 +523,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTecnicoVinculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/solicitacoes': {
-      id: '/_authenticated/admin/solicitacoes'
-      path: '/admin/solicitacoes'
-      fullPath: '/admin/solicitacoes'
-      preLoaderRoute: typeof AuthenticatedAdminSolicitacoesRouteImport
+    '/_authenticated/admin-tecnico/usuarios': {
+      id: '/_authenticated/admin-tecnico/usuarios'
+      path: '/admin-tecnico/usuarios'
+      fullPath: '/admin-tecnico/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/biblioteca/$itemId': {
-      id: '/_authenticated/biblioteca/$itemId'
-      path: '/$itemId'
-      fullPath: '/biblioteca/$itemId'
-      preLoaderRoute: typeof AuthenticatedBibliotecaItemIdRouteImport
-      parentRoute: typeof AuthenticatedBibliotecaRoute
+    '/_authenticated/admin-tecnico/seguranca': {
+      id: '/_authenticated/admin-tecnico/seguranca'
+      path: '/admin-tecnico/seguranca'
+      fullPath: '/admin-tecnico/seguranca'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoSegurancaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/painel': {
+      id: '/_authenticated/admin-tecnico/painel'
+      path: '/admin-tecnico/painel'
+      fullPath: '/admin-tecnico/painel'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoPainelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/diagnosticos': {
+      id: '/_authenticated/admin-tecnico/diagnosticos'
+      path: '/admin-tecnico/diagnosticos'
+      fullPath: '/admin-tecnico/diagnosticos'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoDiagnosticosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/configuracoes': {
+      id: '/_authenticated/admin-tecnico/configuracoes'
+      path: '/admin-tecnico/configuracoes'
+      fullPath: '/admin-tecnico/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/categorias': {
+      id: '/_authenticated/admin-tecnico/categorias'
+      path: '/admin-tecnico/categorias'
+      fullPath: '/admin-tecnico/categorias'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoCategoriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/auditoria': {
+      id: '/_authenticated/admin-tecnico/auditoria'
+      path: '/admin-tecnico/auditoria'
+      fullPath: '/admin-tecnico/auditoria'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/administradores': {
+      id: '/_authenticated/admin-tecnico/administradores'
+      path: '/admin-tecnico/administradores'
+      fullPath: '/admin-tecnico/administradores'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAdministradoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/acesso-global': {
+      id: '/_authenticated/admin-tecnico/acesso-global'
+      path: '/admin-tecnico/acesso-global'
+      fullPath: '/admin-tecnico/acesso-global'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAcessoGlobalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-tecnico/acesso-emergencial': {
+      id: '/_authenticated/admin-tecnico/acesso-emergencial'
+      path: '/admin-tecnico/acesso-emergencial'
+      fullPath: '/admin-tecnico/acesso-emergencial'
+      preLoaderRoute: typeof AuthenticatedAdminTecnicoAcessoEmergencialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
