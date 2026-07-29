@@ -9,6 +9,23 @@ import type {
   AtendimentoFormField,
 } from "@/lib/reintegra-api";
 
+/** Tipos de campo com valor escalar simples (string) — os únicos aceitos
+ *  como sub-campo de um grupo repetível ou como fonte de um campo
+ *  calculado. Exclui seção, matriz, tabela, grupo repetível e calculado. */
+const TIPOS_ESCALARES: AtendimentoFieldType[] = [
+  "text_short",
+  "text_long",
+  "radio",
+  "dropdown",
+  "email",
+  "phone",
+  "cpf_cnpj",
+  "date",
+  "time",
+  "number",
+  "currency",
+];
+
 /** Tipos de campo oferecidos no seletor "tipo" de um campo comum do builder. */
 export const FIELD_TYPE_ORDER: AtendimentoFieldType[] = [
   "text_short",
@@ -23,7 +40,16 @@ export const FIELD_TYPE_ORDER: AtendimentoFieldType[] = [
   "time",
   "number",
   "currency",
+  "matrix",
+  "table_fillable",
+  "repeat_group",
+  "calculated",
 ];
+
+/** Tipos de campo permitidos como sub-campo de um grupo repetível (Fase 7)
+ *  — apenas valor escalar simples, sem checkbox (valor em array) nem
+ *  aninhamento de estruturas compostas. */
+export const REPEAT_SUBFIELD_TYPES: AtendimentoFieldType[] = TIPOS_ESCALARES;
 
 /** Tipos de campo cuja resposta é uma escolha entre opções pré-definidas —
  *  únicos elegíveis como referência de uma condição de visibilidade. */
@@ -42,6 +68,10 @@ export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasO
   time: { label: "Hora", hasOptions: false },
   number: { label: "Número", hasOptions: false },
   currency: { label: "Valor em reais (R$)", hasOptions: false },
+  matrix: { label: "Matriz (linhas x colunas)", hasOptions: false },
+  table_fillable: { label: "Tabela preenchível", hasOptions: false },
+  repeat_group: { label: "Grupo repetível", hasOptions: false },
+  calculated: { label: "Campo calculado", hasOptions: false },
   section: { label: "Seção", hasOptions: false },
 };
 
@@ -60,10 +90,18 @@ export function novoCampo(type: AtendimentoFieldType = "text_short"): Atendiment
     label: "",
     required: false,
     placeholder: null,
-    options: fieldHasOptions(type) ? ["Opção 1"] : null,
+    options: fieldHasOptions(type)
+      ? ["Opção 1"]
+      : type === "matrix"
+        ? ["Coluna 1", "Coluna 2"]
+        : null,
     visibleIf: null,
     requiredIf: null,
     allowOther: false,
+    matrixRows: type === "matrix" ? ["Linha 1"] : null,
+    tableColumns: type === "table_fillable" ? ["Coluna 1"] : null,
+    repeatFields: type === "repeat_group" ? [] : null,
+    calc: type === "calculated" ? { kind: "sum", fieldIds: [], outputCurrency: false } : null,
   };
 }
 
@@ -81,11 +119,21 @@ export function novaSecao(): AtendimentoFormField {
   };
 }
 
-/** Valores de preenchimento em memória (nunca persistidos). */
-export type AtendimentoFormValues = Record<string, string | string[]>;
+/** Valores de preenchimento em memória (nunca persistidos). String para a
+ *  maioria dos tipos; string[] para checkbox; Record<string,string> para
+ *  matriz (índice da linha -> coluna escolhida); Record<string,string>[]
+ *  para tabela preenchível (uma linha por registro, chave = coluna) e
+ *  grupo repetível (uma instância por registro, chave = id do sub-campo). */
+export type AtendimentoFormValues = Record<
+  string,
+  string | string[] | Record<string, string> | Record<string, string>[]
+>;
 
-export function valorInicial(field: AtendimentoFormField): string | string[] {
-  return field.type === "checkbox" ? [] : "";
+export function valorInicial(field: AtendimentoFormField): AtendimentoFormValues[string] {
+  if (field.type === "checkbox") return [];
+  if (field.type === "matrix") return {};
+  if (field.type === "table_fillable" || field.type === "repeat_group") return [];
+  return "";
 }
 
 /**
@@ -206,9 +254,21 @@ function valorTextoVazio(v: string): boolean {
   return ehValorOutro(v) ? !textoDoValorOutro(v).trim() : !v.trim();
 }
 
-function valorVazio(valor: string | string[] | undefined): boolean {
+function valorVazio(valor: AtendimentoFormValues[string] | undefined): boolean {
   if (valor === undefined) return true;
-  if (Array.isArray(valor)) return valor.length === 0 || valor.every(valorTextoVazio);
+  if (Array.isArray(valor)) {
+    if (valor.length === 0) return true;
+    // string[] (checkbox) — vazio se nenhum item tem conteúdo real.
+    if (typeof valor[0] === "string") return (valor as string[]).every(valorTextoVazio);
+    // Record<string,string>[] (tabela/grupo repetível) — ao menos uma
+    // linha/instância já conta como preenchido, independente do conteúdo
+    // de cada célula.
+    return false;
+  }
+  if (typeof valor === "object") {
+    // Record<string,string> (matriz) — vazio se nenhuma linha foi respondida.
+    return Object.values(valor).every((v) => !v || !v.trim());
+  }
   return valorTextoVazio(valor);
 }
 
@@ -232,36 +292,144 @@ function textoDeExibicaoPorTipo(field: AtendimentoFormField, v: string): string 
   return field.type === "currency" ? formatarMoedaExibicao(v) : valorParaExibicao(v);
 }
 
+/** Fase 7 — campos elegíveis como fonte de um campo calculado no índice
+ *  `index` do builder: apenas campos com valor escalar simples (inclui
+ *  checkbox, já que "concatenar" sabe juntar múltiplos valores) que
+ *  aparecem ANTES dele na lista — mesma regra estrutural anti-ciclo usada
+ *  nas condições. Para "sum", restringe a campos numéricos/moeda. */
+export function camposElegiveisParaCalculo(
+  campos: AtendimentoFormField[],
+  index: number,
+  kind: "sum" | "concat",
+): AtendimentoFormField[] {
+  const tipos: AtendimentoFieldType[] = [...TIPOS_ESCALARES, "checkbox"];
+  return campos
+    .slice(0, index)
+    .filter((f) => tipos.includes(f.type))
+    .filter((f) => (kind === "sum" ? f.type === "number" || f.type === "currency" : true));
+}
+
+/** Fase 7 — computa o valor de um campo calculado a partir das respostas
+ *  já dadas aos campos referenciados em `calc.fieldIds`. "sum" soma os
+ *  valores numéricos; "concat" junta os textos com o separador definido. */
+export function calcularValor(
+  campo: AtendimentoFormField,
+  todosOsCampos: AtendimentoFormField[],
+  values: AtendimentoFormValues,
+): string {
+  const calc = campo.calc;
+  if (!calc || calc.fieldIds.length === 0) return "";
+  const referenciados = calc.fieldIds
+    .map((id) => todosOsCampos.find((c) => c.id === id))
+    .filter((c): c is AtendimentoFormField => !!c);
+  if (calc.kind === "sum") {
+    const soma = referenciados.reduce((acc, c) => {
+      const v = values[c.id];
+      const texto = typeof v === "string" ? v : "";
+      if (!texto.trim()) return acc;
+      const num = Number(texto.replace(/\./g, "").replace(",", "."));
+      return acc + (Number.isNaN(num) ? 0 : num);
+    }, 0);
+    return calc.outputCurrency
+      ? soma.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      : soma.toLocaleString("pt-BR");
+  }
+  const sep = calc.separator ?? ", ";
+  return referenciados
+    .map((c) => {
+      const v = values[c.id];
+      if (typeof v === "string") return v.trim() ? textoDeExibicaoPorTipo(c, v) : "";
+      if (Array.isArray(v) && (v.length === 0 || typeof v[0] === "string")) {
+        return (v as string[]).map((x) => textoDeExibicaoPorTipo(c, x)).join(", ");
+      }
+      return "";
+    })
+    .filter((t) => t.trim().length > 0)
+    .join(sep);
+}
+
+/** Fase 7 — texto de exibição unificado de uma resposta, para qualquer
+ *  tipo de campo (incluindo matriz, tabela, grupo repetível e campo
+ *  calculado). Um único lugar para a lógica de formatação por tipo,
+ *  usado pelo resumo por IA, impressão preenchida e texto expandido. */
+export function textoDaResposta(
+  campo: AtendimentoFormField,
+  valor: AtendimentoFormValues[string] | undefined,
+  todosOsCampos: AtendimentoFormField[],
+  values: AtendimentoFormValues,
+): string {
+  if (campo.type === "calculated") return calcularValor(campo, todosOsCampos, values);
+  if (valor === undefined) return "";
+  if (campo.type === "matrix") {
+    const registro = valor as Record<string, string>;
+    return (campo.matrixRows ?? [])
+      .map((rotulo, i) => (registro[String(i)] ? `${rotulo}: ${registro[String(i)]}` : null))
+      .filter((s): s is string => !!s)
+      .join("; ");
+  }
+  if (campo.type === "table_fillable") {
+    const cols = campo.tableColumns ?? [];
+    return (valor as Record<string, string>[])
+      .map((linha) =>
+        cols
+          .map((c) => (linha[c]?.trim() ? `${c}: ${linha[c]}` : null))
+          .filter((s): s is string => !!s)
+          .join(", "),
+      )
+      .filter((s) => s.length > 0)
+      .join(" | ");
+  }
+  if (campo.type === "repeat_group") {
+    const sub = campo.repeatFields ?? [];
+    return (valor as Record<string, string>[])
+      .map((inst) =>
+        sub
+          .map((sf) =>
+            inst[sf.id]?.trim() ? `${sf.label || "(sem rótulo)"}: ${textoDeExibicaoPorTipo(sf, inst[sf.id])}` : null,
+          )
+          .filter((s): s is string => !!s)
+          .join(", "),
+      )
+      .filter((s) => s.length > 0)
+      .join(" | ");
+  }
+  if (Array.isArray(valor)) return (valor as string[]).map((x) => textoDeExibicaoPorTipo(campo, x)).join(", ");
+  return textoDeExibicaoPorTipo(campo, valor as string);
+}
+
 /** Fase 3 — execução: rótulos dos campos obrigatórios (e visíveis) que
  *  ainda não foram respondidos. Vazio = pode concluir. Fase 4: considera
- *  obrigatoriedade condicional (`requiredIf`), não só o `required` estático. */
+ *  obrigatoriedade condicional (`requiredIf`), não só o `required` estático.
+ *  Campos calculados nunca bloqueiam (são sempre preenchidos automaticamente). */
 export function obrigatoriosFaltando(
   campos: AtendimentoFormField[],
   values: AtendimentoFormValues,
 ): string[] {
   return campos
-    .filter((f) => f.type !== "section" && campoVisivel(f, values) && campoObrigatorioEfetivo(f, values))
+    .filter(
+      (f) =>
+        f.type !== "section" &&
+        f.type !== "calculated" &&
+        campoVisivel(f, values) &&
+        campoObrigatorioEfetivo(f, values),
+    )
     .filter((f) => valorVazio(values[f.id]))
     .map((f) => f.label || "(sem rótulo)");
 }
 
 /** Fase 3 — execução: transforma o preenchimento em pares label/valor
- *  (só campos visíveis e respondidos) para enviar ao resumo por IA. */
+ *  (só campos visíveis e respondidos, incluindo calculados) para enviar
+ *  ao resumo por IA. */
 export function montarRespostasParaResumo(
   campos: AtendimentoFormField[],
   values: AtendimentoFormValues,
 ): { label: string; valor: string }[] {
   return campos
     .filter((f) => f.type !== "section" && campoVisivel(f, values))
-    .map((f) => {
-      const v = values[f.id];
-      const valor = Array.isArray(v)
-        ? v.map((x) => textoDeExibicaoPorTipo(f, x)).join(", ")
-        : v !== undefined
-          ? textoDeExibicaoPorTipo(f, v)
-          : "";
-      return { label: f.label || "(sem rótulo)", valor };
-    })
+    .map((f) => ({
+      label: f.label || "(sem rótulo)",
+      valor: textoDaResposta(f, values[f.id], campos, values),
+    }))
     .filter((r) => r.valor.trim().length > 0);
 }
 
@@ -283,11 +451,8 @@ export function montarTextoExpandido(
       if (campo.label) linhas.push("", campo.label.toUpperCase());
       continue;
     }
-    const v = values[campo.id];
-    if (valorVazio(v)) continue;
-    const valor = Array.isArray(v)
-      ? v.map((x) => textoDeExibicaoPorTipo(campo, x)).join(", ")
-      : textoDeExibicaoPorTipo(campo, v as string);
+    const valor = textoDaResposta(campo, values[campo.id], campos, values);
+    if (!valor.trim()) continue;
     linhas.push(`${campo.label || "(sem rótulo)"}: ${valor}`);
   }
   return linhas.join("\n");

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import {
 import type { AtendimentoFormField } from "@/lib/reintegra-api";
 import {
   agruparEmEtapas,
+  calcularValor,
   campoObrigatorioEfetivo,
   campoVisivel,
   construirValorOutro,
@@ -26,10 +27,12 @@ import {
   type AtendimentoFormValues,
 } from "@/components/atendimento/form-field-types";
 
+type CampoValor = AtendimentoFormValues[string];
+
 interface FormRendererProps {
   fields: AtendimentoFormField[];
   values: AtendimentoFormValues;
-  onChange: (fieldId: string, value: string | string[]) => void;
+  onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
 }
 
@@ -87,6 +90,7 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
               field={field}
               value={values[field.id]}
               values={values}
+              allFields={fields}
               onChange={onChange}
               disabled={disabled}
             />
@@ -134,6 +138,7 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
             field={field}
             value={values[field.id]}
             values={values}
+            allFields={fields}
             onChange={onChange}
             disabled={disabled}
           />
@@ -147,15 +152,31 @@ function CampoRenderizado({
   field,
   value,
   values,
+  allFields,
   onChange,
   disabled,
 }: {
   field: AtendimentoFormField;
-  value: string | string[] | undefined;
+  value: CampoValor | undefined;
   values: AtendimentoFormValues;
-  onChange: (fieldId: string, value: string | string[]) => void;
+  allFields: AtendimentoFormField[];
+  onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
 }) {
+  // Fase 7 — campo calculado: nunca editável, computado ao vivo a partir
+  // dos campos que ele referencia. Não passa por FieldInput.
+  if (field.type === "calculated") {
+    const texto = calcularValor(field, allFields, values);
+    return (
+      <div className="space-y-1.5">
+        <Label>{field.label || "(sem rótulo)"}</Label>
+        <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-2 text-sm">
+          {texto || <span className="text-muted-foreground">—</span>}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       <Label htmlFor={`campo-${field.id}`}>
@@ -174,8 +195,8 @@ function FieldInput({
   disabled,
 }: {
   field: AtendimentoFormField;
-  value: string | string[] | undefined;
-  onChange: (fieldId: string, value: string | string[]) => void;
+  value: CampoValor | undefined;
+  onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
 }) {
   const id = `campo-${field.id}`;
@@ -344,6 +365,166 @@ function FieldInput({
           required={field.required}
         />
       );
+    case "matrix": {
+      const linhas = field.matrixRows ?? [];
+      const colunas = field.options ?? [];
+      const registro = (value as Record<string, string>) ?? {};
+      return (
+        <div className="overflow-x-auto rounded-md border border-border">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="p-2 text-left font-medium"> </th>
+                {colunas.map((c, ci) => (
+                  <th key={ci} className="p-2 text-center font-medium">
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {linhas.map((linha, ri) => (
+                <tr key={ri} className="border-b border-border last:border-0">
+                  <td className="p-2">{linha}</td>
+                  <td colSpan={colunas.length} className="p-0">
+                    <RadioGroup
+                      value={registro[String(ri)] ?? ""}
+                      onValueChange={(v) => onChange(field.id, { ...registro, [String(ri)]: v })}
+                      className="flex"
+                    >
+                      {colunas.map((c, ci) => (
+                        <div key={ci} className="flex flex-1 items-center justify-center py-2">
+                          <RadioGroupItem value={c} disabled={disabled} aria-label={c} />
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case "table_fillable": {
+      const colunas = field.tableColumns ?? [];
+      const linhas = (value as Record<string, string>[]) ?? [];
+      const setCelula = (ri: number, col: string, v: string) => {
+        onChange(field.id, linhas.map((linha, i) => (i === ri ? { ...linha, [col]: v } : linha)));
+      };
+      const addLinha = () => onChange(field.id, [...linhas, {}]);
+      const removeLinha = (ri: number) => onChange(field.id, linhas.filter((_, i) => i !== ri));
+      return (
+        <div className="space-y-2">
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  {colunas.map((c, ci) => (
+                    <th key={ci} className="p-2 text-left font-medium">
+                      {c}
+                    </th>
+                  ))}
+                  <th className="w-8" />
+                </tr>
+              </thead>
+              <tbody>
+                {linhas.map((linha, ri) => (
+                  <tr key={ri} className="border-b border-border last:border-0">
+                    {colunas.map((c, ci) => (
+                      <td key={ci} className="p-1">
+                        <Input
+                          className="h-7 text-xs"
+                          value={linha[c] ?? ""}
+                          onChange={(e) => setCelula(ri, c, e.target.value)}
+                          disabled={disabled}
+                        />
+                      </td>
+                    ))}
+                    <td className="p-1 text-center">
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Remover linha"
+                        disabled={disabled}
+                        onClick={() => removeLinha(ri)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 text-[11px]"
+            disabled={disabled}
+            onClick={addLinha}
+          >
+            <Plus className="h-3 w-3" aria-hidden /> Adicionar linha
+          </Button>
+        </div>
+      );
+    }
+    case "repeat_group": {
+      const subfields = field.repeatFields ?? [];
+      const instancias = (value as Record<string, string>[]) ?? [];
+      const setSub = (ii: number, subId: string, v: CampoValor) => {
+        onChange(
+          field.id,
+          instancias.map((inst, i) => (i === ii ? { ...inst, [subId]: v as string } : inst)),
+        );
+      };
+      const addInstancia = () => onChange(field.id, [...instancias, {}]);
+      const removeInstancia = (ii: number) => onChange(field.id, instancias.filter((_, i) => i !== ii));
+      return (
+        <div className="space-y-2">
+          {instancias.map((inst, ii) => (
+            <div key={ii} className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-medium text-muted-foreground">Item {ii + 1}</p>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label="Remover item"
+                  disabled={disabled}
+                  onClick={() => removeInstancia(ii)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {subfields.map((sf) => (
+                <div key={sf.id} className="space-y-1">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    {sf.label || "(sem rótulo)"}
+                  </Label>
+                  <FieldInput
+                    field={sf}
+                    value={inst[sf.id] ?? ""}
+                    onChange={(_, v) => setSub(ii, sf.id, v)}
+                    disabled={disabled}
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 text-[11px]"
+            disabled={disabled}
+            onClick={addInstancia}
+          >
+            <Plus className="h-3 w-3" aria-hidden /> Adicionar {field.label || "item"}
+          </Button>
+        </div>
+      );
+    }
     case "email":
     case "phone":
     case "cpf_cnpj":

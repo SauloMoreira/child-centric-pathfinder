@@ -10,8 +10,7 @@
 import type { AtendimentoFormField } from "@/lib/reintegra-api";
 import {
   campoVisivel,
-  formatarMoedaExibicao,
-  valorParaExibicao,
+  textoDaResposta,
   type AtendimentoFormValues,
 } from "@/components/atendimento/form-field-types";
 
@@ -65,6 +64,12 @@ const ESTILOS = `
   }
   .resumo h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; }
   .resumo p { font-size: 13px; white-space: pre-wrap; }
+  table.matriz, table.tabela-preenchivel { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 4px; }
+  table.matriz th, table.matriz td, table.tabela-preenchivel th, table.tabela-preenchivel td {
+    border: 1px solid #ccc; padding: 4px 6px; text-align: left;
+  }
+  table.matriz .marca-cel { text-align: center; }
+  table.tabela-preenchivel .linha-branco-cel { height: 18px; }
 `;
 
 /**
@@ -108,6 +113,36 @@ function campoHtmlBranco(campo: AtendimentoFormField): string {
   if (campo.type === "text_long") {
     return `<div class="campo">${rotulo}<div class="caixa-branco"></div></div>`;
   }
+  if (campo.type === "matrix") {
+    const linhas = campo.matrixRows ?? [];
+    const colunas = campo.options ?? [];
+    const tabela = `<table class="matriz"><thead><tr><td></td>${colunas
+      .map((c) => `<th>${escapeHtml(c)}</th>`)
+      .join("")}</tr></thead><tbody>${linhas
+      .map(
+        (l) =>
+          `<tr><td>${escapeHtml(l)}</td>${colunas.map(() => `<td class="marca-cel">○</td>`).join("")}</tr>`,
+      )
+      .join("")}</tbody></table>`;
+    return `<div class="campo">${rotulo}${tabela}</div>`;
+  }
+  if (campo.type === "table_fillable") {
+    const colunas = campo.tableColumns ?? [];
+    const linhaVazia = `<tr>${colunas.map(() => `<td class="linha-branco-cel"></td>`).join("")}</tr>`;
+    const tabela = `<table class="tabela-preenchivel"><thead><tr>${colunas
+      .map((c) => `<th>${escapeHtml(c)}</th>`)
+      .join("")}</tr></thead><tbody>${linhaVazia.repeat(4)}</tbody></table>`;
+    return `<div class="campo">${rotulo}${tabela}</div>`;
+  }
+  if (campo.type === "repeat_group") {
+    const sub = campo.repeatFields ?? [];
+    return `<div class="campo">${rotulo}${sub
+      .map((sf) => campoHtmlBranco(sf))
+      .join("")}</div>`;
+  }
+  if (campo.type === "calculated") {
+    return `<div class="campo">${rotulo}<p class="resposta vazia">(calculado automaticamente)</p></div>`;
+  }
   return `<div class="campo">${rotulo}<div class="linha-branco"></div></div>`;
 }
 
@@ -134,12 +169,15 @@ export function montarFormularioBrancoHtml(
   return partes.join("\n");
 }
 
-function formatarResposta(campo: AtendimentoFormField, valor: string | string[] | undefined): string {
-  if (valor === undefined || (Array.isArray(valor) ? valor.length === 0 : !valor.trim())) {
+function formatarResposta(
+  campo: AtendimentoFormField,
+  todosOsCampos: AtendimentoFormField[],
+  values: AtendimentoFormValues,
+): string {
+  const texto = textoDaResposta(campo, values[campo.id], todosOsCampos, values);
+  if (!texto.trim()) {
     return `<p class="resposta vazia">Não respondido</p>`;
   }
-  const exibir = (v: string) => (campo.type === "currency" ? formatarMoedaExibicao(v) : valorParaExibicao(v));
-  const texto = Array.isArray(valor) ? valor.map(exibir).join(", ") : exibir(valor);
   return `<p class="resposta">${escapeHtml(texto)}</p>`;
 }
 
@@ -166,7 +204,8 @@ export function montarFormularioPreenchidoHtml(
       partes.push(
         `<div class="campo"><div class="rotulo">${escapeHtml(campo.label || "(sem rótulo)")}</div>${formatarResposta(
           campo,
-          values[campo.id],
+          campos,
+          values,
         )}</div>`,
       );
     }

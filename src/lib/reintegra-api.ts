@@ -181,6 +181,17 @@ export type AtendimentoFieldType =
   | "number"
   /** Fase 7: valor monetário (R$) — texto livre com formatação de exibição. */
   | "currency"
+  /** Fase 7: matriz linhas x colunas (uma escolha por linha). */
+  | "matrix"
+  /** Fase 7: tabela preenchível — colunas fixas, linhas adicionadas
+   *  livremente durante o preenchimento. */
+  | "table_fillable"
+  /** Fase 7: grupo repetível — um sub-schema (campos simples, sem
+   *  aninhamento) que o usuário repete quantas vezes precisar. */
+  | "repeat_group"
+  /** Fase 7: campo calculado — somente leitura, computado a partir de
+   *  outros campos (soma ou concatenação) no momento da exibição. */
+  | "calculated"
   /** Marcador estrutural (título de seção) — não coleta resposta. Fase 2:
    *  lógica condicional. Pode ter sua própria visibleIf para "pular" a
    *  seção inteira conforme uma escolha anterior. Fase 5: cada seção
@@ -206,13 +217,24 @@ export type AtendimentoFieldCondition =
   | { operator: "AND" | "OR"; rules: AtendimentoConditionRule[] }
   | { fieldId: string; value: string };
 
+/** Fase 7: definição de um campo calculado — somente leitura, computado a
+ *  partir de outros campos escalares anteriores na lista. */
+export type AtendimentoCalc = {
+  kind: "sum" | "concat";
+  fieldIds: string[];
+  /** Apenas para "concat": texto entre os valores concatenados. */
+  separator?: string;
+  /** Apenas para "sum": formata o resultado como moeda (R$). */
+  outputCurrency?: boolean;
+};
+
 export type AtendimentoFormField = {
   id: string;
   type: AtendimentoFieldType;
   label: string;
   required: boolean;
   placeholder?: string | null;
-  /** Apenas para radio/checkbox/dropdown. */
+  /** Radio/checkbox/dropdown: as opções. Matriz: os rótulos das colunas. */
   options?: string[] | null;
   /** Fase 2/4: visibilidade condicional. */
   visibleIf?: AtendimentoFieldCondition | null;
@@ -223,6 +245,17 @@ export type AtendimentoFormField = {
   /** Fase 7: para radio/checkbox/dropdown — acrescenta a opção "Outro",
    *  com um campo de texto livre associado à escolha. */
   allowOther?: boolean;
+  /** Fase 7 — matriz: rótulos das linhas (colunas reaproveitam `options`). */
+  matrixRows?: string[] | null;
+  /** Fase 7 — tabela preenchível: rótulos das colunas fixas (linhas são
+   *  adicionadas livremente durante o preenchimento). */
+  tableColumns?: string[] | null;
+  /** Fase 7 — grupo repetível: sub-schema repetido pelo usuário durante o
+   *  preenchimento. Sem aninhamento — não pode conter seção, matriz,
+   *  tabela, outro grupo repetível ou campo calculado. */
+  repeatFields?: AtendimentoFormField[] | null;
+  /** Fase 7 — campo calculado: nunca editável pelo usuário. */
+  calc?: AtendimentoCalc | null;
 };
 
 export type AtendimentoDetalhe = {

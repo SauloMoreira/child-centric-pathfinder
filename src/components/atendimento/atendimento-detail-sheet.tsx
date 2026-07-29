@@ -111,7 +111,7 @@ export function AtendimentoDetailSheet({
     setResumoDesatualizado(false);
   }, [detalhe.data]);
 
-  const handleChange = (fieldId: string, value: string | string[]) => {
+  const handleChange = (fieldId: string, value: AtendimentoFormValues[string]) => {
     setValues((prev) => {
       const next = { ...prev, [fieldId]: value };
       // Fase 2 — lógica condicional: se essa resposta fez algum campo

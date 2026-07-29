@@ -45,6 +45,7 @@ import {
   mensagemErroAtendimento,
 } from "@/features/atendimento/hooks";
 import {
+  camposElegiveisParaCalculo,
   camposElegiveisParaCondicao,
   FIELD_TYPE_META,
   FIELD_TYPE_ORDER,
@@ -54,9 +55,11 @@ import {
   novaSecao,
   novoCampo,
   removerReferenciaDaCondicao,
+  REPEAT_SUBFIELD_TYPES,
   validarCondicaoParaSubmissao,
 } from "@/components/atendimento/form-field-types";
 import type {
+  AtendimentoCalc,
   AtendimentoConditionRule,
   AtendimentoDetalhe,
   AtendimentoFieldCondition,
@@ -134,13 +137,13 @@ export function AtendimentoFormSheet({
     setCampos((prev) =>
       prev
         .filter((f) => f.id !== id)
-        // Remove regras de condição que apontavam para o campo excluído —
-        // evita referência pendente ("mostrar/obrigatório apenas se" de um
-        // campo que não existe mais).
+        // Remove regras de condição e referências de cálculo que apontavam
+        // para o campo excluído — evita referência pendente.
         .map((f) => ({
           ...f,
           visibleIf: removerReferenciaDaCondicao(f.visibleIf, id),
           requiredIf: removerReferenciaDaCondicao(f.requiredIf, id),
+          calc: f.calc ? { ...f.calc, fieldIds: f.calc.fieldIds.filter((fid) => fid !== id) } : f.calc,
         })),
     );
   const moveCampo = (index: number, dir: -1 | 1) => {
@@ -162,8 +165,21 @@ export function AtendimentoFormSheet({
           return {
             ...f,
             type,
-            options: fieldHasOptions(type) ? (f.options?.length ? f.options : ["Opção 1"]) : null,
+            options: fieldHasOptions(type)
+              ? f.options?.length
+                ? f.options
+                : ["Opção 1"]
+              : type === "matrix"
+                ? f.options?.length
+                  ? f.options
+                  : ["Coluna 1", "Coluna 2"]
+                : null,
             allowOther: fieldHasOptions(type) ? f.allowOther : false,
+            matrixRows: type === "matrix" ? (f.matrixRows?.length ? f.matrixRows : ["Linha 1"]) : null,
+            tableColumns:
+              type === "table_fillable" ? (f.tableColumns?.length ? f.tableColumns : ["Coluna 1"]) : null,
+            repeatFields: type === "repeat_group" ? (f.repeatFields ?? []) : null,
+            calc: type === "calculated" ? (f.calc ?? { kind: "sum", fieldIds: [], outputCurrency: false }) : null,
           };
         }
         // Se o campo deixou de ser de escolha, condições que dependiam
@@ -180,9 +196,19 @@ export function AtendimentoFormSheet({
     );
   };
 
-  const camposValidos = campos.every(
-    (f) => f.label.trim().length > 0 && (!fieldHasOptions(f.type) || (f.options ?? []).some((o) => o.trim())),
-  );
+  const campoValido = (f: AtendimentoFormField): boolean => {
+    if (!f.label.trim()) return false;
+    if (fieldHasOptions(f.type) && !(f.options ?? []).some((o) => o.trim())) return false;
+    if (f.type === "matrix") {
+      if (!(f.matrixRows ?? []).some((r) => r.trim())) return false;
+      if (!(f.options ?? []).some((o) => o.trim())) return false;
+    }
+    if (f.type === "table_fillable" && !(f.tableColumns ?? []).some((c) => c.trim())) return false;
+    if (f.type === "repeat_group" && !(f.repeatFields ?? []).some((sf) => sf.label.trim())) return false;
+    if (f.type === "calculated" && (f.calc?.fieldIds.length ?? 0) === 0) return false;
+    return true;
+  };
+  const camposValidos = campos.every(campoValido);
 
   const handleSubmit = () => {
     if (!titulo.trim()) {
@@ -202,16 +228,37 @@ export function AtendimentoFormSheet({
       // Descarta regras de condição que ficaram órfãs (campo referenciado
       // removido, deixou de ser de escolha, ou a opção referenciada foi
       // apagada) — melhor cair para "sem condição" do que salvar uma regra
-      // que nunca vai bater com nada.
+      // que nunca vai bater com nada. Mesma ideia para referências de
+      // campo calculado.
       const anteriores = campos.slice(0, i);
       return {
         ...f,
         label: f.label.trim(),
-        options: fieldHasOptions(f.type) ? (f.options ?? []).map((o) => o.trim()).filter(Boolean) : null,
+        options:
+          fieldHasOptions(f.type) || f.type === "matrix"
+            ? (f.options ?? []).map((o) => o.trim()).filter(Boolean)
+            : null,
+        matrixRows: f.type === "matrix" ? (f.matrixRows ?? []).map((r) => r.trim()).filter(Boolean) : null,
+        tableColumns:
+          f.type === "table_fillable" ? (f.tableColumns ?? []).map((c) => c.trim()).filter(Boolean) : null,
+        repeatFields:
+          f.type === "repeat_group"
+            ? (f.repeatFields ?? [])
+                .filter((sf) => sf.label.trim())
+                .map((sf) => ({
+                  ...sf,
+                  label: sf.label.trim(),
+                  options: fieldHasOptions(sf.type) ? (sf.options ?? []).map((o) => o.trim()).filter(Boolean) : null,
+                }))
+            : null,
+        calc:
+          f.type === "calculated" && f.calc
+            ? { ...f.calc, fieldIds: f.calc.fieldIds.filter((fid) => campos.some((c) => c.id === fid)) }
+            : null,
         visibleIf: validarCondicaoParaSubmissao(f.visibleIf, anteriores),
         requiredIf: f.type === "section" ? null : validarCondicaoParaSubmissao(f.requiredIf, anteriores),
       };
-    });
+    }).map((f) => (f.type === "calculated" && (f.calc?.fieldIds.length ?? 0) === 0 ? { ...f, calc: null } : f));
 
     if (target?.mode === "edit") {
       atualizar.mutate(
@@ -523,16 +570,165 @@ function FieldEditor({
             </Select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Switch
-              id={`obrigatorio-${campo.id}`}
-              checked={campo.required}
-              onCheckedChange={(v) => onChange({ required: v })}
-            />
-            <Label htmlFor={`obrigatorio-${campo.id}`} className="text-xs font-normal">
-              Obrigatório
-            </Label>
-          </div>
+          {campo.type !== "calculated" && (
+            <div className="flex items-center gap-2">
+              <Switch
+                id={`obrigatorio-${campo.id}`}
+                checked={campo.required}
+                onCheckedChange={(v) => onChange({ required: v })}
+              />
+              <Label htmlFor={`obrigatorio-${campo.id}`} className="text-xs font-normal">
+                Obrigatório
+              </Label>
+            </div>
+          )}
+
+          {campo.type === "matrix" && (
+            <div className="space-y-2 rounded-md bg-muted/30 p-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Linhas</p>
+                {(campo.matrixRows ?? []).map((linha, i) => (
+                  <div key={i} className="flex items-center gap-1.5 pt-1">
+                    <Input
+                      value={linha}
+                      onChange={(e) => {
+                        const next = [...(campo.matrixRows ?? [])];
+                        next[i] = e.target.value;
+                        onChange({ matrixRows: next });
+                      }}
+                      className="h-7 text-xs"
+                    />
+                    <button
+                      type="button"
+                      className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                      aria-label="Remover linha"
+                      disabled={(campo.matrixRows ?? []).length <= 1}
+                      onClick={() =>
+                        onChange({ matrixRows: (campo.matrixRows ?? []).filter((_, ri) => ri !== i) })
+                      }
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 gap-1 text-[11px]"
+                  onClick={() =>
+                    onChange({
+                      matrixRows: [...(campo.matrixRows ?? []), `Linha ${(campo.matrixRows ?? []).length + 1}`],
+                    })
+                  }
+                >
+                  <Plus className="h-3 w-3" aria-hidden /> Adicionar linha
+                </Button>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Colunas</p>
+                {options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-1.5 pt-1">
+                    <Input value={opt} onChange={(e) => setOption(i, e.target.value)} className="h-7 text-xs" />
+                    <button
+                      type="button"
+                      className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                      aria-label="Remover coluna"
+                      disabled={options.length <= 1}
+                      onClick={() => removeOption(i)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 text-[11px]" onClick={addOption}>
+                  <Plus className="h-3 w-3" aria-hidden /> Adicionar coluna
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {campo.type === "table_fillable" && (
+            <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Colunas da tabela
+              </p>
+              {(campo.tableColumns ?? []).map((col, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Input
+                    value={col}
+                    onChange={(e) => {
+                      const next = [...(campo.tableColumns ?? [])];
+                      next[i] = e.target.value;
+                      onChange({ tableColumns: next });
+                    }}
+                    className="h-7 text-xs"
+                  />
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                    aria-label="Remover coluna"
+                    disabled={(campo.tableColumns ?? []).length <= 1}
+                    onClick={() =>
+                      onChange({ tableColumns: (campo.tableColumns ?? []).filter((_, ci) => ci !== i) })
+                    }
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 text-[11px]"
+                onClick={() =>
+                  onChange({
+                    tableColumns: [...(campo.tableColumns ?? []), `Coluna ${(campo.tableColumns ?? []).length + 1}`],
+                  })
+                }
+              >
+                <Plus className="h-3 w-3" aria-hidden /> Adicionar coluna
+              </Button>
+            </div>
+          )}
+
+          {campo.type === "repeat_group" && (
+            <div className="space-y-2 rounded-md bg-muted/30 p-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Campos do grupo (repetidos a cada item)
+              </p>
+              {(campo.repeatFields ?? []).map((sf, i) => (
+                <RepeatSubfieldEditor
+                  key={sf.id}
+                  subcampo={sf}
+                  onChange={(patch) => {
+                    const next = [...(campo.repeatFields ?? [])];
+                    next[i] = { ...next[i], ...patch };
+                    onChange({ repeatFields: next });
+                  }}
+                  onRemove={() =>
+                    onChange({ repeatFields: (campo.repeatFields ?? []).filter((_, si) => si !== i) })
+                  }
+                />
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 text-[11px]"
+                onClick={() =>
+                  onChange({ repeatFields: [...(campo.repeatFields ?? []), novoCampo("text_short")] })
+                }
+              >
+                <Plus className="h-3 w-3" aria-hidden /> Adicionar campo ao grupo
+              </Button>
+            </div>
+          )}
+
+          {campo.type === "calculated" && (
+            <CalcEditor campo={campo} campos={campos} index={index} onChange={onChange} />
+          )}
 
           {fieldHasOptions(campo.type) && (
             <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
@@ -579,16 +775,196 @@ function FieldEditor({
             elegiveis={camposElegiveisParaCondicao(campos, index)}
             onChange={(visibleIf) => onChange({ visibleIf })}
           />
-          <ConditionEditor
-            titulo="Obrigatório apenas se…"
-            condicao={campo.requiredIf}
-            elegiveis={camposElegiveisParaCondicao(campos, index)}
-            onChange={(requiredIf) => onChange({ requiredIf })}
-          />
+          {campo.type !== "calculated" && (
+            <ConditionEditor
+              titulo="Obrigatório apenas se…"
+              condicao={campo.requiredIf}
+              elegiveis={camposElegiveisParaCondicao(campos, index)}
+              onChange={(requiredIf) => onChange({ requiredIf })}
+            />
+          )}
         </div>
 
         {removeButton}
       </div>
+    </div>
+  );
+}
+
+/** Fase 7 — editor de um sub-campo dentro de um grupo repetível: versão
+ *  enxuta do editor de campo comum (sem condições, sem "Outro", sem
+ *  reordenação — mantém o aninhamento simples por design). */
+function RepeatSubfieldEditor({
+  subcampo,
+  onChange,
+  onRemove,
+}: {
+  subcampo: AtendimentoFormField;
+  onChange: (patch: Partial<AtendimentoFormField>) => void;
+  onRemove: () => void;
+}) {
+  const options = subcampo.options ?? [];
+  const setOption = (i: number, value: string) => {
+    const next = [...options];
+    next[i] = value;
+    onChange({ options: next });
+  };
+  const addOption = () => onChange({ options: [...options, `Opção ${options.length + 1}`] });
+  const removeOption = (i: number) => onChange({ options: options.filter((_, oi) => oi !== i) });
+
+  return (
+    <div className="space-y-1.5 rounded border border-border bg-background p-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Input
+          value={subcampo.label}
+          onChange={(e) => onChange({ label: e.target.value })}
+          placeholder="Rótulo do sub-campo"
+          className="h-7 min-w-[120px] flex-1 text-xs"
+        />
+        <Select
+          value={subcampo.type}
+          onValueChange={(v) => {
+            const type = v as AtendimentoFieldType;
+            onChange({
+              type,
+              options: fieldHasOptions(type) ? (options.length ? options : ["Opção 1"]) : null,
+            });
+          }}
+        >
+          <SelectTrigger className="h-7 w-[150px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {REPEAT_SUBFIELD_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {FIELD_TYPE_META[t].label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <button
+          type="button"
+          className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+          aria-label="Remover campo do grupo"
+          onClick={onRemove}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Switch
+          id={`req-sub-${subcampo.id}`}
+          checked={subcampo.required}
+          onCheckedChange={(v) => onChange({ required: v })}
+        />
+        <Label htmlFor={`req-sub-${subcampo.id}`} className="text-[11px] font-normal">
+          Obrigatório
+        </Label>
+      </div>
+      {fieldHasOptions(subcampo.type) && (
+        <div className="space-y-1 pl-1">
+          {options.map((opt, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <Input value={opt} onChange={(e) => setOption(i, e.target.value)} className="h-6 text-[11px]" />
+              <button
+                type="button"
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                aria-label="Remover opção"
+                disabled={options.length <= 1}
+                onClick={() => removeOption(i)}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          <Button type="button" variant="ghost" size="sm" className="h-5 gap-1 text-[10px]" onClick={addOption}>
+            <Plus className="h-2.5 w-2.5" aria-hidden /> Adicionar opção
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Fase 7 — editor de campo calculado: escolhe soma ou concatenação,
+ *  quais campos anteriores usar como fonte, e opções de formatação. */
+function CalcEditor({
+  campo,
+  campos,
+  index,
+  onChange,
+}: {
+  campo: AtendimentoFormField;
+  campos: AtendimentoFormField[];
+  index: number;
+  onChange: (patch: Partial<AtendimentoFormField>) => void;
+}) {
+  const calc: AtendimentoCalc = campo.calc ?? { kind: "sum", fieldIds: [], outputCurrency: false };
+  const elegiveis = camposElegiveisParaCalculo(campos, index, calc.kind);
+
+  const toggleField = (fieldId: string) => {
+    const next = calc.fieldIds.includes(fieldId)
+      ? calc.fieldIds.filter((id) => id !== fieldId)
+      : [...calc.fieldIds, fieldId];
+    onChange({ calc: { ...calc, fieldIds: next } });
+  };
+
+  return (
+    <div className="space-y-2 rounded-md bg-muted/30 p-2">
+      <div className="flex items-center gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tipo de cálculo</p>
+        <Select
+          value={calc.kind}
+          onValueChange={(v) => onChange({ calc: { kind: v as "sum" | "concat", fieldIds: [] } })}
+        >
+          <SelectTrigger className="h-7 w-[170px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="sum">Soma</SelectItem>
+            <SelectItem value="concat">Concatenar texto</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {elegiveis.length === 0 ? (
+        <p className="text-[10px] text-muted-foreground">
+          {calc.kind === "sum"
+            ? "Adicione um campo Número ou Valor (R$) antes deste para somar."
+            : "Adicione algum campo antes deste para concatenar."}
+        </p>
+      ) : (
+        <div className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Campos a usar</p>
+          {elegiveis.map((c) => (
+            <label key={c.id} className="flex items-center gap-2 text-xs">
+              <input type="checkbox" checked={calc.fieldIds.includes(c.id)} onChange={() => toggleField(c.id)} />
+              {c.label || "(sem rótulo)"}
+            </label>
+          ))}
+        </div>
+      )}
+      {calc.kind === "concat" && (
+        <div className="space-y-1">
+          <Label className="text-[11px] font-normal text-muted-foreground">Separador</Label>
+          <Input
+            value={calc.separator ?? ", "}
+            onChange={(e) => onChange({ calc: { ...calc, separator: e.target.value } })}
+            className="h-7 w-[120px] text-xs"
+          />
+        </div>
+      )}
+      {calc.kind === "sum" && (
+        <div className="flex items-center gap-2">
+          <Switch
+            id={`calc-currency-${campo.id}`}
+            checked={!!calc.outputCurrency}
+            onCheckedChange={(v) => onChange({ calc: { ...calc, outputCurrency: v } })}
+          />
+          <Label htmlFor={`calc-currency-${campo.id}`} className="text-[11px] font-normal">
+            Exibir resultado como moeda (R$)
+          </Label>
+        </div>
+      )}
     </div>
   );
 }
