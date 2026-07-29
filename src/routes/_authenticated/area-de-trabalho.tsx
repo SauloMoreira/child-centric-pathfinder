@@ -770,11 +770,27 @@ function ColumnsBoard({
   >(null);
   const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
   const [atendimentoDetailId, setAtendimentoDetailId] = useState<string | null>(null);
+  // Ajuste doc — quando a edição é aberta a partir do detalhe (visualização),
+  // guarda o id para reabrir o detalhe ao salvar ou cancelar, em vez de só
+  // fechar a caixa de edição. Editar direto pelo card (menu da coluna) não
+  // passa por aqui, então fica null e o fechamento é o de sempre.
+  const [atendimentoReturnToDetailId, setAtendimentoReturnToDetailId] = useState<string | null>(null);
 
   const openEditAtendimento = useCallback((detalhe: AtendimentoDetalhe) => {
     setAtendimentoFormTarget({ mode: "edit", itemId: detalhe.id, detalhe });
     setAtendimentoFormOpen(true);
   }, []);
+
+  const handleAtendimentoFormOpenChange = useCallback(
+    (v: boolean) => {
+      setAtendimentoFormOpen(v);
+      if (!v && atendimentoReturnToDetailId) {
+        setAtendimentoDetailId(atendimentoReturnToDetailId);
+        setAtendimentoReturnToDetailId(null);
+      }
+    },
+    [atendimentoReturnToDetailId],
+  );
 
   const handleEditAtendimento = useCallback(
     async (card: WorkspaceCardDto) => {
@@ -783,6 +799,8 @@ function ColumnsBoard({
           queryKey: atendimentoKeys.detalhe(card.itemId),
           queryFn: () => obterAtendimentoDetalhe(card.itemId),
         });
+        // Edição direta pelo card (não veio do detalhe) — ao fechar, some.
+        setAtendimentoReturnToDetailId(null);
         openEditAtendimento(detalhe);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falha ao carregar o atendimento para edição");
@@ -1040,7 +1058,7 @@ function ColumnsBoard({
 
       <AtendimentoFormSheet
         open={atendimentoFormOpen}
-        onOpenChange={setAtendimentoFormOpen}
+        onOpenChange={handleAtendimentoFormOpenChange}
         target={atendimentoFormTarget}
         onSaved={onRefetch}
       />
@@ -1052,6 +1070,9 @@ function ColumnsBoard({
             atendimentoKeys.detalhe(atendimentoDetailId ?? ""),
           );
           if (detalhe) {
+            // Ajuste doc — veio do detalhe: ao salvar/cancelar a edição,
+            // volta para a visualização em vez de só fechar.
+            setAtendimentoReturnToDetailId(detalhe.id);
             setAtendimentoDetailId(null);
             openEditAtendimento(detalhe);
           }

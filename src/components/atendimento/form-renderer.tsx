@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Info, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, ListChecks, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -87,6 +87,15 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
           {(etapa?.campos ?? []).map((field) =>
             field.type === "orientation" ? (
               <OrientacaoBox key={field.id} texto={field.label} />
+            ) : field.type === "checklist" ? (
+              <ChecklistField
+                key={field.id}
+                field={field}
+                value={values[field.id]}
+                values={values}
+                onChange={onChange}
+                disabled={disabled}
+              />
             ) : (
               <CampoRenderizado
                 key={field.id}
@@ -138,6 +147,15 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
           </div>
         ) : field.type === "orientation" ? (
           <OrientacaoBox key={field.id} texto={field.label} />
+        ) : field.type === "checklist" ? (
+          <ChecklistField
+            key={field.id}
+            field={field}
+            value={values[field.id]}
+            values={values}
+            onChange={onChange}
+            disabled={disabled}
+          />
         ) : (
           <CampoRenderizado
             key={field.id}
@@ -163,6 +181,58 @@ function OrientacaoBox({ texto }: { texto: string }) {
     <div className="flex items-start gap-2 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
       <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
+    </div>
+  );
+}
+
+/** Bloco grande (Ajuste 8) — checklist: itens marcáveis. Título opcional
+ *  (ao contrário de um campo comum, não usa o Label externo do
+ *  CampoRenderizado) — quando "Obrigatório" está marcado, exige que TODOS
+ *  os itens estejam marcados para concluir o atendimento. */
+function ChecklistField({
+  field,
+  value,
+  values,
+  onChange,
+  disabled,
+}: {
+  field: AtendimentoFormField;
+  value: CampoValor | undefined;
+  values: AtendimentoFormValues;
+  onChange: (fieldId: string, value: CampoValor) => void;
+  disabled?: boolean;
+}) {
+  const items = field.checklistItems ?? [];
+  const selected = Array.isArray(value) ? (value as string[]) : [];
+  return (
+    <div className="space-y-1.5 rounded-md border border-border p-2.5">
+      {field.label && (
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+          <p className="text-xs font-medium text-foreground">
+            {field.label}
+            {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
+          </p>
+        </div>
+      )}
+      <div className="space-y-1.5 pt-0.5">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Checkbox
+              id={`${field.id}-${i}`}
+              checked={selected.includes(item)}
+              disabled={disabled}
+              onCheckedChange={(checked) => {
+                const next = checked ? [...selected, item] : selected.filter((v) => v !== item);
+                onChange(field.id, next);
+              }}
+            />
+            <Label htmlFor={`${field.id}-${i}`} className="text-xs font-normal">
+              {item}
+            </Label>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

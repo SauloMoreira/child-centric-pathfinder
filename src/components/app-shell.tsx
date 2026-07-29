@@ -292,14 +292,14 @@ function SidebarHeader({ collapsed, mobile = false }: { collapsed: boolean; mobi
               aria-expanded={!collapsed}
               aria-controls="sidebar-nav"
               className={cn(
-                "inline-flex h-9 w-9 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                "inline-flex h-7 w-7 items-center justify-center rounded-full border border-sidebar-border/60 bg-sidebar-accent/30 text-sidebar-muted transition-colors hover:border-sidebar-accent hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 collapsed && "mt-2",
               )}
             >
               {collapsed ? (
-                <PanelLeftOpen className="h-4 w-4" aria-hidden />
+                <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden />
               ) : (
-                <PanelLeftClose className="h-4 w-4" aria-hidden />
+                <PanelLeftClose className="h-3.5 w-3.5" aria-hidden />
               )}
             </button>
           </TooltipTrigger>

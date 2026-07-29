@@ -74,6 +74,7 @@ export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasO
   calculated: { label: "Campo calculado", hasOptions: false },
   section: { label: "Seção", hasOptions: false },
   orientation: { label: "Orientação", hasOptions: false },
+  checklist: { label: "Checklist", hasOptions: false },
 };
 
 export function fieldHasOptions(type: AtendimentoFieldType): boolean {
@@ -134,21 +135,50 @@ export function novaOrientacao(): AtendimentoFormField {
   };
 }
 
+/** Ajuste doc — marcador de checklist: lista de itens marcáveis. Título
+ *  (`label`) é opcional — quem carrega o conteúdo obrigatório é a lista de
+ *  itens em `checklistItems`. Quando "Obrigatório" está marcado, exige que
+ *  TODOS os itens estejam marcados (não apenas um, como no checkbox comum). */
+export function novoChecklist(): AtendimentoFormField {
+  return {
+    id: crypto.randomUUID(),
+    type: "checklist",
+    label: "",
+    required: false,
+    placeholder: null,
+    options: null,
+    visibleIf: null,
+    checklistItems: ["Item 1"],
+  };
+}
+
 /** Valores de preenchimento em memória (nunca persistidos). String para a
- *  maioria dos tipos; string[] para checkbox; Record<string,string> para
- *  matriz (índice da linha -> coluna escolhida); Record<string,string>[]
- *  para tabela preenchível (uma linha por registro, chave = coluna) e
- *  grupo repetível (uma instância por registro, chave = id do sub-campo). */
+ *  maioria dos tipos; string[] para checkbox e checklist (itens marcados);
+ *  Record<string,string> para matriz (índice da linha -> coluna escolhida);
+ *  Record<string,string>[] para tabela preenchível (uma linha por registro,
+ *  chave = coluna) e grupo repetível (uma instância por registro, chave =
+ *  id do sub-campo). */
 export type AtendimentoFormValues = Record<
   string,
   string | string[] | Record<string, string> | Record<string, string>[]
 >;
 
 export function valorInicial(field: AtendimentoFormField): AtendimentoFormValues[string] {
-  if (field.type === "checkbox") return [];
+  if (field.type === "checkbox" || field.type === "checklist") return [];
   if (field.type === "matrix") return {};
   if (field.type === "table_fillable" || field.type === "repeat_group") return [];
   return "";
+}
+
+/** Ajuste doc — checklist: true quando TODOS os itens definidos estão
+ *  marcados nas respostas atuais (usado como critério de "obrigatório",
+ *  diferente do checkbox comum que basta ter uma marcação). */
+export function checklistCompleta(field: AtendimentoFormField, values: AtendimentoFormValues): boolean {
+  const itens = (field.checklistItems ?? []).filter((i) => i.trim());
+  if (itens.length === 0) return true;
+  const marcados = values[field.id];
+  if (!Array.isArray(marcados)) return false;
+  return itens.every((item) => (marcados as string[]).includes(item));
 }
 
 /**
@@ -429,8 +459,8 @@ export function obrigatoriosFaltando(
         campoVisivel(f, values) &&
         campoObrigatorioEfetivo(f, values),
     )
-    .filter((f) => valorVazio(values[f.id]))
-    .map((f) => f.label || "(sem rótulo)");
+    .filter((f) => (f.type === "checklist" ? !checklistCompleta(f, values) : valorVazio(values[f.id])))
+    .map((f) => f.label || "(checklist sem título)");
 }
 
 /** Fase 3 — execução: transforma o preenchimento em pares label/valor
@@ -441,7 +471,9 @@ export function montarRespostasParaResumo(
   values: AtendimentoFormValues,
 ): { label: string; valor: string }[] {
   return campos
-    .filter((f) => f.type !== "section" && f.type !== "orientation" && campoVisivel(f, values))
+    .filter(
+      (f) => f.type !== "section" && f.type !== "orientation" && f.type !== "checklist" && campoVisivel(f, values),
+    )
     .map((f) => ({
       label: f.label || "(sem rótulo)",
       valor: textoDaResposta(f, values[f.id], campos, values),
@@ -463,7 +495,7 @@ export function montarTextoExpandido(
   const linhas: string[] = [];
   for (const campo of campos) {
     if (!campoVisivel(campo, values)) continue;
-    if (campo.type === "section" || campo.type === "orientation") continue;
+    if (campo.type === "section" || campo.type === "orientation" || campo.type === "checklist") continue;
     const valor = textoDaResposta(campo, values[campo.id], campos, values);
     if (!valor.trim()) continue;
     linhas.push(`${campo.label || "(sem rótulo)"}: ${valor}`);

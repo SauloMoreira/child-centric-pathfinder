@@ -203,7 +203,14 @@ export type AtendimentoFieldType =
    *  no formulário em destaque (como a antiga descrição), mas é
    *  desconsiderada no resumo por IA, no texto expandido e nos PDFs
    *  gerados (em branco ou preenchido). */
-  | "orientation";
+  | "orientation"
+  /** Bloco grande (Ajuste 8): checklist de itens marcáveis. Diferente de
+   *  "orientation"/"section", coleta resposta (itens marcados) e participa
+   *  da obrigatoriedade — quando marcado como obrigatório, exige que TODOS
+   *  os itens estejam marcados. Como a orientação, fica de fora do resumo
+   *  por IA, do texto expandido e do PDF preenchido (só aparece como
+   *  checkboxes no PDF em branco/impressão do formulário vazio). */
+  | "checklist";
 
 /** Uma regra individual de condição: campo de escolha (sempre anterior na
  *  lista) e o valor esperado entre as respostas atuais. */
@@ -262,6 +269,9 @@ export type AtendimentoFormField = {
   repeatFields?: AtendimentoFormField[] | null;
   /** Fase 7 — campo calculado: nunca editável pelo usuário. */
   calc?: AtendimentoCalc | null;
+  /** Bloco grande (Ajuste 8) — checklist: os itens marcáveis. Título
+   *  (`label`) é opcional; quem carrega o conteúdo obrigatório é a lista. */
+  checklistItems?: string[] | null;
 };
 
 export type AtendimentoDetalhe = {

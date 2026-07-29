@@ -107,6 +107,17 @@ function campoHtmlBranco(campo: AtendimentoFormField): string {
   const rotulo = `<div class="rotulo">${escapeHtml(campo.label || "(sem rótulo)")}${
     campo.required ? ' <span class="obrig">*</span>' : ""
   }</div>`;
+  if (campo.type === "checklist") {
+    const itens = campo.checklistItems ?? [];
+    const lista = `<div class="opcoes">${itens
+      .map((i) => `<div class="opcao"><span class="marca">☐</span>${escapeHtml(i)}</div>`)
+      .join("")}</div>`;
+    // Checklist tem título opcional — não repete "(sem rótulo)" quando vazio.
+    const rotuloChecklist = campo.label
+      ? `<div class="rotulo">${escapeHtml(campo.label)}${campo.required ? ' <span class="obrig">*</span>' : ""}</div>`
+      : "";
+    return `<div class="campo">${rotuloChecklist}${lista}</div>`;
+  }
   if (campo.type === "radio" || campo.type === "checkbox" || campo.type === "dropdown") {
     return `<div class="campo">${rotulo}${formatarOpcoesBranco(campo)}</div>`;
   }
@@ -204,7 +215,9 @@ export function montarFormularioPreenchidoHtml(
   for (const campo of visiveis) {
     if (campo.type === "section") {
       partes.push(`<div class="secao">${escapeHtml(campo.label || "(seção sem título)")}</div>`);
-    } else if (campo.type === "orientation") {
+    } else if (campo.type === "orientation" || campo.type === "checklist") {
+      // Ajuste doc — checklist, como a orientação, fica de fora do PDF
+      // preenchido/resumo (só aparece como checkbox no formulário em branco).
       continue;
     } else {
       partes.push(

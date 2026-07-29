@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  GripVertical,
   Info,
+  ListChecks,
   Loader2,
   MessageSquare,
   Plus,
@@ -13,6 +15,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -20,6 +39,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +85,7 @@ import {
   novaOrientacao,
   novaSecao,
   novoCampo,
+  novoChecklist,
   removerReferenciaDaCondicao,
   REPEAT_SUBFIELD_TYPES,
   validarCondicaoParaSubmissao,
@@ -112,6 +142,11 @@ export function AtendimentoFormSheet({
   const [descricao, setDescricao] = useState("");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
   const [campos, setCampos] = useState<AtendimentoFormField[]>([]);
+  // Ajuste doc — confirmação ao fechar com alterações não salvas: guarda uma
+  // "foto" do estado logo após abrir/carregar, para comparar na hora de
+  // fechar (sem precisar marcar "sujo" em cada setter individualmente).
+  const [confirmClose, setConfirmClose] = useState(false);
+  const initialSnapshotRef = useRef("");
 
   const isEdit = target?.mode === "edit";
   const pending = criar.isPending || atualizar.isPending;
@@ -123,13 +158,31 @@ export function AtendimentoFormSheet({
       setDescricao(target.detalhe.descricao ?? "");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
       setCampos(target.detalhe.formSchema);
+      initialSnapshotRef.current = JSON.stringify({
+        titulo: target.detalhe.titulo,
+        descricao: target.detalhe.descricao ?? "",
+        categoriaIds: target.detalhe.categorias.map((c) => c.id),
+        campos: target.detalhe.formSchema,
+      });
     } else {
       setTitulo("");
       setDescricao("");
       setCategoriaIds([]);
       setCampos([]);
+      initialSnapshotRef.current = JSON.stringify({ titulo: "", descricao: "", categoriaIds: [], campos: [] });
     }
   }, [open, target]);
+
+  const formEstaSujo = () =>
+    JSON.stringify({ titulo, descricao, categoriaIds, campos }) !== initialSnapshotRef.current;
+
+  const handleOpenChange = (v: boolean) => {
+    if (!v && formEstaSujo()) {
+      setConfirmClose(true);
+      return;
+    }
+    onOpenChange(v);
+  };
 
   const toggleCategoria = (id: string) => {
     setCategoriaIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
@@ -138,6 +191,23 @@ export function AtendimentoFormSheet({
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
   const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
   const addOrientacao = () => setCampos((prev) => [...prev, novaOrientacao()]);
+  const addChecklist = () => setCampos((prev) => [...prev, novoChecklist()]);
+
+  // Ajuste doc — reordenar campos por arrastar e soltar, além das setas.
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEndCampos = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setCampos((prev) => {
+      const oldIndex = prev.findIndex((f) => f.id === active.id);
+      const newIndex = prev.findIndex((f) => f.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
   const removeCampo = (id: string) =>
     setCampos((prev) =>
       prev
@@ -202,7 +272,9 @@ export function AtendimentoFormSheet({
   };
 
   const campoValido = (f: AtendimentoFormField): boolean => {
-    if (!f.label.trim()) return false;
+    // Checklist tem título opcional — quem precisa de conteúdo obrigatório
+    // são os itens da lista, validados abaixo.
+    if (f.type !== "checklist" && !f.label.trim()) return false;
     if (fieldHasOptions(f.type) && !(f.options ?? []).some((o) => o.trim())) return false;
     if (f.type === "matrix") {
       if (!(f.matrixRows ?? []).some((r) => r.trim())) return false;
@@ -211,6 +283,7 @@ export function AtendimentoFormSheet({
     if (f.type === "table_fillable" && !(f.tableColumns ?? []).some((c) => c.trim())) return false;
     if (f.type === "repeat_group" && !(f.repeatFields ?? []).some((sf) => sf.label.trim())) return false;
     if (f.type === "calculated" && (f.calc?.fieldIds.length ?? 0) === 0) return false;
+    if (f.type === "checklist" && !(f.checklistItems ?? []).some((i) => i.trim())) return false;
     return true;
   };
   const camposValidos = campos.every(campoValido);
@@ -260,9 +333,11 @@ export function AtendimentoFormSheet({
           f.type === "calculated" && f.calc
             ? { ...f.calc, fieldIds: f.calc.fieldIds.filter((fid) => campos.some((c) => c.id === fid)) }
             : null,
+        checklistItems:
+          f.type === "checklist" ? (f.checklistItems ?? []).map((i) => i.trim()).filter(Boolean) : null,
         visibleIf: validarCondicaoParaSubmissao(f.visibleIf, anteriores),
         requiredIf:
-          f.type === "section" || f.type === "orientation"
+          f.type === "section" || f.type === "orientation" || f.type === "checklist"
             ? null
             : validarCondicaoParaSubmissao(f.requiredIf, anteriores),
       };
@@ -308,7 +383,8 @@ export function AtendimentoFormSheet({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-3xl flex-col gap-0 overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -325,6 +401,7 @@ export function AtendimentoFormSheet({
             <Label htmlFor="atendimento-titulo">Título</Label>
             <Input
               id="atendimento-titulo"
+              className="bg-surface text-xs"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ex.: Atendimento — Pedido de alimentos"
@@ -340,7 +417,7 @@ export function AtendimentoFormSheet({
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Contexto para a equipe sobre quando usar este atendimento…"
               rows={3}
-              className="resize-none text-sm"
+              className="resize-none bg-surface text-xs"
             />
           </div>
 
@@ -352,7 +429,7 @@ export function AtendimentoFormSheet({
                   type="button"
                   variant="outline"
                   disabled={categoriasQuery.isLoading || categoriasSelecionaveis.length === 0}
-                  className="w-full justify-between font-normal"
+                  className="w-full justify-between bg-surface font-normal text-xs"
                 >
                   <span className="text-muted-foreground">
                     {categoriasQuery.isLoading
@@ -410,43 +487,50 @@ export function AtendimentoFormSheet({
             <div className="flex items-center justify-between gap-2">
               <Label>Campos do formulário</Label>
               <div className="flex flex-wrap gap-1.5">
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
+                  <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
+                </Button>
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addSecao}>
                   <SeparatorHorizontal className="h-3.5 w-3.5" aria-hidden /> Adicionar seção
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
-                  <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar campo
-                </Button>
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addOrientacao}>
                   <Info className="h-3.5 w-3.5" aria-hidden /> Adicionar orientação
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addChecklist}>
+                  <ListChecks className="h-3.5 w-3.5" aria-hidden /> Adicionar checklist
                 </Button>
               </div>
             </div>
             {campos.length === 0 ? (
               <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                Nenhum campo ainda. Use "Adicionar campo" para montar o formulário.
+                Nenhum campo ainda. Use "Adicionar pergunta" para montar o formulário.
               </p>
             ) : (
-              <div className="space-y-3">
-                {campos.map((campo, index) => (
-                  <FieldEditor
-                    key={campo.id}
-                    campo={campo}
-                    campos={campos}
-                    index={index}
-                    total={campos.length}
-                    onChange={(patch) => updateCampo(campo.id, patch)}
-                    onChangeType={(type) => changeCampoType(campo.id, type)}
-                    onRemove={() => removeCampo(campo.id)}
-                    onMove={(dir) => moveCampo(index, dir)}
-                  />
-                ))}
-              </div>
+              <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndCampos}>
+                <SortableContext items={campos.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-3">
+                    {campos.map((campo, index) => (
+                      <FieldEditor
+                        key={campo.id}
+                        campo={campo}
+                        campos={campos}
+                        index={index}
+                        total={campos.length}
+                        onChange={(patch) => updateCampo(campo.id, patch)}
+                        onChangeType={(type) => changeCampoType(campo.id, type)}
+                        onRemove={() => removeCampo(campo.id)}
+                        onMove={(dir) => moveCampo(index, dir)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </div>
 
         <DialogFooter className="mt-6 shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={pending}>
             Cancelar
           </Button>
           <Button
@@ -459,6 +543,29 @@ export function AtendimentoFormSheet({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza que deseja fechar?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Ao fechar, as alterações feitas neste {isEdit ? "atendimento" : "novo atendimento"} serão perdidas.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              setConfirmClose(false);
+              onOpenChange(false);
+            }}
+          >
+            Fechar sem salvar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
@@ -483,7 +590,16 @@ function FieldEditor({
 }) {
   const isSection = campo.type === "section";
   const isOrientation = campo.type === "orientation";
+  const isChecklist = campo.type === "checklist";
   const options = campo.options ?? [];
+  const checklistItems = campo.checklistItems ?? [];
+
+  const sortable = useSortable({ id: campo.id });
+  const sortableStyle = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+    opacity: sortable.isDragging ? 0.5 : 1,
+  };
 
   const setOption = (i: number, value: string) => {
     const next = [...options];
@@ -493,8 +609,27 @@ function FieldEditor({
   const addOption = () => onChange({ options: [...options, `Opção ${options.length + 1}`] });
   const removeOption = (i: number) => onChange({ options: options.filter((_, oi) => oi !== i) });
 
+  const setChecklistItem = (i: number, value: string) => {
+    const next = [...checklistItems];
+    next[i] = value;
+    onChange({ checklistItems: next });
+  };
+  const addChecklistItem = () =>
+    onChange({ checklistItems: [...checklistItems, `Item ${checklistItems.length + 1}`] });
+  const removeChecklistItem = (i: number) =>
+    onChange({ checklistItems: checklistItems.filter((_, ci) => ci !== i) });
+
   const moveButtons = (
-    <div className="flex shrink-0 flex-col gap-0.5">
+    <div className="flex shrink-0 flex-col items-center gap-0.5">
+      <button
+        type="button"
+        className="cursor-grab touch-none rounded p-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        aria-label="Arrastar para reordenar"
+        {...sortable.attributes}
+        {...sortable.listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
       <button
         type="button"
         className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
@@ -529,7 +664,11 @@ function FieldEditor({
 
   if (isSection) {
     return (
-      <div className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3">
+      <div
+        ref={sortable.setNodeRef}
+        style={sortableStyle}
+        className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3"
+      >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
@@ -539,7 +678,7 @@ function FieldEditor({
                 value={campo.label}
                 onChange={(e) => onChange({ label: e.target.value })}
                 placeholder="Título da seção"
-                className="text-sm font-medium"
+                className="bg-surface text-xs font-medium"
               />
             </div>
             <ConditionEditor
@@ -557,7 +696,11 @@ function FieldEditor({
 
   if (isOrientation) {
     return (
-      <div className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3">
+      <div
+        ref={sortable.setNodeRef}
+        style={sortableStyle}
+        className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3"
+      >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
@@ -582,8 +725,76 @@ function FieldEditor({
     );
   }
 
+  if (isChecklist) {
+    return (
+      <div ref={sortable.setNodeRef} style={sortableStyle} className="rounded-md border border-border p-3">
+        <div className="flex items-start gap-2">
+          {moveButtons}
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <ListChecks className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+              <Input
+                value={campo.label}
+                onChange={(e) => onChange({ label: e.target.value })}
+                placeholder="Título do checklist (opcional)"
+                className="bg-surface text-xs"
+              />
+            </div>
+            <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Itens</p>
+              {checklistItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Input
+                    value={item}
+                    onChange={(e) => setChecklistItem(i, e.target.value)}
+                    className="h-7 bg-surface text-xs"
+                  />
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                    aria-label="Remover item"
+                    disabled={checklistItems.length <= 1}
+                    onClick={() => removeChecklistItem(i)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 text-[11px]"
+                onClick={addChecklistItem}
+              >
+                <Plus className="h-3 w-3" aria-hidden /> Adicionar item
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id={`obrigatorio-${campo.id}`}
+                checked={campo.required}
+                onCheckedChange={(v) => onChange({ required: v })}
+              />
+              <Label htmlFor={`obrigatorio-${campo.id}`} className="text-xs font-normal">
+                Obrigatório (exige todos os itens marcados)
+              </Label>
+            </div>
+            <ConditionEditor
+              titulo="Mostrar apenas se…"
+              condicao={campo.visibleIf}
+              elegiveis={camposElegiveisParaCondicao(campos, index)}
+              onChange={(visibleIf) => onChange({ visibleIf })}
+            />
+          </div>
+          {removeButton}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-md border border-border p-3">
+    <div ref={sortable.setNodeRef} style={sortableStyle} className="rounded-md border border-border p-3">
       <div className="flex items-start gap-2">
         {moveButtons}
 
@@ -593,10 +804,10 @@ function FieldEditor({
               value={campo.label}
               onChange={(e) => onChange({ label: e.target.value })}
               placeholder="Rótulo do campo"
-              className="min-w-[160px] flex-1 text-sm"
+              className="min-w-[160px] flex-1 bg-surface text-xs"
             />
             <Select value={campo.type} onValueChange={(v) => onChangeType(v as AtendimentoFieldType)}>
-              <SelectTrigger className="w-[200px] text-sm">
+              <SelectTrigger className="w-[200px] bg-surface text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -635,7 +846,7 @@ function FieldEditor({
                         next[i] = e.target.value;
                         onChange({ matrixRows: next });
                       }}
-                      className="h-7 text-xs"
+                      className="h-7 bg-surface text-xs"
                     />
                     <button
                       type="button"
@@ -668,7 +879,7 @@ function FieldEditor({
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Colunas</p>
                 {options.map((opt, i) => (
                   <div key={i} className="flex items-center gap-1.5 pt-1">
-                    <Input value={opt} onChange={(e) => setOption(i, e.target.value)} className="h-7 text-xs" />
+                    <Input value={opt} onChange={(e) => setOption(i, e.target.value)} className="h-7 bg-surface text-xs" />
                     <button
                       type="button"
                       className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-30"
@@ -701,7 +912,7 @@ function FieldEditor({
                       next[i] = e.target.value;
                       onChange({ tableColumns: next });
                     }}
-                    className="h-7 text-xs"
+                    className="h-7 bg-surface text-xs"
                   />
                   <button
                     type="button"
@@ -779,7 +990,7 @@ function FieldEditor({
                   <Input
                     value={opt}
                     onChange={(e) => setOption(i, e.target.value)}
-                    className="h-7 text-xs"
+                    className="h-7 bg-surface text-xs"
                   />
                   <button
                     type="button"
@@ -904,7 +1115,7 @@ function RepeatSubfieldEditor({
         <div className="space-y-1 pl-1">
           {options.map((opt, i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <Input value={opt} onChange={(e) => setOption(i, e.target.value)} className="h-6 text-[11px]" />
+              <Input value={opt} onChange={(e) => setOption(i, e.target.value)} className="h-6 bg-surface text-[11px]" />
               <button
                 type="button"
                 className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-30"
@@ -988,7 +1199,7 @@ function CalcEditor({
           <Input
             value={calc.separator ?? ", "}
             onChange={(e) => onChange({ calc: { ...calc, separator: e.target.value } })}
-            className="h-7 w-[120px] text-xs"
+            className="h-7 w-[120px] bg-surface text-xs"
           />
         </div>
       )}
