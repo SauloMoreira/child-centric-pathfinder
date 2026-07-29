@@ -19,6 +19,7 @@ import {
   Pencil,
   Check,
   Search,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -112,6 +113,8 @@ import { cotaKeys } from "@/features/cota/hooks";
 import { AtendimentoFormSheet } from "@/components/atendimento/atendimento-form-sheet";
 import { AtendimentoDetailSheet } from "@/components/atendimento/atendimento-detail-sheet";
 import { atendimentoKeys } from "@/features/atendimento/hooks";
+import { AtendimentoIaDialog } from "@/components/atendimento/atendimento-ia-dialog";
+import { AtendimentoIaSheet, type AtendimentoIaResultado } from "@/components/atendimento/atendimento-ia-sheet";
 
 export const Route = createFileRoute("/_authenticated/area-de-trabalho")({
   head: () => ({
@@ -792,6 +795,12 @@ function ColumnsBoard({
     [atendimentoReturnToDetailId],
   );
 
+  // Atendimento IA — caixa de entrada (nome/contexto/upload) e caixa de
+  // execução ephemeral (nada disso é persistido em nenhuma tabela).
+  const [atendimentoIaDialogOpen, setAtendimentoIaDialogOpen] = useState(false);
+  const [atendimentoIaResultado, setAtendimentoIaResultado] = useState<AtendimentoIaResultado | null>(null);
+  const [atendimentoIaSheetOpen, setAtendimentoIaSheetOpen] = useState(false);
+
   const handleEditAtendimento = useCallback(
     async (card: WorkspaceCardDto) => {
       try {
@@ -861,6 +870,19 @@ function ColumnsBoard({
             )}
           </div>
 
+          {/* Ajuste doc — "Atendimento IA": disponível para todos os usuários,
+              não só Defensores Públicos, e sempre antes de "Criar atendimento"
+              e "Criar cota". */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 shrink-0 gap-1.5"
+            onClick={() => setAtendimentoIaDialogOpen(true)}
+          >
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            Atendimento IA
+          </Button>
           {access.accessMode === "owner" && (
             <Button
               type="button"
@@ -1080,6 +1102,23 @@ function ColumnsBoard({
         onDeleted={() => {
           setAtendimentoDetailId(null);
           onRefetch();
+        }}
+      />
+
+      <AtendimentoIaDialog
+        open={atendimentoIaDialogOpen}
+        onOpenChange={setAtendimentoIaDialogOpen}
+        onGenerated={(resultado) => {
+          setAtendimentoIaResultado(resultado);
+          setAtendimentoIaSheetOpen(true);
+        }}
+      />
+      <AtendimentoIaSheet
+        open={atendimentoIaSheetOpen}
+        data={atendimentoIaResultado}
+        onOpenChange={(v) => {
+          setAtendimentoIaSheetOpen(v);
+          if (!v) setAtendimentoIaResultado(null);
         }}
       />
     </>

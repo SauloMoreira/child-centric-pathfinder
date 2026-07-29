@@ -51,8 +51,10 @@ function formatDate(iso: string): string {
   }
 }
 
-/** Mensagens amigáveis para os códigos de erro do resumo por IA. */
-function mensagemErroResumoIA(e: unknown): string {
+/** Mensagens amigáveis para os códigos de erro do resumo por IA. Exportada
+ *  para reaproveitar no Atendimento IA (atendimento-ia-sheet.tsx), que usa
+ *  a mesma Edge Function de resumo. */
+export function mensagemErroResumoIA(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e ?? "");
   if (msg.includes("NO_ANSWERS")) return "Preencha ao menos uma resposta antes de concluir.";
   if (msg.includes("RATE_LIMITED"))

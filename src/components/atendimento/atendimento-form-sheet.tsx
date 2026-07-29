@@ -569,7 +569,11 @@ export function AtendimentoFormSheet({
   );
 }
 
-function FieldEditor({
+/** Exportado para reaproveitar na edição inline das perguntas geradas pelo
+ *  Atendimento IA (atendimento-ia-sheet.tsx) — mesmo editor de campo usado
+ *  no builder normal, incluindo drag handle (precisa estar dentro de um
+ *  DndContext/SortableContext com os ids dos campos). */
+export function FieldEditor({
   campo,
   campos,
   index,

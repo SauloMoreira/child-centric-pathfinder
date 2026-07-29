@@ -381,6 +381,67 @@ export async function gerarResumoAtendimentoIA(params: {
   return resumo;
 }
 
+/** Limite de tamanho do arquivo anexado no Atendimento IA, conforme o doc
+ *  de especificação (60MB). Só PDF é aceito. */
+export const ATENDIMENTO_IA_MAX_FILE_BYTES = 60 * 1024 * 1024;
+
+function arquivoParaBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // O FileReader devolve uma data URL ("data:<mime>;base64,<...>") —
+      // a Edge Function só precisa da parte depois da vírgula.
+      const idx = result.indexOf(",");
+      resolve(idx >= 0 ? result.slice(idx + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("FILE_READ_ERROR"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Atendimento IA — a partir de um documento (PDF), do nome completo da
+ * pessoa a ser atendida e de um contexto em texto livre, gera as perguntas
+ * de um formulário de atendimento via Edge Function `atendimento-ia-gerar`.
+ * O arquivo nunca é salvo em nenhum bucket/tabela — trafega só nessa
+ * chamada, convertido para base64 no navegador.
+ */
+export async function gerarAtendimentoComIA(params: {
+  personName: string;
+  context: string;
+  file: File;
+}): Promise<AtendimentoFormField[]> {
+  if (params.file.type !== "application/pdf") {
+    throw new Error("INVALID_FILE_TYPE");
+  }
+  if (params.file.size > ATENDIMENTO_IA_MAX_FILE_BYTES) {
+    throw new Error("FILE_TOO_LARGE");
+  }
+  const fileBase64 = await arquivoParaBase64(params.file);
+  const { data, error } = await supabase.functions.invoke("atendimento-ia-gerar", {
+    body: {
+      personName: params.personName,
+      context: params.context,
+      fileBase64,
+      fileMimeType: params.file.type,
+    },
+  });
+  if (error) {
+    let code: string | undefined;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx) code = (await ctx.clone().json())?.error;
+    } catch {
+      // corpo não era JSON (ou já foi consumido) — segue com o fallback abaixo
+    }
+    throw new Error(code ?? error.message ?? "AI_GATEWAY_ERROR");
+  }
+  const campos = (data as { campos?: unknown } | null)?.campos;
+  if (!Array.isArray(campos) || campos.length === 0) throw new Error("EMPTY_AI_RESPONSE");
+  return campos as AtendimentoFormField[];
+}
+
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
   kind?: ContentKind;
