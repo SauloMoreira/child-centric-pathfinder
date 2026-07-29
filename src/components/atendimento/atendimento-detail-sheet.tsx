@@ -255,6 +255,30 @@ export function AtendimentoDetailSheet({
                 </DialogTitle>
               </DialogHeader>
 
+              <div className="mt-2 shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span>{detalhe.data.ownerDisplayName}</span>
+                <span aria-hidden>·</span>
+                <span>Editado em {formatDate(detalhe.data.updatedAt)}</span>
+                <span aria-hidden>·</span>
+                {detalhe.data.categorias.length === 0 ? (
+                  <Badge variant="outline" className="text-[10px]">
+                    Sem categoria
+                  </Badge>
+                ) : (
+                  detalhe.data.categorias.map((c) => (
+                    <Badge key={c.id} variant="outline" className="text-[10px]">
+                      {c.nome}
+                    </Badge>
+                  ))
+                )}
+              </div>
+
+              {detalhe.data.descricao && (
+                <p className="mt-2 shrink-0 whitespace-pre-wrap text-xs text-muted-foreground">
+                  {detalhe.data.descricao}
+                </p>
+              )}
+
               {temCampos && (
                 <div className="mt-2 shrink-0">
                   <Button
@@ -263,43 +287,13 @@ export function AtendimentoDetailSheet({
                     className="h-7 gap-1.5 text-[11px] text-muted-foreground"
                     onClick={handleImprimirBranco}
                   >
-                    <Printer className="h-3.5 w-3.5" /> Imprimir formulário em branco
+                    <Printer className="h-3.5 w-3.5" /> Imprimir formulário
                   </Button>
                 </div>
               )}
 
-              <div className="mt-1 flex min-h-0 flex-1 flex-col gap-3">
-                <div className="shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span>{detalhe.data.ownerDisplayName}</span>
-                  <span aria-hidden>·</span>
-                  <span>Editado em {formatDate(detalhe.data.updatedAt)}</span>
-                </div>
-
-                <div className="shrink-0 flex flex-wrap gap-1.5">
-                  {detalhe.data.categorias.length === 0 ? (
-                    <Badge variant="outline" className="text-[10px]">
-                      Sem categoria
-                    </Badge>
-                  ) : (
-                    detalhe.data.categorias.map((c) => (
-                      <Badge key={c.id} variant="outline" className="text-[10px]">
-                        {c.nome}
-                      </Badge>
-                    ))
-                  )}
-                </div>
-
+              <div className="mt-2 flex min-h-0 flex-1 flex-col gap-3">
                 <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
-                  {detalhe.data.descricao && (
-                    <div className="mb-3 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-institutional">
-                        Descrição
-                      </p>
-                      <p className="whitespace-pre-wrap text-xs text-foreground">
-                        {detalhe.data.descricao}
-                      </p>
-                    </div>
-                  )}
                   <FormRenderer fields={detalhe.data.formSchema} values={values} onChange={handleChange} />
 
                   {resumo && (
@@ -323,62 +317,62 @@ export function AtendimentoDetailSheet({
                 </div>
               </div>
 
-              {temCampos && (
-                <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2">
-                  {hasRespostaPreenchida(values) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={handleCopiarTextoExpandido}
-                      title="Gerado localmente — nenhuma resposta é enviada pela rede"
-                    >
-                      <Copy className="h-3.5 w-3.5" /> Copiar texto (sem IA)
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant={resumo && !resumoDesatualizado ? "outline" : "default"}
-                    className="gap-1.5"
-                    onClick={handleConcluir}
-                    disabled={gerandoResumo || (!!resumo && !resumoDesatualizado)}
-                  >
-                    {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
-                    {resumo ? (resumoDesatualizado ? "Atualizar conclusão" : "Concluído") : "Concluir"}
-                  </Button>
-                  {resumo && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={handleImprimirPreenchido}
-                    >
-                      <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              <DialogFooter className="mt-3 shrink-0 sm:justify-between">
-                <p className="text-[10px] text-muted-foreground">
-                  As respostas preenchidas aqui não são salvas.
-                </p>
-                {detalhe.data.canEdit && (
+              {(temCampos || detalhe.data.canEdit) && (
+                <DialogFooter className="mt-3 shrink-0 sm:justify-between">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
-                      <Pencil className="h-3.5 w-3.5" /> Editar modelo
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 text-destructive hover:text-destructive"
-                      onClick={() => setConfirmDelete(true)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> Excluir modelo
-                    </Button>
+                    {temCampos && (
+                      <Button
+                        size="sm"
+                        variant={resumo && !resumoDesatualizado ? "outline" : "default"}
+                        className="gap-1.5"
+                        onClick={handleConcluir}
+                        disabled={gerandoResumo || (!!resumo && !resumoDesatualizado)}
+                      >
+                        {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
+                        {resumo ? (resumoDesatualizado ? "Atualizar conclusão" : "Concluído") : "Concluir"}
+                      </Button>
+                    )}
                   </div>
-                )}
-              </DialogFooter>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {temCampos && hasRespostaPreenchida(values) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={handleCopiarTextoExpandido}
+                        title="Gerado localmente — nenhuma resposta é enviada pela rede"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> Copiar texto (sem IA)
+                      </Button>
+                    )}
+                    {temCampos && resumo && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={handleImprimirPreenchido}
+                      >
+                        <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
+                      </Button>
+                    )}
+                    {detalhe.data.canEdit && (
+                      <>
+                        <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
+                          <Pencil className="h-3.5 w-3.5" /> Editar modelo
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-destructive hover:text-destructive"
+                          onClick={() => setConfirmDelete(true)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Excluir modelo
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </DialogFooter>
+              )}
             </>
           )}
         </DialogContent>

@@ -73,6 +73,7 @@ export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasO
   repeat_group: { label: "Grupo repetível", hasOptions: false },
   calculated: { label: "Campo calculado", hasOptions: false },
   section: { label: "Seção", hasOptions: false },
+  orientation: { label: "Orientação", hasOptions: false },
 };
 
 export function fieldHasOptions(type: AtendimentoFieldType): boolean {
@@ -111,6 +112,20 @@ export function novaSecao(): AtendimentoFormField {
   return {
     id: crypto.randomUUID(),
     type: "section",
+    label: "",
+    required: false,
+    placeholder: null,
+    options: null,
+    visibleIf: null,
+  };
+}
+
+/** Ajuste doc — marcador estrutural de orientação: nota do Defensor
+ *  Público para quem preenche o formulário. O texto vive em `label`. */
+export function novaOrientacao(): AtendimentoFormField {
+  return {
+    id: crypto.randomUUID(),
+    type: "orientation",
     label: "",
     required: false,
     placeholder: null,
@@ -409,6 +424,7 @@ export function obrigatoriosFaltando(
     .filter(
       (f) =>
         f.type !== "section" &&
+        f.type !== "orientation" &&
         f.type !== "calculated" &&
         campoVisivel(f, values) &&
         campoObrigatorioEfetivo(f, values),
@@ -425,7 +441,7 @@ export function montarRespostasParaResumo(
   values: AtendimentoFormValues,
 ): { label: string; valor: string }[] {
   return campos
-    .filter((f) => f.type !== "section" && campoVisivel(f, values))
+    .filter((f) => f.type !== "section" && f.type !== "orientation" && campoVisivel(f, values))
     .map((f) => ({
       label: f.label || "(sem rótulo)",
       valor: textoDaResposta(f, values[f.id], campos, values),
@@ -451,6 +467,7 @@ export function montarTextoExpandido(
       if (campo.label) linhas.push("", campo.label.toUpperCase());
       continue;
     }
+    if (campo.type === "orientation") continue;
     const valor = textoDaResposta(campo, values[campo.id], campos, values);
     if (!valor.trim()) continue;
     linhas.push(`${campo.label || "(sem rótulo)"}: ${valor}`);

@@ -84,17 +84,21 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
           </p>
         </div>
         <div className="space-y-4">
-          {(etapa?.campos ?? []).map((field) => (
-            <CampoRenderizado
-              key={field.id}
-              field={field}
-              value={values[field.id]}
-              values={values}
-              allFields={fields}
-              onChange={onChange}
-              disabled={disabled}
-            />
-          ))}
+          {(etapa?.campos ?? []).map((field) =>
+            field.type === "orientation" ? (
+              <OrientacaoBox key={field.id} texto={field.label} />
+            ) : (
+              <CampoRenderizado
+                key={field.id}
+                field={field}
+                value={values[field.id]}
+                values={values}
+                allFields={fields}
+                onChange={onChange}
+                disabled={disabled}
+              />
+            ),
+          )}
         </div>
         <div className="flex items-center justify-between gap-2 pt-1">
           <Button
@@ -132,6 +136,8 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
               {field.label || "(seção sem título)"}
             </p>
           </div>
+        ) : field.type === "orientation" ? (
+          <OrientacaoBox key={field.id} texto={field.label} />
         ) : (
           <CampoRenderizado
             key={field.id}
@@ -144,6 +150,18 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
           />
         ),
       )}
+    </div>
+  );
+}
+
+/** Ajuste doc — nota de orientação do Defensor Público para quem preenche,
+ *  em destaque no formulário (mesmo estilo da antiga descrição do
+ *  Atendimento). Não é um campo de resposta: sem Label/FieldInput. */
+function OrientacaoBox({ texto }: { texto: string }) {
+  if (!texto) return null;
+  return (
+    <div className="rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
+      <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
     </div>
   );
 }
@@ -169,8 +187,8 @@ function CampoRenderizado({
     const texto = calcularValor(field, allFields, values);
     return (
       <div className="space-y-1.5">
-        <Label>{field.label || "(sem rótulo)"}</Label>
-        <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-2 text-sm">
+        <Label className="text-xs">{field.label || "(sem rótulo)"}</Label>
+        <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-2 text-xs">
           {texto || <span className="text-muted-foreground">—</span>}
         </p>
       </div>
@@ -179,7 +197,7 @@ function CampoRenderizado({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={`campo-${field.id}`}>
+      <Label htmlFor={`campo-${field.id}`} className="text-xs">
         {field.label || "(sem rótulo)"}
         {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
       </Label>
@@ -206,6 +224,7 @@ function FieldInput({
       return (
         <Textarea
           id={id}
+          className="bg-surface text-xs"
           value={(value as string) ?? ""}
           onChange={(e) => onChange(field.id, e.target.value)}
           placeholder={field.placeholder ?? undefined}
@@ -228,7 +247,7 @@ function FieldInput({
             {opts.map((opt, i) => (
               <div key={i} className="flex items-center gap-2">
                 <RadioGroupItem id={`${id}-${i}`} value={opt} disabled={disabled} />
-                <Label htmlFor={`${id}-${i}`} className="font-normal">
+                <Label htmlFor={`${id}-${i}`} className="text-xs font-normal">
                   {opt}
                 </Label>
               </div>
@@ -236,7 +255,7 @@ function FieldInput({
             {field.allowOther && (
               <div className="flex items-center gap-2">
                 <RadioGroupItem id={`${id}-outro`} value="__outro__" disabled={disabled} />
-                <Label htmlFor={`${id}-outro`} className="font-normal">
+                <Label htmlFor={`${id}-outro`} className="text-xs font-normal">
                   Outro
                 </Label>
               </div>
@@ -244,7 +263,7 @@ function FieldInput({
           </RadioGroup>
           {outroAtivo && (
             <Input
-              className="ml-6 h-8 max-w-[240px] text-xs"
+              className="ml-6 h-8 max-w-[240px] bg-surface text-xs"
               value={ehValorOutro(atual) ? textoDoValorOutro(atual) : ""}
               onChange={(e) => onChange(field.id, construirValorOutro(e.target.value))}
               placeholder="Especifique…"
@@ -271,7 +290,7 @@ function FieldInput({
                   onChange(field.id, next);
                 }}
               />
-              <Label htmlFor={`${id}-${i}`} className="font-normal">
+              <Label htmlFor={`${id}-${i}`} className="text-xs font-normal">
                 {opt}
               </Label>
             </div>
@@ -290,13 +309,13 @@ function FieldInput({
                     onChange(field.id, next);
                   }}
                 />
-                <Label htmlFor={`${id}-outro`} className="font-normal">
+                <Label htmlFor={`${id}-outro`} className="text-xs font-normal">
                   Outro
                 </Label>
               </div>
               {outroSelecionado && (
                 <Input
-                  className="ml-6 h-8 max-w-[240px] text-xs"
+                  className="ml-6 h-8 max-w-[240px] bg-surface text-xs"
                   value={textoDoValorOutro(outroSelecionado)}
                   onChange={(e) => {
                     const next = selected.map((v) =>
@@ -325,21 +344,25 @@ function FieldInput({
             onValueChange={(v) => onChange(field.id, v === "__outro__" ? construirValorOutro("") : v)}
             disabled={disabled}
           >
-            <SelectTrigger id={id}>
+            <SelectTrigger id={id} className="bg-surface text-xs">
               <SelectValue placeholder="Selecione…" />
             </SelectTrigger>
             <SelectContent>
               {opts.map((opt, i) => (
-                <SelectItem key={i} value={opt}>
+                <SelectItem key={i} value={opt} className="text-xs">
                   {opt}
                 </SelectItem>
               ))}
-              {field.allowOther && <SelectItem value="__outro__">Outro</SelectItem>}
+              {field.allowOther && (
+                <SelectItem value="__outro__" className="text-xs">
+                  Outro
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
           {outroAtivo && (
             <Input
-              className="h-8 max-w-[240px] text-xs"
+              className="h-8 max-w-[240px] bg-surface text-xs"
               value={ehValorOutro(atual) ? textoDoValorOutro(atual) : ""}
               onChange={(e) => onChange(field.id, construirValorOutro(e.target.value))}
               placeholder="Especifique…"
@@ -353,6 +376,7 @@ function FieldInput({
       return (
         <Input
           id={id}
+          className="bg-surface text-xs"
           inputMode="decimal"
           value={(value as string) ?? ""}
           onChange={(e) => onChange(field.id, e.target.value)}
@@ -434,7 +458,7 @@ function FieldInput({
                     {colunas.map((c, ci) => (
                       <td key={ci} className="p-1">
                         <Input
-                          className="h-7 text-xs"
+                          className="h-7 bg-surface text-xs"
                           value={linha[c] ?? ""}
                           onChange={(e) => setCelula(ri, c, e.target.value)}
                           disabled={disabled}
@@ -547,6 +571,7 @@ function FieldInput({
       return (
         <Input
           id={id}
+          className="bg-surface text-xs"
           type={htmlType[field.type] ?? "text"}
           value={(value as string) ?? ""}
           onChange={(e) => onChange(field.id, e.target.value)}

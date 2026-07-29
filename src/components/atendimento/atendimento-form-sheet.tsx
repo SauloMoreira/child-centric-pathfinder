@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  Info,
   Loader2,
   MessageSquare,
   Plus,
@@ -52,6 +53,7 @@ import {
   fieldHasOptions,
   isChoiceField,
   normalizarCondicao,
+  novaOrientacao,
   novaSecao,
   novoCampo,
   removerReferenciaDaCondicao,
@@ -135,6 +137,7 @@ export function AtendimentoFormSheet({
 
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
   const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
+  const addOrientacao = () => setCampos((prev) => [...prev, novaOrientacao()]);
   const removeCampo = (id: string) =>
     setCampos((prev) =>
       prev
@@ -258,7 +261,10 @@ export function AtendimentoFormSheet({
             ? { ...f.calc, fieldIds: f.calc.fieldIds.filter((fid) => campos.some((c) => c.id === fid)) }
             : null,
         visibleIf: validarCondicaoParaSubmissao(f.visibleIf, anteriores),
-        requiredIf: f.type === "section" ? null : validarCondicaoParaSubmissao(f.requiredIf, anteriores),
+        requiredIf:
+          f.type === "section" || f.type === "orientation"
+            ? null
+            : validarCondicaoParaSubmissao(f.requiredIf, anteriores),
       };
     }).map((f) => (f.type === "calculated" && (f.calc?.fieldIds.length ?? 0) === 0 ? { ...f, calc: null } : f));
 
@@ -403,12 +409,15 @@ export function AtendimentoFormSheet({
           <div className="space-y-2 border-t border-border pt-4">
             <div className="flex items-center justify-between gap-2">
               <Label>Campos do formulário</Label>
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addSecao}>
                   <SeparatorHorizontal className="h-3.5 w-3.5" aria-hidden /> Adicionar seção
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
                   <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar campo
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addOrientacao}>
+                  <Info className="h-3.5 w-3.5" aria-hidden /> Adicionar orientação
                 </Button>
               </div>
             </div>
@@ -473,6 +482,7 @@ function FieldEditor({
   onMove: (dir: -1 | 1) => void;
 }) {
   const isSection = campo.type === "section";
+  const isOrientation = campo.type === "orientation";
   const options = campo.options ?? [];
 
   const setOption = (i: number, value: string) => {
@@ -538,6 +548,33 @@ function FieldEditor({
               elegiveis={camposElegiveisParaCondicao(campos, index)}
               onChange={(visibleIf) => onChange({ visibleIf })}
             />
+          </div>
+          {removeButton}
+        </div>
+      </div>
+    );
+  }
+
+  if (isOrientation) {
+    return (
+      <div className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3">
+        <div className="flex items-start gap-2">
+          {moveButtons}
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+              <p className="text-xs font-medium text-institutional">Orientação</p>
+            </div>
+            <Textarea
+              value={campo.label}
+              onChange={(e) => onChange({ label: e.target.value })}
+              placeholder="Texto de orientação para quem preenche o formulário…"
+              rows={2}
+              className="resize-none bg-surface text-xs"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Aparece em destaque no formulário. Não entra no resumo por IA nem nos PDFs gerados.
+            </p>
           </div>
           {removeButton}
         </div>

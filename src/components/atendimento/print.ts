@@ -162,6 +162,10 @@ export function montarFormularioBrancoHtml(
   for (const campo of campos) {
     if (campo.type === "section") {
       partes.push(`<div class="secao">${escapeHtml(campo.label || "(seção sem título)")}</div>`);
+    } else if (campo.type === "orientation") {
+      // Ajuste doc — orientações são notas para quem preenche na tela;
+      // não fazem parte do arquivo gerado para download/impressão.
+      continue;
     } else {
       partes.push(campoHtmlBranco(campo));
     }
@@ -200,6 +204,8 @@ export function montarFormularioPreenchidoHtml(
   for (const campo of visiveis) {
     if (campo.type === "section") {
       partes.push(`<div class="secao">${escapeHtml(campo.label || "(seção sem título)")}</div>`);
+    } else if (campo.type === "orientation") {
+      continue;
     } else {
       partes.push(
         `<div class="campo"><div class="rotulo">${escapeHtml(campo.label || "(sem rótulo)")}</div>${formatarResposta(

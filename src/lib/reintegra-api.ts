@@ -197,7 +197,13 @@ export type AtendimentoFieldType =
    *  seção inteira conforme uma escolha anterior. Fase 5: cada seção
    *  também delimita uma etapa quando o formulário usa navegação por
    *  etapas. */
-  | "section";
+  | "section"
+  /** Marcador estrutural (nota orientativa do Defensor Público para quem
+   *  preenche) — não coleta resposta. O texto vive em `label`. É exibida
+   *  no formulário em destaque (como a antiga descrição), mas é
+   *  desconsiderada no resumo por IA, no texto expandido e nos PDFs
+   *  gerados (em branco ou preenchido). */
+  | "orientation";
 
 /** Uma regra individual de condição: campo de escolha (sempre anterior na
  *  lista) e o valor esperado entre as respostas atuais. */
