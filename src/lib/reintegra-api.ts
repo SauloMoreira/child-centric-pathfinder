@@ -178,7 +178,23 @@ export type AtendimentoFieldType =
   | "cpf_cnpj"
   | "date"
   | "time"
-  | "number";
+  | "number"
+  /** Marcador estrutural (título de seção) — não coleta resposta. Fase 2:
+   *  lógica condicional. Pode ter sua própria visibleIf para "pular" a
+   *  seção inteira conforme uma escolha anterior. */
+  | "section";
+
+/**
+ * Condição de visibilidade (Fase 2 — lógica condicional/branching): o
+ * campo/seção só aparece se o campo referenciado (sempre um campo de
+ * escolha — radio/checkbox/dropdown — anterior na lista) tiver `value`
+ * entre suas respostas atuais. Sem condição (null/undefined) = sempre
+ * visível.
+ */
+export type AtendimentoFieldCondition = {
+  fieldId: string;
+  value: string;
+};
 
 export type AtendimentoFormField = {
   id: string;
@@ -188,6 +204,8 @@ export type AtendimentoFormField = {
   placeholder?: string | null;
   /** Apenas para radio/checkbox/dropdown. */
   options?: string[] | null;
+  /** Fase 2: visibilidade condicional. */
+  visibleIf?: AtendimentoFieldCondition | null;
 };
 
 export type AtendimentoDetalhe = {

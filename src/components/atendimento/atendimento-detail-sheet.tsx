@@ -15,7 +15,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FormRenderer } from "@/components/atendimento/form-renderer";
-import { valorInicial, type AtendimentoFormValues } from "@/components/atendimento/form-field-types";
+import {
+  campoVisivel,
+  valorInicial,
+  type AtendimentoFormValues,
+} from "@/components/atendimento/form-field-types";
 import {
   useAtendimentoDetalhe,
   useExcluirAtendimento,
@@ -65,7 +69,19 @@ export function AtendimentoDetailSheet({
   }, [detalhe.data]);
 
   const handleChange = (fieldId: string, value: string | string[]) => {
-    setValues((prev) => ({ ...prev, [fieldId]: value }));
+    setValues((prev) => {
+      const next = { ...prev, [fieldId]: value };
+      // Fase 2 — lógica condicional: se essa resposta fez algum campo
+      // posterior deixar de estar visível, limpa a resposta dele (evita
+      // guardar respostas "fantasma" de campos escondidos).
+      for (const field of detalhe.data?.formSchema ?? []) {
+        if (field.type === "section") continue;
+        if (!campoVisivel(field, next) && next[field.id] !== undefined) {
+          next[field.id] = valorInicial(field);
+        }
+      }
+      return next;
+    });
   };
 
   const handleDelete = () => {

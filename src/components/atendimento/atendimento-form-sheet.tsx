@@ -6,6 +6,7 @@ import {
   Loader2,
   MessageSquare,
   Plus,
+  SeparatorHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -43,7 +44,15 @@ import {
   useAtualizarAtendimento,
   mensagemErroAtendimento,
 } from "@/features/atendimento/hooks";
-import { FIELD_TYPE_META, FIELD_TYPE_ORDER, fieldHasOptions, novoCampo } from "@/components/atendimento/form-field-types";
+import {
+  camposElegiveisParaCondicao,
+  FIELD_TYPE_META,
+  FIELD_TYPE_ORDER,
+  fieldHasOptions,
+  isChoiceField,
+  novaSecao,
+  novoCampo,
+} from "@/components/atendimento/form-field-types";
 import type { AtendimentoDetalhe, AtendimentoFieldType, AtendimentoFormField } from "@/lib/reintegra-api";
 
 type AtendimentoFormMode =
@@ -63,9 +72,11 @@ interface AtendimentoFormSheetProps {
 /**
  * Camada lateral de criação/edição de Atendimento: título, descrição
  * (opcional), categoria(s) — múltiplas — e o construtor de campos do
- * formulário (tipos de campo, obrigatoriedade, opções). Sem lógica
- * condicional/branching nesta fase. Autor é sempre implícito (o Defensor
- * autenticado).
+ * formulário (tipos de campo, obrigatoriedade, opções). Fase 2: lógica
+ * condicional — cada campo/seção pode ter uma condição "mostrar apenas
+ * se" referenciando um campo de escolha (radio/checkbox/dropdown)
+ * anterior na lista, e seções inteiras podem ser puladas assim. Autor é
+ * sempre implícito (o Defensor autenticado).
  */
 export function AtendimentoFormSheet({
   open,
@@ -109,7 +120,15 @@ export function AtendimentoFormSheet({
   };
 
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
-  const removeCampo = (id: string) => setCampos((prev) => prev.filter((f) => f.id !== id));
+  const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
+  const removeCampo = (id: string) =>
+    setCampos((prev) =>
+      prev
+        .filter((f) => f.id !== id)
+        // Remove condições que apontavam para o campo excluído — evita
+        // referência pendente ("mostrar apenas se" de um campo que não existe mais).
+        .map((f) => (f.visibleIf?.fieldId === id ? { ...f, visibleIf: null } : f)),
+    );
   const moveCampo = (index: number, dir: -1 | 1) => {
     setCampos((prev) => {
       const next = [...prev];
@@ -124,11 +143,21 @@ export function AtendimentoFormSheet({
   };
   const changeCampoType = (id: string, type: AtendimentoFieldType) => {
     setCampos((prev) =>
-      prev.map((f) =>
-        f.id === id
-          ? { ...f, type, options: fieldHasOptions(type) ? (f.options?.length ? f.options : ["Opção 1"]) : null }
-          : f,
-      ),
+      prev.map((f) => {
+        if (f.id === id) {
+          return {
+            ...f,
+            type,
+            options: fieldHasOptions(type) ? (f.options?.length ? f.options : ["Opção 1"]) : null,
+          };
+        }
+        // Se o campo deixou de ser de escolha, condições que dependiam
+        // dele deixam de fazer sentido.
+        if (!isChoiceField(type) && f.visibleIf?.fieldId === id) {
+          return { ...f, visibleIf: null };
+        }
+        return f;
+      }),
     );
   };
 
@@ -150,11 +179,24 @@ export function AtendimentoFormSheet({
       return;
     }
 
-    const schema = campos.map((f) => ({
-      ...f,
-      label: f.label.trim(),
-      options: fieldHasOptions(f.type) ? (f.options ?? []).map((o) => o.trim()).filter(Boolean) : null,
-    }));
+    const schema = campos.map((f, i) => {
+      // Descarta condições que ficaram órfãs (campo referenciado removido,
+      // deixou de ser de escolha, ou a opção referenciada foi apagada) —
+      // melhor cair para "sempre visível" do que salvar uma condição que
+      // nunca vai bater com nada.
+      let visibleIf = f.visibleIf ?? null;
+      if (visibleIf) {
+        const ref = campos.slice(0, i).find((c) => c.id === visibleIf!.fieldId);
+        const refValido = ref && isChoiceField(ref.type) && (ref.options ?? []).includes(visibleIf.value);
+        if (!refValido) visibleIf = null;
+      }
+      return {
+        ...f,
+        label: f.label.trim(),
+        options: fieldHasOptions(f.type) ? (f.options ?? []).map((o) => o.trim()).filter(Boolean) : null,
+        visibleIf,
+      };
+    });
 
     if (target?.mode === "edit") {
       atualizar.mutate(
@@ -295,11 +337,16 @@ export function AtendimentoFormSheet({
           </div>
 
           <div className="space-y-2 border-t border-border pt-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Label>Campos do formulário</Label>
-              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
-                <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar campo
-              </Button>
+              <div className="flex gap-1.5">
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addSecao}>
+                  <SeparatorHorizontal className="h-3.5 w-3.5" aria-hidden /> Adicionar seção
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
+                  <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar campo
+                </Button>
+              </div>
             </div>
             {campos.length === 0 ? (
               <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
@@ -311,6 +358,7 @@ export function AtendimentoFormSheet({
                   <FieldEditor
                     key={campo.id}
                     campo={campo}
+                    campos={campos}
                     index={index}
                     total={campos.length}
                     onChange={(patch) => updateCampo(campo.id, patch)}
@@ -343,6 +391,7 @@ export function AtendimentoFormSheet({
 
 function FieldEditor({
   campo,
+  campos,
   index,
   total,
   onChange,
@@ -351,6 +400,7 @@ function FieldEditor({
   onMove,
 }: {
   campo: AtendimentoFormField;
+  campos: AtendimentoFormField[];
   index: number;
   total: number;
   onChange: (patch: Partial<AtendimentoFormField>) => void;
@@ -358,6 +408,7 @@ function FieldEditor({
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
 }) {
+  const isSection = campo.type === "section";
   const options = campo.options ?? [];
 
   const setOption = (i: number, value: string) => {
@@ -368,29 +419,67 @@ function FieldEditor({
   const addOption = () => onChange({ options: [...options, `Opção ${options.length + 1}`] });
   const removeOption = (i: number) => onChange({ options: options.filter((_, oi) => oi !== i) });
 
+  const moveButtons = (
+    <div className="flex shrink-0 flex-col gap-0.5">
+      <button
+        type="button"
+        className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+        aria-label="Mover para cima"
+        disabled={index === 0}
+        onClick={() => onMove(-1)}
+      >
+        <ArrowUp className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+        aria-label="Mover para baixo"
+        disabled={index === total - 1}
+        onClick={() => onMove(1)}
+      >
+        <ArrowDown className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+
+  const removeButton = (
+    <button
+      type="button"
+      className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+      aria-label={isSection ? "Remover seção" : "Remover campo"}
+      onClick={onRemove}
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </button>
+  );
+
+  if (isSection) {
+    return (
+      <div className="rounded-md border border-dashed border-institutional/40 bg-institutional/[0.03] p-3">
+        <div className="flex items-start gap-2">
+          {moveButtons}
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <SeparatorHorizontal className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+              <Input
+                value={campo.label}
+                onChange={(e) => onChange({ label: e.target.value })}
+                placeholder="Título da seção"
+                className="text-sm font-medium"
+              />
+            </div>
+            <ConditionEditor campo={campo} campos={campos} index={index} onChange={onChange} />
+          </div>
+          {removeButton}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border border-border p-3">
       <div className="flex items-start gap-2">
-        <div className="flex shrink-0 flex-col gap-0.5">
-          <button
-            type="button"
-            className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-            aria-label="Mover campo para cima"
-            disabled={index === 0}
-            onClick={() => onMove(-1)}
-          >
-            <ArrowUp className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-            aria-label="Mover campo para baixo"
-            disabled={index === total - 1}
-            onClick={() => onMove(1)}
-          >
-            <ArrowDown className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        {moveButtons}
 
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -453,17 +542,103 @@ function FieldEditor({
               </Button>
             </div>
           )}
+
+          <ConditionEditor campo={campo} campos={campos} index={index} onChange={onChange} />
         </div>
 
-        <button
-          type="button"
-          className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
-          aria-label="Remover campo"
-          onClick={onRemove}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        {removeButton}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Editor da condição de visibilidade (Fase 2): "mostrar apenas se" um
+ * campo de escolha anterior tiver uma resposta específica. Só oferece
+ * campos de escolha (radio/checkbox/dropdown) que aparecem ANTES deste
+ * na lista, evitando referências circulares ou "para frente".
+ */
+function ConditionEditor({
+  campo,
+  campos,
+  index,
+  onChange,
+}: {
+  campo: AtendimentoFormField;
+  campos: AtendimentoFormField[];
+  index: number;
+  onChange: (patch: Partial<AtendimentoFormField>) => void;
+}) {
+  const elegiveis = camposElegiveisParaCondicao(campos, index);
+  const hasCondition = !!campo.visibleIf;
+  const referenciado = elegiveis.find((c) => c.id === campo.visibleIf?.fieldId);
+
+  if (elegiveis.length === 0 && !hasCondition) {
+    return (
+      <p className="text-[10px] text-muted-foreground">
+        Adicione um campo de escolha (opções) antes deste para poder condicionar a exibição.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5 rounded-md bg-muted/20 p-2">
+      <div className="flex items-center gap-2">
+        <Switch
+          id={`condicao-${campo.id}`}
+          checked={hasCondition}
+          disabled={elegiveis.length === 0}
+          onCheckedChange={(v) => {
+            if (v && elegiveis.length > 0) {
+              const first = elegiveis[0];
+              onChange({ visibleIf: { fieldId: first.id, value: (first.options ?? [])[0] ?? "" } });
+            } else {
+              onChange({ visibleIf: null });
+            }
+          }}
+        />
+        <Label htmlFor={`condicao-${campo.id}`} className="text-xs font-normal">
+          Mostrar apenas se…
+        </Label>
+      </div>
+      {hasCondition && campo.visibleIf && (
+        <div className="flex flex-wrap items-center gap-2 pl-1">
+          <Select
+            value={campo.visibleIf.fieldId}
+            onValueChange={(fieldId) => {
+              const ref = elegiveis.find((c) => c.id === fieldId);
+              onChange({ visibleIf: { fieldId, value: (ref?.options ?? [])[0] ?? "" } });
+            }}
+          >
+            <SelectTrigger className="h-7 w-[180px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {elegiveis.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.label || "(sem rótulo)"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-xs text-muted-foreground">for</span>
+          <Select
+            value={campo.visibleIf.value}
+            onValueChange={(value) => onChange({ visibleIf: { fieldId: campo.visibleIf!.fieldId, value } })}
+          >
+            <SelectTrigger className="h-7 w-[160px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(referenciado?.options ?? []).map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }

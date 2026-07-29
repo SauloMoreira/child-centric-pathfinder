@@ -3,6 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { AtendimentoFormField } from "@/lib/reintegra-api";
-import type { AtendimentoFormValues } from "@/components/atendimento/form-field-types";
+import { campoVisivel, type AtendimentoFormValues } from "@/components/atendimento/form-field-types";
 
 interface FormRendererProps {
   fields: AtendimentoFormField[];
@@ -24,8 +25,15 @@ interface FormRendererProps {
  * Renderiza o formulário de um Atendimento para preenchimento. Estado
  * sempre em memória (values/onChange controlados pelo componente pai) —
  * nunca é enviado ao backend nem persiste entre sessões.
+ *
+ * Fase 2 — lógica condicional: campos e seções com `visibleIf` só aparecem
+ * quando a condição é satisfeita pelas respostas já dadas. Uma seção cuja
+ * condição não é satisfeita é pulada inteira (ela e os campos que a
+ * seguem, até a próxima seção).
  */
 export function FormRenderer({ fields, values, onChange, disabled }: FormRendererProps) {
+  const visiveis = fields.filter((f) => campoVisivel(f, values));
+
   if (fields.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
@@ -36,15 +44,24 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
 
   return (
     <div className="space-y-4">
-      {fields.map((field) => (
-        <div key={field.id} className="space-y-1.5">
-          <Label htmlFor={`campo-${field.id}`}>
-            {field.label || "(sem rótulo)"}
-            {field.required && <span className="ml-0.5 text-destructive">*</span>}
-          </Label>
-          <FieldInput field={field} value={values[field.id]} onChange={onChange} disabled={disabled} />
-        </div>
-      ))}
+      {visiveis.map((field, i) =>
+        field.type === "section" ? (
+          <div key={field.id} className={i === 0 ? "space-y-1.5" : "space-y-1.5 pt-2"}>
+            {i > 0 && <Separator />}
+            <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-institutional">
+              {field.label || "(seção sem título)"}
+            </p>
+          </div>
+        ) : (
+          <div key={field.id} className="space-y-1.5">
+            <Label htmlFor={`campo-${field.id}`}>
+              {field.label || "(sem rótulo)"}
+              {field.required && <span className="ml-0.5 text-destructive">*</span>}
+            </Label>
+            <FieldInput field={field} value={values[field.id]} onChange={onChange} disabled={disabled} />
+          </div>
+        ),
+      )}
     </div>
   );
 }

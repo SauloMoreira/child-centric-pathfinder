@@ -1,9 +1,14 @@
-// Tipos de campo suportados pelo construtor de formulário de Atendimento
-// (Fase 1 — sem lógica condicional/branching, isso fica para uma fase
-// seguinte). Compartilhado entre o builder (criação/edição) e o renderer
-// (preenchimento/execução).
-import type { AtendimentoFieldType, AtendimentoFormField } from "@/lib/reintegra-api";
+// Tipos de campo suportados pelo construtor de formulário de Atendimento,
+// incluindo lógica condicional (Fase 2): visibilidade de campos/seções
+// baseada em respostas anteriores. Compartilhado entre o builder
+// (criação/edição) e o renderer (preenchimento/execução).
+import type {
+  AtendimentoFieldCondition,
+  AtendimentoFieldType,
+  AtendimentoFormField,
+} from "@/lib/reintegra-api";
 
+/** Tipos de campo oferecidos no seletor "tipo" de um campo comum do builder. */
 export const FIELD_TYPE_ORDER: AtendimentoFieldType[] = [
   "text_short",
   "text_long",
@@ -18,6 +23,10 @@ export const FIELD_TYPE_ORDER: AtendimentoFieldType[] = [
   "number",
 ];
 
+/** Tipos de campo cuja resposta é uma escolha entre opções pré-definidas —
+ *  únicos elegíveis como referência de uma condição de visibilidade. */
+export const CHOICE_FIELD_TYPES: AtendimentoFieldType[] = ["radio", "checkbox", "dropdown"];
+
 export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasOptions: boolean }> = {
   text_short: { label: "Texto curto", hasOptions: false },
   text_long: { label: "Texto longo", hasOptions: false },
@@ -30,10 +39,15 @@ export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasO
   date: { label: "Data", hasOptions: false },
   time: { label: "Hora", hasOptions: false },
   number: { label: "Número", hasOptions: false },
+  section: { label: "Seção", hasOptions: false },
 };
 
 export function fieldHasOptions(type: AtendimentoFieldType): boolean {
   return FIELD_TYPE_META[type].hasOptions;
+}
+
+export function isChoiceField(type: AtendimentoFieldType): boolean {
+  return CHOICE_FIELD_TYPES.includes(type);
 }
 
 export function novoCampo(type: AtendimentoFieldType = "text_short"): AtendimentoFormField {
@@ -44,6 +58,21 @@ export function novoCampo(type: AtendimentoFieldType = "text_short"): Atendiment
     required: false,
     placeholder: null,
     options: fieldHasOptions(type) ? ["Opção 1"] : null,
+    visibleIf: null,
+  };
+}
+
+/** Marcador estrutural de seção — divide o formulário em blocos e pode,
+ *  ele próprio, ser pulado inteiro conforme uma escolha anterior. */
+export function novaSecao(): AtendimentoFormField {
+  return {
+    id: crypto.randomUUID(),
+    type: "section",
+    label: "",
+    required: false,
+    placeholder: null,
+    options: null,
+    visibleIf: null,
   };
 }
 
@@ -52,4 +81,37 @@ export type AtendimentoFormValues = Record<string, string | string[]>;
 
 export function valorInicial(field: AtendimentoFormField): string | string[] {
   return field.type === "checkbox" ? [] : "";
+}
+
+/**
+ * Avalia se uma condição de visibilidade está satisfeita dado o mapa de
+ * respostas atual. Sem condição => sempre satisfeita (visível).
+ */
+export function condicaoSatisfeita(
+  condicao: AtendimentoFieldCondition | null | undefined,
+  values: AtendimentoFormValues,
+): boolean {
+  if (!condicao) return true;
+  const resposta = values[condicao.fieldId];
+  if (resposta === undefined) return false;
+  if (Array.isArray(resposta)) return resposta.includes(condicao.value);
+  return resposta === condicao.value;
+}
+
+/** Visibilidade de um campo/seção específico, dado o preenchimento atual. */
+export function campoVisivel(field: AtendimentoFormField, values: AtendimentoFormValues): boolean {
+  return condicaoSatisfeita(field.visibleIf, values);
+}
+
+/**
+ * Campos elegíveis como referência de condição para o campo/seção no
+ * índice `index` do builder: apenas campos de escolha (radio/checkbox/
+ * dropdown) que aparecem ANTES dele na lista — evita referências
+ * circulares ou "para frente".
+ */
+export function camposElegiveisParaCondicao(
+  campos: AtendimentoFormField[],
+  index: number,
+): AtendimentoFormField[] {
+  return campos.slice(0, index).filter((f) => isChoiceField(f.type) && (f.options ?? []).length > 0);
 }
