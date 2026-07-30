@@ -699,7 +699,6 @@ export type Database = {
           p_idempotency_key?: string
           p_justificativa?: string
           p_matricula?: string
-          p_orgao_execucao_id: string
           p_target_user_id: string
         }
         Returns: Json
@@ -762,13 +761,7 @@ export type Database = {
         Returns: Json
       }
       aprovar_solicitacao_acesso: {
-        Args: {
-          p_criar_novo?: boolean
-          p_novo_orgao?: Json
-          p_orgao_final_id: string
-          p_request_id: string
-          p_version: number
-        }
+        Args: { p_request_id: string; p_version: number }
         Returns: Json
       }
       aprovar_solicitacao_acesso_defensor: {
@@ -1207,15 +1200,19 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: Json
       }
-      registrar_acesso_orgao_externo: {
-        Args: { p_finalidade?: string; p_modulo: string; p_orgao_id: string }
+      registrar_acesso_defensor_externo: {
+        Args: {
+          p_defensor_user_id: string
+          p_finalidade?: string
+          p_modulo: string
+        }
         Returns: Json
       }
       registrar_break_glass: {
         Args: {
           p_chamado: string
+          p_defensor_user_id: string
           p_justificativa: string
-          p_orgao_id: string
           p_prazo_minutos?: number
         }
         Returns: Json
@@ -1300,8 +1297,6 @@ export type Database = {
           p_cargo: string
           p_matricula: string
           p_nome_completo: string
-          p_novo_orgao: Json
-          p_orgao_id: string
           p_telefone: string
         }
         Returns: Json
