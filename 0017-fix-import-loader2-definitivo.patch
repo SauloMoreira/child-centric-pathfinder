@@ -1,0 +1,30 @@
+From 7f714ada58699adeda8d5f8cc12706103bfa09fb Mon Sep 17 00:00:00 2001
+From: Saulo Moreira <saulo@example.com>
+Date: Thu, 30 Jul 2026 21:00:26 +0000
+Subject: [PATCH] =?UTF-8?q?Corrige=20import=20de=20Loader2=20faltando=20(C?=
+ =?UTF-8?q?olumnPanelPickerDialog)=20=E2=80=94=20essa=20corre=C3=A7=C3=A3o?=
+ =?UTF-8?q?=20j=C3=A1=20tinha=20sido=20gerada=20antes=20mas=20nunca=20cheg?=
+ =?UTF-8?q?ou=20a=20ser=20aplicada?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ src/routes/_authenticated/area-de-trabalho.tsx | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/routes/_authenticated/area-de-trabalho.tsx b/src/routes/_authenticated/area-de-trabalho.tsx
+index 539ed3f..1b2c0e2 100644
+--- a/src/routes/_authenticated/area-de-trabalho.tsx
++++ b/src/routes/_authenticated/area-de-trabalho.tsx
+@@ -22,6 +22,7 @@ import {
+   User,
+   Pencil,
+   Check,
++  Loader2,
+   Search,
+   Sparkles,
+ } from "lucide-react";
+-- 
+2.43.0
+
