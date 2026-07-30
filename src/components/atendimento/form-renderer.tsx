@@ -463,7 +463,9 @@ function FieldInput({
     }
     case "checkbox": {
       const opts = field.options ?? [];
-      const selected = Array.isArray(value) ? value : [];
+      const selected: string[] = Array.isArray(value)
+        ? value.filter((v): v is string => typeof v === "string")
+        : [];
       const outroSelecionado = selected.find((v) => ehValorOutro(v));
       return (
         <div className="space-y-1.5 pt-0.5">

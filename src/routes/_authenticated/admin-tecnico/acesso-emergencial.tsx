@@ -39,7 +39,7 @@ function AcessoEmergencial() {
   const mut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("registrar_break_glass", {
-        p_defensor_user_id: defensor || null,
+        p_defensor_user_id: defensor,
         p_justificativa: motivo,
         p_chamado: chamado,
         p_prazo_minutos: prazo,
