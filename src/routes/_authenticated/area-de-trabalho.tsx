@@ -17,6 +17,8 @@ import {
   UnfoldVertical,
   GripVertical,
   Copy,
+  FolderInput,
+  FolderOutput,
   User,
   Pencil,
   Check,
@@ -51,6 +53,9 @@ import { useCurrentDefenderContext } from "@/features/team/defender-bonds";
 import {
   adicionarCardWorkspace,
   atualizarColunaWorkspace,
+  duplicarColunaWorkspace,
+  copiarColunaParaPainel,
+  moverColunaParaPainel,
   criarColunaWorkspace,
   excluirColunaWorkspace,
   isConcurrentChangeError,
@@ -82,6 +87,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
@@ -595,6 +607,39 @@ function ColumnsBoard({
     onError: handleMutationError,
   });
 
+  // Ajuste doc (AJUSTE 13) — duplicar/copiar/mover coluna.
+  const duplicarCol = useMutation({
+    mutationFn: (columnId: string) =>
+      duplicarColunaWorkspace({ columnId, expectedWorkspaceVersion: workspace.optimisticVersion }),
+    onSuccess: () => {
+      toast.success("Coluna duplicada");
+      onRefetch();
+    },
+    onError: handleMutationError,
+  });
+  const copiarColParaPainel = useMutation({
+    mutationFn: (v: { columnId: string; targetWorkspaceId: string }) =>
+      copiarColunaParaPainel(v),
+    onSuccess: () => {
+      toast.success("Coluna copiada para o painel selecionado");
+      qc.invalidateQueries();
+    },
+    onError: handleMutationError,
+  });
+  const moverColParaPainel = useMutation({
+    mutationFn: (v: { columnId: string; targetWorkspaceId: string }) =>
+      moverColunaParaPainel({
+        columnId: v.columnId,
+        targetWorkspaceId: v.targetWorkspaceId,
+        expectedSourceWorkspaceVersion: workspace.optimisticVersion,
+      }),
+    onSuccess: () => {
+      toast.success("Coluna movida para o painel selecionado");
+      qc.invalidateQueries();
+    },
+    onError: handleMutationError,
+  });
+
   const removerCard = useMutation({
     mutationFn: (cardId: string) =>
       removerCardWorkspace({
@@ -772,6 +817,10 @@ function ColumnsBoard({
 
   // "Adicionar a outro Painel"
   const [copyTarget, setCopyTarget] = useState<WorkspaceCardDto | null>(null);
+  // Ajuste doc (AJUSTE 13) — "Copiar para…"/"Mover para…" de coluna.
+  const [columnPanelPicker, setColumnPanelPicker] = useState<
+    { columnId: string; columnName: string; mode: "copy" | "move" } | null
+  >(null);
 
   // Cota: criar/editar (side sheet) e detalhe expandido (side sheet)
   const [cotaFormTarget, setCotaFormTarget] = useState<
@@ -1112,6 +1161,9 @@ function ColumnsBoard({
                   workspace={workspace}
                   onMoveCol={(dir) => moverCol.mutate({ columnId: c.id, direction: dir })}
                   onEditCol={(v) => editarCol.mutate({ columnId: c.id, ...v })}
+                  onDuplicateCol={() => duplicarCol.mutate(c.id)}
+                  onCopyColToPanel={() => setColumnPanelPicker({ columnId: c.id, columnName: c.nome, mode: "copy" })}
+                  onMoveColToPanel={() => setColumnPanelPicker({ columnId: c.id, columnName: c.nome, mode: "move" })}
                   onDeleteCol={(destinationColumnId) =>
                     excluirCol.mutate({ columnId: c.id, destinationColumnId })
                   }
@@ -1171,6 +1223,29 @@ function ColumnsBoard({
         onDone={(panelName) => {
           if (panelName) announce(`Card adicionado ao Painel "${panelName}".`);
           setCopyTarget(null);
+        }}
+      />
+
+      <ColumnPanelPickerDialog
+        open={!!columnPanelPicker}
+        onOpenChange={(v) => !v && setColumnPanelPicker(null)}
+        target={columnPanelPicker}
+        currentPanelId={workspace.id}
+        allPanels={allPanels}
+        pending={copiarColParaPainel.isPending || moverColParaPainel.isPending}
+        onConfirm={(targetWorkspaceId) => {
+          if (!columnPanelPicker) return;
+          if (columnPanelPicker.mode === "copy") {
+            copiarColParaPainel.mutate(
+              { columnId: columnPanelPicker.columnId, targetWorkspaceId },
+              { onSuccess: () => setColumnPanelPicker(null) },
+            );
+          } else {
+            moverColParaPainel.mutate(
+              { columnId: columnPanelPicker.columnId, targetWorkspaceId },
+              { onSuccess: () => setColumnPanelPicker(null) },
+            );
+          }
         }}
       />
 
@@ -1381,6 +1456,9 @@ function SortableColumn(props: {
   workspace: WorkspaceMeta;
   onMoveCol: (dir: "left" | "right") => void;
   onEditCol: (v: { nome: string; descricao: string | null; corToken: WorkspaceColor }) => void;
+  onDuplicateCol: () => void;
+  onCopyColToPanel: () => void;
+  onMoveColToPanel: () => void;
   onDeleteCol: (destinationColumnId: string | null) => void;
   onRemoveCard: (cardId: string) => void;
   onMoveCard: (cardId: string, targetColumnId: string, newPosition: number) => void;
@@ -1407,6 +1485,9 @@ function SortableColumn(props: {
     workspace,
     onMoveCol,
     onEditCol,
+    onDuplicateCol,
+    onCopyColToPanel,
+    onMoveColToPanel,
     onDeleteCol,
     onRemoveCard,
     onMoveCard,
@@ -1585,6 +1666,16 @@ function SortableColumn(props: {
                 onClick={() => onMoveCol("right")}
               >
                 <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDuplicateCol}>
+                <Copy className="mr-2 h-4 w-4" /> Duplicar coluna
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCopyColToPanel}>
+                <FolderInput className="mr-2 h-4 w-4" /> Copiar para…
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onMoveColToPanel}>
+                <FolderOutput className="mr-2 h-4 w-4" /> Mover para…
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -2501,6 +2592,98 @@ function MoveToPanelDialog({
             onClick={() => addMutation.mutate()}
           >
             Adicionar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// ColumnPanelPickerDialog — Ajuste doc (AJUSTE 13): "Copiar para…"/"Mover
+// para…" de uma coluna inteira, escolhendo o painel de destino.
+// -----------------------------------------------------------------------------
+function ColumnPanelPickerDialog({
+  open,
+  onOpenChange,
+  target,
+  currentPanelId,
+  allPanels,
+  pending,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  target: { columnId: string; columnName: string; mode: "copy" | "move" } | null;
+  currentPanelId: string;
+  allPanels: PanelSummary[];
+  pending: boolean;
+  onConfirm: (targetWorkspaceId: string) => void;
+}) {
+  const [targetPanelId, setTargetPanelId] = useState<string | null>(null);
+
+  const availablePanels = useMemo(
+    () => allPanels.filter((p) => p.id !== currentPanelId && !p.archivedAt),
+    [allPanels, currentPanelId],
+  );
+
+  useEffect(() => {
+    if (open) setTargetPanelId(availablePanels[0]?.id ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const verbo = target?.mode === "move" ? "Mover" : "Copiar";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{verbo} coluna para outro painel</DialogTitle>
+        </DialogHeader>
+        {target && (
+          <div className="grid gap-4">
+            <div className="rounded-md border border-border bg-muted/40 p-3">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Coluna</p>
+              <p className="text-sm font-medium">{target.columnName}</p>
+            </div>
+
+            {availablePanels.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Você não possui outros Painéis ativos.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Painel de destino</Label>
+                <Select value={targetPanelId ?? undefined} onValueChange={setTargetPanelId}>
+                  <SelectTrigger className="bg-surface text-sm">
+                    <SelectValue placeholder="Selecione um painel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePanels.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  A coluna será {target.mode === "move" ? "movida" : "copiada"} como a primeira
+                  coluna (à esquerda) do painel selecionado.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={!targetPanelId || pending}
+            onClick={() => targetPanelId && onConfirm(targetPanelId)}
+          >
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+            {verbo}
           </Button>
         </DialogFooter>
       </DialogContent>

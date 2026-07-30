@@ -774,6 +774,53 @@ export async function excluirColunaWorkspace(params: {
   return Number(data);
 }
 
+/** Ajuste doc (AJUSTE 13) — duplica a coluna no MESMO painel, logo à
+ *  direita, com os cards copiados. */
+export async function duplicarColunaWorkspace(params: {
+  columnId: string;
+  expectedWorkspaceVersion: number;
+}): Promise<{ column_id: string; workspace_version: number }> {
+  const { data, error } = await supabase.rpc("duplicar_coluna_workspace", {
+    p_column_id: params.columnId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return data as { column_id: string; workspace_version: number };
+}
+
+/** Ajuste doc (AJUSTE 13) — copia a coluna para outro painel do mesmo
+ *  Defensor, como primeira coluna, com os cards copiados. */
+export async function copiarColunaParaPainel(params: {
+  columnId: string;
+  targetWorkspaceId: string;
+}): Promise<{ column_id: string; workspace_version: number }> {
+  const { data, error } = await supabase.rpc("copiar_coluna_para_painel", {
+    p_column_id: params.columnId,
+    p_target_workspace_id: params.targetWorkspaceId,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return data as { column_id: string; workspace_version: number };
+}
+
+/** Ajuste doc (AJUSTE 13) — move a coluna (com os cards) para outro
+ *  painel do mesmo Defensor, como primeira coluna. */
+export async function moverColunaParaPainel(params: {
+  columnId: string;
+  targetWorkspaceId: string;
+  expectedSourceWorkspaceVersion: number;
+}): Promise<{ column_id: string; source_workspace_version: number; target_workspace_version: number }> {
+  const { data, error } = await supabase.rpc("mover_coluna_para_painel", {
+    p_column_id: params.columnId,
+    p_target_workspace_id: params.targetWorkspaceId,
+    p_expected_source_workspace_version: params.expectedSourceWorkspaceVersion,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return data as { column_id: string; source_workspace_version: number; target_workspace_version: number };
+}
+
 export async function adicionarCardWorkspace(params: {
   columnId: string;
   itemId: string;
