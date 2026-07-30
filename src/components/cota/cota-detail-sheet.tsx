@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Loader2, Pencil, Scale, Trash2 } from "lucide-react";
+import { Copy, Info, Loader2, Pencil, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ interface CotaDetailSheetProps {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    return new Date(iso).toLocaleDateString("pt-BR", { dateStyle: "short" });
   } catch {
     return iso;
   }
@@ -88,38 +88,42 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
             <>
               <SheetHeader className="shrink-0">
                 <SheetTitle className="flex items-start gap-2 pr-6 text-base">
-                  <Scale className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
+                  <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
                   <span className="break-words">{detalhe.data.titulo}</span>
                 </SheetTitle>
               </SheetHeader>
 
               <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
                 <div className="shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span>{detalhe.data.ownerDisplayName}</span>
+                  <span>
+                    <span className="font-semibold text-foreground">Autor(a):</span>{" "}
+                    {detalhe.data.ownerDisplayName}
+                  </span>
                   <span aria-hidden>·</span>
-                  <span>Editado em {formatDate(detalhe.data.updatedAt)}</span>
-                </div>
-
-                <div className="shrink-0 flex flex-wrap gap-1.5">
+                  <span>{formatDate(detalhe.data.updatedAt)}</span>
                   {detalhe.data.categorias.length === 0 ? (
-                    <Badge variant="outline" className="text-[10px]">
-                      Sem categoria
-                    </Badge>
-                  ) : (
-                    detalhe.data.categorias.map((c) => (
-                      <Badge key={c.id} variant="outline" className="text-[10px]">
-                        {c.nome}
+                    <>
+                      <span aria-hidden>·</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        Sem categoria
                       </Badge>
-                    ))
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden>·</span>
+                      {detalhe.data.categorias.map((c) => (
+                        <Badge key={c.id} variant="outline" className="text-[10px]">
+                          {c.nome}
+                        </Badge>
+                      ))}
+                    </>
                   )}
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
                   {detalhe.data.orientacao && (
-                    <div className="mb-3 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-institutional">
-                        Orientação
-                      </p>
+                    <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/[0.1] p-2.5">
+                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
                       <p className="whitespace-pre-wrap text-xs text-foreground">
                         {detalhe.data.orientacao}
                       </p>
@@ -133,7 +137,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
 
               <SheetFooter className="mt-3 shrink-0 sm:justify-between">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopy}>
-                  <Copy className="h-3.5 w-3.5" /> Copiar texto
+                  <Copy className="h-3.5 w-3.5" /> Copiar
                 </Button>
                 {detalhe.data.canEdit && (
                   <div className="flex gap-2">

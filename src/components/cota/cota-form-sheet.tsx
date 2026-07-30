@@ -6,7 +6,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -147,53 +146,55 @@ export function CotaFormSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle className="flex items-center gap-2 text-sm">
             <Scale className="h-4 w-4 text-institutional" />
             {isEdit ? "Editar cota" : "Nova cota"}
           </SheetTitle>
-          <SheetDescription>
-            Modelo de texto reutilizável para sua equipe copiar em minutas de processos.
-          </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 flex-1 space-y-5">
+        <div className="mt-6 flex-1 space-y-5 text-xs">
           <div className="space-y-1.5">
-            <Label htmlFor="cota-titulo">Título</Label>
+            <Label htmlFor="cota-titulo" className="text-xs">
+              Título
+            </Label>
             <Input
               id="cota-titulo"
+              className="bg-background text-xs"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Ex.: Cota de vista — pedido de guarda"
+              placeholder="Ex.: Bloqueio de valores para aquisição de medicamento"
               autoFocus
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Texto</Label>
+            <Label className="text-xs">Texto</Label>
             <RichTextEditor html={texto.html} onChange={setTexto} minHeight="260px" />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cota-orientacao">Orientação (opcional)</Label>
+            <Label htmlFor="cota-orientacao" className="text-xs">
+              Orientação (opcional)
+            </Label>
             <Textarea
               id="cota-orientacao"
               value={orientacao}
               onChange={(e) => setOrientacao(e.target.value)}
-              placeholder="Alguma orientação para a equipe sobre como/quando usar esta cota…"
+              placeholder="Ex.: Indique a quantia necessária de acordo com os orçamentos apresentados pelo(a) assistido(a)."
               rows={3}
-              className="resize-none text-sm"
+              className="resize-none bg-background text-xs"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Categoria(s)</Label>
+            <Label className="text-xs">Categoria(s)</Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   disabled={categoriasQuery.isLoading || categoriasSelecionaveis.length === 0}
-                  className="w-full justify-between font-normal"
+                  className="w-full justify-between bg-background text-xs font-normal"
                 >
                   <span className="text-muted-foreground">
                     {categoriasQuery.isLoading

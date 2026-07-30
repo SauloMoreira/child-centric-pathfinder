@@ -242,10 +242,10 @@ function PanelTabButton({
   return (
     <div
       className={cn(
-        "group relative flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
+        "group relative flex shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
         selected
-          ? "bg-muted text-foreground"
-          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          ? "border-transparent bg-muted text-foreground"
+          : "border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         dragging && "shadow-md ring-1 ring-institutional/60",
       )}
     >

@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Bold, Italic, Underline } from "lucide-react";
+import { Bold, Italic, Strikethrough, Underline } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export type RichTextValue = { html: string; text: string };
 
-const ALLOWED_TAGS = new Set(["B", "STRONG", "I", "EM", "U", "BR", "DIV", "P", "SPAN"]);
+const ALLOWED_TAGS = new Set([
+  "B",
+  "STRONG",
+  "I",
+  "EM",
+  "U",
+  "S",
+  "STRIKE",
+  "DEL",
+  "BR",
+  "DIV",
+  "P",
+  "SPAN",
+]);
 
 /**
  * Sanitização por allowlist: mantém apenas negrito/itálico/sublinhado e
@@ -85,7 +98,7 @@ export function RichTextEditor({
     onChange({ html: sanitizeCotaHtml(ref.current.innerHTML), text: ref.current.innerText.trim() });
   }, [onChange]);
 
-  const exec = (command: "bold" | "italic" | "underline") => {
+  const exec = (command: "bold" | "italic" | "underline" | "strikeThrough") => {
     ref.current?.focus();
     document.execCommand(command);
     emit();
@@ -165,6 +178,17 @@ export function RichTextEditor({
           aria-label="Sublinhado"
         >
           <Underline className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => exec("strikeThrough")}
+          aria-label="Tachado"
+        >
+          <Strikethrough className="h-3.5 w-3.5" />
         </Button>
         <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
         <Button

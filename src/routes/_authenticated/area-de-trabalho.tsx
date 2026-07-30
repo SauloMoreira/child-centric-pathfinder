@@ -900,7 +900,6 @@ function ColumnsBoard({
               e "Criar cota". */}
           <Button
             type="button"
-            variant="outline"
             size="sm"
             className="h-8 shrink-0 gap-1.5"
             onClick={() => setAtendimentoIaDialogOpen(true)}
@@ -911,6 +910,7 @@ function ColumnsBoard({
           {access.accessMode === "owner" && (
             <Button
               type="button"
+              variant="outline"
               size="sm"
               className="h-8 shrink-0 gap-1.5"
               onClick={() => {
@@ -925,6 +925,7 @@ function ColumnsBoard({
           {access.accessMode === "owner" && (
             <Button
               type="button"
+              variant="outline"
               size="sm"
               className="h-8 shrink-0 gap-1.5"
               onClick={() => {
@@ -934,25 +935,6 @@ function ColumnsBoard({
             >
               <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
               Criar cota
-            </Button>
-          )}
-          {access.canManageColumns && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                setCreatorOpen(true);
-                // rola para o fim para o input ficar visível
-                requestAnimationFrame(() => {
-                  const el = boardScrollRef.current;
-                  if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
-                });
-              }}
-            >
-              <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-              Criar coluna
             </Button>
           )}
         </div>
@@ -982,26 +964,48 @@ function ColumnsBoard({
         >
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
             <div ref={boardContentRef} className="flex h-full min-w-max items-stretch gap-4">
-              {orderedColumns.length > 0 && (
+              {(access.canManageColumns || orderedColumns.length > 0) && (
                 <div className="-mr-2.5 flex shrink-0 flex-col items-center justify-start gap-1 pt-1">
-                  <button
-                    type="button"
-                    className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                    aria-label="Compactar todas as colunas"
-                    title="Compactar todas as colunas"
-                    onClick={collapseAllColumns}
-                  >
-                    <ChevronsLeft className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                    aria-label="Expandir todas as colunas"
-                    title="Expandir todas as colunas"
-                    onClick={expandAllColumns}
-                  >
-                    <ChevronsRight className="h-3.5 w-3.5" />
-                  </button>
+                  {access.canManageColumns && (
+                    <button
+                      type="button"
+                      className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                      aria-label="Criar coluna"
+                      title="Criar coluna"
+                      onClick={() => {
+                        setCreatorOpen(true);
+                        // rola para o fim para o input ficar visível
+                        requestAnimationFrame(() => {
+                          const el = boardScrollRef.current;
+                          if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                        });
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    </button>
+                  )}
+                  {orderedColumns.length > 0 && (
+                    <button
+                      type="button"
+                      className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                      aria-label="Compactar todas as colunas"
+                      title="Compactar todas as colunas"
+                      onClick={collapseAllColumns}
+                    >
+                      <ChevronsLeft className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {orderedColumns.length > 0 && (
+                    <button
+                      type="button"
+                      className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                      aria-label="Expandir todas as colunas"
+                      title="Expandir todas as colunas"
+                      onClick={expandAllColumns}
+                    >
+                      <ChevronsRight className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               )}
               {orderedColumns.map((c, idx) => (
@@ -2095,7 +2099,7 @@ function AddCardDialog({
           // (hover:bg-muted), em vez do tom esverdeado padrão do ghost.
           className="w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
-          <Plus className="h-4 w-4" /> Adicionar conteúdo
+          <Plus className="h-4 w-4" /> Inserir cota ou atendimento
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
