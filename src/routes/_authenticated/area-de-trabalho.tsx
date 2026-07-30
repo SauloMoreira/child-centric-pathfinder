@@ -1782,7 +1782,7 @@ function DeleteColumnDialog({
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={onConfirm}
           >
-            Excluir coluna “{column.nome}”
+            Excluir coluna
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

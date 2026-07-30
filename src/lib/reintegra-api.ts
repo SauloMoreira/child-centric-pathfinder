@@ -442,6 +442,43 @@ export async function gerarAtendimentoComIA(params: {
   return campos as AtendimentoFormField[];
 }
 
+/** Contexto salvo pelo usuário para reutilização em futuros Atendimentos IA. */
+export interface AtendimentoIaContexto {
+  id: string;
+  nome: string;
+  texto: string;
+}
+
+/** Lista os contextos salvos pelo usuário logado (sempre por usuário, nunca
+ *  compartilhado entre Defensores). */
+export async function listarContextosAtendimentoIA(): Promise<AtendimentoIaContexto[]> {
+  const { data, error } = await supabase.rpc("listar_contextos_atendimento_ia");
+  if (error) throw error;
+  return (data ?? []) as AtendimentoIaContexto[];
+}
+
+/** Salva (ou atualiza, se já existir um contexto com o mesmo nome) um
+ *  contexto do usuário logado para reutilização futura. */
+export async function salvarContextoAtendimentoIA(params: {
+  nome: string;
+  texto: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc("salvar_contexto_atendimento_ia", {
+    p_nome: params.nome,
+    p_texto: params.texto,
+  } as never);
+  if (error) throw error;
+  return data as string;
+}
+
+/** Exclui um contexto salvo do usuário logado. */
+export async function excluirContextoAtendimentoIA(params: { contextId: string }): Promise<void> {
+  const { error } = await supabase.rpc("excluir_contexto_atendimento_ia", {
+    p_context_id: params.contextId,
+  } as never);
+  if (error) throw error;
+}
+
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
   kind?: ContentKind;

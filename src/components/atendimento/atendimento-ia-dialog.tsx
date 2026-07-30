@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { FileUp, Loader2, Sparkles, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { FileUp, Loader2, Save, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -9,12 +9,39 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { gerarAtendimentoComIA, ATENDIMENTO_IA_MAX_FILE_BYTES } from "@/lib/reintegra-api";
-import type { AtendimentoFormField } from "@/lib/reintegra-api";
+import {
+  gerarAtendimentoComIA,
+  listarContextosAtendimentoIA,
+  salvarContextoAtendimentoIA,
+  excluirContextoAtendimentoIA,
+  ATENDIMENTO_IA_MAX_FILE_BYTES,
+} from "@/lib/reintegra-api";
+import type { AtendimentoFormField, AtendimentoIaContexto } from "@/lib/reintegra-api";
+
+/** Valor reservado para a opção "criar um novo contexto" no seletor —
+ * nenhum contexto salvo pode ter esse id (são uuids gerados pelo banco). */
+const NOVO_CONTEXTO = "__novo__";
 
 interface AtendimentoIaDialogProps {
   open: boolean;
@@ -66,12 +93,92 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
   const [gerando, setGerando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Contextos salvos pelo usuário (bloco doc: opções pré-estabelecidas,
+  // selecionáveis, criáveis e excluíveis — sempre vinculadas ao usuário).
+  const [contextos, setContextos] = useState<AtendimentoIaContexto[]>([]);
+  const [contextosCarregando, setContextosCarregando] = useState(false);
+  const [contextoSelecionadoId, setContextoSelecionadoId] = useState<string>(NOVO_CONTEXTO);
+  const [salvarAberto, setSalvarAberto] = useState(false);
+  const [nomeParaSalvar, setNomeParaSalvar] = useState("");
+  const [salvandoContexto, setSalvandoContexto] = useState(false);
+  const [contextoParaExcluir, setContextoParaExcluir] = useState<AtendimentoIaContexto | null>(null);
+
+  const carregarContextos = async () => {
+    setContextosCarregando(true);
+    try {
+      const lista = await listarContextosAtendimentoIA();
+      setContextos(lista);
+    } catch {
+      toast.error("Não foi possível carregar os contextos salvos.");
+    } finally {
+      setContextosCarregando(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) carregarContextos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const resetAndClose = () => {
     if (gerando) return;
     setPersonName("");
     setContext("");
     setFile(null);
+    setContextoSelecionadoId(NOVO_CONTEXTO);
+    setSalvarAberto(false);
+    setNomeParaSalvar("");
     onOpenChange(false);
+  };
+
+  const handleSelecionarContexto = (value: string) => {
+    setContextoSelecionadoId(value);
+    setSalvarAberto(false);
+    if (value === NOVO_CONTEXTO) {
+      setContext("");
+      return;
+    }
+    const encontrado = contextos.find((c) => c.id === value);
+    setContext(encontrado?.texto ?? "");
+  };
+
+  const handleContextChange = (value: string) => {
+    setContext(value);
+    // Editar o texto descola do contexto salvo selecionado — evita que o
+    // usuário pense que está editando o registro salvo sem confirmar.
+    if (contextoSelecionadoId !== NOVO_CONTEXTO) setContextoSelecionadoId(NOVO_CONTEXTO);
+  };
+
+  const handleConfirmarSalvarContexto = async () => {
+    if (!nomeParaSalvar.trim() || !context.trim()) return;
+    setSalvandoContexto(true);
+    try {
+      await salvarContextoAtendimentoIA({ nome: nomeParaSalvar.trim(), texto: context.trim() });
+      toast.success("Contexto salvo para reutilização futura.");
+      setSalvarAberto(false);
+      setNomeParaSalvar("");
+      await carregarContextos();
+    } catch {
+      toast.error("Não foi possível salvar o contexto. Tente novamente.");
+    } finally {
+      setSalvandoContexto(false);
+    }
+  };
+
+  const handleExcluirContexto = async () => {
+    if (!contextoParaExcluir) return;
+    try {
+      await excluirContextoAtendimentoIA({ contextId: contextoParaExcluir.id });
+      toast.success("Contexto excluído.");
+      if (contextoSelecionadoId === contextoParaExcluir.id) {
+        setContextoSelecionadoId(NOVO_CONTEXTO);
+        setContext("");
+      }
+      setContextoParaExcluir(null);
+      await carregarContextos();
+    } catch {
+      toast.error("Não foi possível excluir o contexto.");
+    }
   };
 
   const handleFileChange = (f: File | null) => {
@@ -128,8 +235,8 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
             Atendimento IA
           </DialogTitle>
           <DialogDescription>
-            Anexe um documento (peça processual, minuta, ofício, e-mail etc.) e a IA formula um
-            formulário de atendimento pertinente ao caso.
+            Anexe um documento (peça processual, ofício, decisão judicial, etc) para que, a partir
+            do contexto indicado, seja elaborado um formulário de atendimento pertinente ao caso.
           </DialogDescription>
         </DialogHeader>
 
@@ -155,19 +262,97 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="atendimento-ia-contexto">Contexto</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="atendimento-ia-contexto">Contexto</Label>
+                <Select value={contextoSelecionadoId} onValueChange={handleSelecionarContexto}>
+                  <SelectTrigger className="h-7 w-auto min-w-[9rem] gap-1 border-none bg-transparent px-2 text-[11px] shadow-none">
+                    <SelectValue placeholder="Novo contexto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NOVO_CONTEXTO}>Novo contexto</SelectItem>
+                    {contextos.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                    {contextosCarregando && (
+                      <div className="px-2 py-1.5 text-[11px] text-muted-foreground">Carregando…</div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
               <Textarea
                 id="atendimento-ia-contexto"
                 className="resize-none bg-surface text-xs"
                 value={context}
-                onChange={(e) => setContext(e.target.value)}
+                onChange={(e) => handleContextChange(e.target.value)}
                 placeholder='Ex.: "Se trata de atendimento para contestação, refutando os fatos narrados na petição inicial anexada."'
                 rows={3}
               />
+
+              {salvarAberto ? (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    autoFocus
+                    className="h-7 flex-1 bg-surface text-xs"
+                    placeholder="Nome do contexto (ex.: Contestação de alimentos)"
+                    value={nomeParaSalvar}
+                    onChange={(e) => setNomeParaSalvar(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleConfirmarSalvarContexto()}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    disabled={!nomeParaSalvar.trim() || salvandoContexto}
+                    onClick={handleConfirmarSalvarContexto}
+                  >
+                    {salvandoContexto ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => setSalvarAberto(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-institutional disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={!context.trim()}
+                    onClick={() => {
+                      setNomeParaSalvar("");
+                      setSalvarAberto(true);
+                    }}
+                  >
+                    <Save className="h-3 w-3" aria-hidden />
+                    Salvar contexto para reutilização
+                  </button>
+                  {contextoSelecionadoId !== NOVO_CONTEXTO && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive"
+                      onClick={() =>
+                        setContextoParaExcluir(
+                          contextos.find((c) => c.id === contextoSelecionadoId) ?? null,
+                        )
+                      }
+                    >
+                      <Trash2 className="h-3 w-3" aria-hidden />
+                      Excluir contexto salvo
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="atendimento-ia-arquivo">Documento (PDF, até {formatarMB(ATENDIMENTO_IA_MAX_FILE_BYTES)}MB)</Label>
+              <Label htmlFor="atendimento-ia-arquivo">Documento</Label>
               {file ? (
                 <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs">
                   <FileUp className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
@@ -188,7 +373,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                   className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-surface px-3 py-4 text-xs text-muted-foreground hover:border-institutional/50 hover:text-foreground"
                 >
                   <FileUp className="h-3.5 w-3.5" aria-hidden />
-                  Selecionar arquivo PDF
+                  Selecionar arquivo PDF (até {formatarMB(ATENDIMENTO_IA_MAX_FILE_BYTES)} MB)
                 </label>
               )}
               <input
@@ -200,11 +385,6 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                 onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
               />
             </div>
-
-            <p className="text-[10px] text-muted-foreground">
-              O documento e as respostas não são salvos no sistema — tudo é descartado ao fechar
-              esta caixa ou atualizar a página.
-            </p>
           </div>
         )}
 
@@ -218,6 +398,27 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={!!contextoParaExcluir} onOpenChange={(o) => !o && setContextoParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contexto salvo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O contexto “{contextoParaExcluir?.nome}” será excluído e não poderá mais ser
+              reutilizado em futuros atendimentos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleExcluirContexto}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
