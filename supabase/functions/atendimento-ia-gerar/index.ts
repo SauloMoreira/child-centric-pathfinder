@@ -37,7 +37,7 @@ const MODEL = "google/gemini-2.5-flash";
 
 const MAX_FILE_BYTES = 60 * 1024 * 1024; // 60MB, conforme o doc de especificação
 const MAX_CAMPOS = 40;
-const MAX_OPCOES_POR_CAMPO = 20;
+const MAX_SUGESTOES_POR_CAMPO = 3;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -52,14 +52,14 @@ function json(body: unknown, status = 200) {
   });
 }
 
-type CampoGeradoTipo = "text_short" | "text_long" | "checkbox";
+type CampoGeradoTipo = "text_short" | "text_long";
 
 type CampoGerado = {
   id: string;
   type: CampoGeradoTipo;
   label: string;
   required: boolean;
-  options: string[] | null;
+  sugestoesResposta: string[] | null;
 };
 
 type Payload = {
@@ -75,9 +75,9 @@ A partir de um documento anexado (peça processual, minuta, ofício, e-mail etc.
 
 Regras estritas:
 - Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem crases.
-- Formato exato: {"campos": [{"label": "...", "type": "text_short" | "text_long" | "checkbox", "required": true | false, "options": ["...", "..."] }]}.
-- "options" só deve existir (e ser não vazio) quando "type" for "checkbox". Para "text_short" e "text_long", omita "options" ou deixe null.
-- Use "text_short" para respostas curtas (nomes, datas, valores, números). Use "text_long" para relatos ou explicações mais longas. Use "checkbox" sempre que fizer sentido oferecer opções rápidas de marcação (ex.: "Sim / Não / Não sabe informar", documentos a conferir, situações comuns) — isso agiliza o preenchimento durante o atendimento em tempo real.
+- Formato exato: {"campos": [{"label": "...", "type": "text_short" | "text_long", "required": true | false, "sugestoesResposta": ["...", "..."] }]}.
+- Todas as perguntas devem ser do tipo "text_short" (respostas curtas: nomes, datas, valores, números) ou "text_long" (relatos ou explicações mais longas). Não existe mais tipo de múltipla escolha neste formulário.
+- "sugestoesResposta" é OPCIONAL: preencha apenas quando a pergunta tiver respostas prováveis e de escolha praticamente única (ex.: "Sim, fui encontrada e o estudo foi feito.", "Sim, fui procurada, mas o estudo não foi feito.", "Não, não houve tentativa de contato."). São sugestões de PREENCHIMENTO RÁPIDO por um clique — não uma escolha obrigatória —, então omita ou deixe null quando a resposta for genuinamente aberta/variável (nomes, datas, valores, relatos livres). No máximo 3 sugestões por pergunta.
 - Gere entre 5 e 20 perguntas, cobrindo os pontos realmente relevantes ao caso descrito no documento e no contexto. Não gere perguntas genéricas demais nem redundantes.
 - As perguntas devem ser dirigidas à pessoa atendida (quem responde é a equipe, com base no que a pessoa relatar), em português do Brasil, claras e objetivas.
 - Não inclua perguntas sobre dados que já constam obviamente do documento anexado, a menos que seja importante confirmá-los com a pessoa atendida.`;
@@ -97,19 +97,20 @@ function normalizarCampo(raw: unknown): CampoGerado | null {
   const label = typeof r.label === "string" ? r.label.trim().slice(0, 300) : "";
   if (!label) return null;
   const tipoRaw = typeof r.type === "string" ? r.type : "text_short";
-  const type: CampoGeradoTipo =
-    tipoRaw === "text_long" || tipoRaw === "checkbox" ? tipoRaw : "text_short";
+  const type: CampoGeradoTipo = tipoRaw === "text_long" ? "text_long" : "text_short";
   const required = r.required === true;
-  let options: string[] | null = null;
-  if (type === "checkbox") {
-    const rawOptions = Array.isArray(r.options) ? r.options : [];
-    options = rawOptions
-      .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
-      .map((o) => o.trim().slice(0, 200))
-      .slice(0, MAX_OPCOES_POR_CAMPO);
-    if (options.length === 0) return null;
-  }
-  return { id: crypto.randomUUID(), type, label, required, options };
+  const rawSugestoes = Array.isArray(r.sugestoesResposta) ? r.sugestoesResposta : [];
+  const sugestoesResposta = rawSugestoes
+    .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
+    .map((o) => o.trim().slice(0, 200))
+    .slice(0, MAX_SUGESTOES_POR_CAMPO);
+  return {
+    id: crypto.randomUUID(),
+    type,
+    label,
+    required,
+    sugestoesResposta: sugestoesResposta.length > 0 ? sugestoesResposta : null,
+  };
 }
 
 Deno.serve(async (req) => {

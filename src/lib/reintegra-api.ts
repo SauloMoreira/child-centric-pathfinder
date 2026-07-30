@@ -278,6 +278,10 @@ export type AtendimentoFormField = {
   /** Ajuste doc — grau de importância de Orientação/Checklist: "media"
    *  (Âmbar, padrão) ou "alta" (Bordô). Ignorado por outros tipos de campo. */
   nivelImportancia?: "media" | "alta" | null;
+  /** Ajuste doc — Atendimento IA: até 3 respostas prováveis sugeridas pela
+   *  IA para campos de texto curto/longo, exibidas como botões de
+   *  preenchimento rápido (não são opções de escolha obrigatória). */
+  sugestoesResposta?: string[] | null;
 };
 
 export type AtendimentoDetalhe = {

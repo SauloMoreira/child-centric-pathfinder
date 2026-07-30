@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Info, ListChecks, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, ListChecks, Plus, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { InsertFieldHere } from "@/components/atendimento/atendimento-form-sheet";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,15 @@ interface FormRendererProps {
   values: AtendimentoFormValues;
   onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
+  /** Ajuste doc — Atendimento IA: quando fornecido, cada pergunta ganha um
+   *  botão discreto de excluir ao passar o mouse (lateral esquerda),
+   *  visível também durante o PREENCHIMENTO (não só na edição). Opcional e
+   *  sem efeito nos Atendimentos normais, que não passam esta prop. Só se
+   *  aplica ao modo sem etapas (formulários de página única). */
+  onRemoveField?: (fieldId: string) => void;
+  /** Ajuste doc — idem, para inserir um campo entre perguntas ao passar o
+   *  mouse no espaço entre elas, mesma funcionalidade da página de edição. */
+  onInsertFieldAt?: (index: number, campo: AtendimentoFormField) => void;
 }
 
 /**
@@ -52,7 +62,14 @@ interface FormRendererProps {
  * de página única. A validação de obrigatórios continua centralizada em
  * "Concluir" (não bloqueia o avanço entre etapas).
  */
-export function FormRenderer({ fields, values, onChange, disabled }: FormRendererProps) {
+export function FormRenderer({
+  fields,
+  values,
+  onChange,
+  disabled,
+  onRemoveField,
+  onInsertFieldAt,
+}: FormRendererProps) {
   const usaEtapas = fields.filter((f) => f.type === "section").length >= 2;
   const visiveis = fields.filter((f) => campoVisivel(f, values));
   const etapas = usaEtapas ? agruparEmEtapas(visiveis) : null;
@@ -138,37 +155,60 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
 
   return (
     <div className="space-y-4">
-      {visiveis.map((field, i) =>
-        field.type === "section" ? (
-          <div key={field.id} className={i === 0 ? "space-y-1.5" : "space-y-1.5 pt-2"}>
-            {i > 0 && <Separator />}
-            <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-institutional">
-              {field.label || "(seção sem título)"}
-            </p>
+      {visiveis.map((field, i) => {
+        const conteudo =
+          field.type === "section" ? (
+            <div className={i === 0 ? "space-y-1.5" : "space-y-1.5 pt-2"}>
+              {i > 0 && <Separator />}
+              <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-institutional">
+                {field.label || "(seção sem título)"}
+              </p>
+            </div>
+          ) : field.type === "orientation" ? (
+            <OrientacaoBox texto={field.label} nivel={field.nivelImportancia} />
+          ) : field.type === "checklist" ? (
+            <ChecklistField field={field} value={values[field.id]} values={values} onChange={onChange} disabled={disabled} />
+          ) : (
+            <CampoRenderizado
+              field={field}
+              value={values[field.id]}
+              values={values}
+              allFields={fields}
+              onChange={onChange}
+              disabled={disabled}
+            />
+          );
+
+        // Ajuste doc — Atendimento IA: excluir pergunta com hover, botão
+        // posicionado entre o limite da caixa e a borda interna do
+        // formulário. Só perguntas de fato (não seção/orientação/checklist,
+        // que têm suas próprias ferramentas de gestão na edição).
+        const podeExcluirAqui =
+          onRemoveField && field.type !== "section" && field.type !== "orientation" && field.type !== "checklist";
+        const indiceReal = fields.findIndex((f) => f.id === field.id);
+
+        return (
+          <div key={field.id}>
+            {onInsertFieldAt && i > 0 && (
+              <InsertFieldHere onInsert={(novo) => onInsertFieldAt(indiceReal, novo)} />
+            )}
+            <div className="group/campo relative">
+              {podeExcluirAqui && (
+                <button
+                  type="button"
+                  className="absolute -left-6 top-0.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
+                  aria-label="Excluir pergunta"
+                  title="Excluir pergunta"
+                  onClick={() => onRemoveField(field.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {conteudo}
+            </div>
           </div>
-        ) : field.type === "orientation" ? (
-          <OrientacaoBox key={field.id} texto={field.label} nivel={field.nivelImportancia} />
-        ) : field.type === "checklist" ? (
-          <ChecklistField
-            key={field.id}
-            field={field}
-            value={values[field.id]}
-            values={values}
-            onChange={onChange}
-            disabled={disabled}
-          />
-        ) : (
-          <CampoRenderizado
-            key={field.id}
-            field={field}
-            value={values[field.id]}
-            values={values}
-            allFields={fields}
-            onChange={onChange}
-            disabled={disabled}
-          />
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }
@@ -314,6 +354,58 @@ function FieldInput({
   disabled?: boolean;
 }) {
   const id = `campo-${field.id}`;
+
+  // Ajuste doc — Atendimento IA: sugestões de resposta rápida (até 3) para
+  // campos de texto curto/longo. Clicar preenche o campo com o texto
+  // sugerido; a pessoa que preenche pode editar livremente depois.
+  const sugestoes = (field.sugestoesResposta ?? []).filter((s) => s.trim());
+  if ((field.type === "text_short" || field.type === "text_long") && sugestoes.length > 0) {
+    const atual = (value as string) ?? "";
+    return (
+      <div className="space-y-1.5">
+        {field.type === "text_long" ? (
+          <Textarea
+            id={id}
+            className="bg-surface text-xs"
+            value={atual}
+            onChange={(e) => onChange(field.id, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
+            disabled={disabled}
+            rows={3}
+            required={field.required}
+          />
+        ) : (
+          <Input
+            id={id}
+            className="bg-surface text-xs"
+            value={atual}
+            onChange={(e) => onChange(field.id, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
+            disabled={disabled}
+            required={field.required}
+          />
+        )}
+        <div className="flex flex-wrap gap-1.5">
+          {sugestoes.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              disabled={disabled}
+              className={cn(
+                "rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                atual === s
+                  ? "border-institutional bg-institutional/[0.08] text-institutional"
+                  : "border-border text-muted-foreground hover:border-institutional/50 hover:text-institutional",
+              )}
+              onClick={() => onChange(field.id, s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   switch (field.type) {
     case "text_long":

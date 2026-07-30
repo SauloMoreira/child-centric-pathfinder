@@ -384,7 +384,13 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                 </div>
               ) : (
                 <>
-                  <FormRenderer fields={campos} values={values} onChange={handleChange} />
+                  <FormRenderer
+                    fields={campos}
+                    values={values}
+                    onChange={handleChange}
+                    onRemoveField={removeCampo}
+                    onInsertFieldAt={insertCampoAt}
+                  />
 
                   {resumo && (
                     <div className="mt-4 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
