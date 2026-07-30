@@ -234,10 +234,12 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
             <Sparkles className="h-4 w-4 text-institutional" />
             Atendimento IA
           </DialogTitle>
-          <DialogDescription>
-            Anexe um documento (peça processual, ofício, decisão judicial, etc) para que, a partir
-            do contexto indicado, seja elaborado um formulário de atendimento pertinente ao caso.
-          </DialogDescription>
+          {!gerando && (
+            <DialogDescription>
+              Anexe um documento (peça processual, ofício, decisão judicial, etc) para que, a partir
+              do contexto indicado, seja elaborado um formulário de atendimento pertinente ao caso.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {gerando ? (

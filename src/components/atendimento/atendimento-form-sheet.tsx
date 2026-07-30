@@ -501,7 +501,7 @@ export function AtendimentoFormSheet({
               <Label className="text-xs">Campos do formulário</Label>
               <div className="flex flex-wrap gap-1.5">
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
-                  <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
+                  <MessageSquare className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addSecao}>
                   <SeparatorHorizontal className="h-3.5 w-3.5" aria-hidden /> Adicionar seção
@@ -1247,42 +1247,35 @@ function CalcEditor({
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tipo de cálculo</p>
         <Select
           value={calc.kind}
-          onValueChange={(v) => onChange({ calc: { kind: v as "sum" | "concat", fieldIds: [] } })}
+          onValueChange={(v) => onChange({ calc: { kind: v as "sum" | "subtract", fieldIds: [] } })}
         >
           <SelectTrigger className="h-7 w-[170px] text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="sum">Soma</SelectItem>
-            <SelectItem value="concat">Concatenar texto</SelectItem>
+            <SelectItem value="subtract">Subtração</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {elegiveis.length === 0 ? (
         <p className="text-[10px] text-muted-foreground">
-          {calc.kind === "sum"
-            ? "Adicione um campo Número ou Valor (R$) antes deste para somar."
-            : "Adicione algum campo antes deste para concatenar."}
+          Adicione um campo Número ou Valor (R$) antes deste para {calc.kind === "sum" ? "somar" : "subtrair"}.
         </p>
       ) : (
         <div className="space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Campos a usar</p>
+          {calc.kind === "subtract" && (
+            <p className="text-[10px] text-muted-foreground">
+              A ordem de seleção importa: o primeiro campo marcado é o valor inicial, e os demais são subtraídos dele.
+            </p>
+          )}
           {elegiveis.map((c) => (
             <label key={c.id} className="flex items-center gap-2 text-xs">
               <input type="checkbox" checked={calc.fieldIds.includes(c.id)} onChange={() => toggleField(c.id)} />
               {c.label || "(sem rótulo)"}
             </label>
           ))}
-        </div>
-      )}
-      {calc.kind === "concat" && (
-        <div className="space-y-1">
-          <Label className="text-[11px] font-normal text-muted-foreground">Separador</Label>
-          <Input
-            value={calc.separator ?? ", "}
-            onChange={(e) => onChange({ calc: { ...calc, separator: e.target.value } })}
-            className="h-7 w-[120px] bg-surface text-xs"
-          />
         </div>
       )}
       {calc.kind === "sum" && (

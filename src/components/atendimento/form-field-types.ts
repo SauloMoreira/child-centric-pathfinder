@@ -26,23 +26,24 @@ const TIPOS_ESCALARES: AtendimentoFieldType[] = [
   "currency",
 ];
 
-/** Tipos de campo oferecidos no seletor "tipo" de um campo comum do builder. */
+/** Tipos de campo oferecidos no seletor "tipo" de um campo comum do builder.
+ *  Ajuste doc — removidos da criação de novos campos: "e-mail", "Matriz
+ *  (linhas x colunas)", "Tabela preenchível" e "Grupo repetível". Os tipos
+ *  seguem definidos em AtendimentoFieldType e continuam sendo renderizados
+ *  normalmente onde já existirem em formulários criados anteriormente —
+ *  apenas deixam de ser oferecidos para NOVOS campos. */
 export const FIELD_TYPE_ORDER: AtendimentoFieldType[] = [
   "text_short",
   "text_long",
   "radio",
   "checkbox",
   "dropdown",
-  "email",
+  "number",
   "phone",
   "cpf_cnpj",
   "date",
   "time",
-  "number",
   "currency",
-  "matrix",
-  "table_fillable",
-  "repeat_group",
   "calculated",
 ];
 
@@ -63,7 +64,7 @@ export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasO
   dropdown: { label: "Lista suspensa (opções)", hasOptions: true },
   email: { label: "E-mail", hasOptions: false },
   phone: { label: "Telefone", hasOptions: false },
-  cpf_cnpj: { label: "CPF/CNPJ", hasOptions: false },
+  cpf_cnpj: { label: "CPF", hasOptions: false },
   date: { label: "Data", hasOptions: false },
   time: { label: "Hora", hasOptions: false },
   number: { label: "Número", hasOptions: false },
@@ -345,18 +346,27 @@ function textoDeExibicaoPorTipo(field: AtendimentoFormField, v: string): string 
 export function camposElegiveisParaCalculo(
   campos: AtendimentoFormField[],
   index: number,
-  kind: "sum" | "concat",
+  kind: "sum" | "subtract",
 ): AtendimentoFormField[] {
-  const tipos: AtendimentoFieldType[] = [...TIPOS_ESCALARES, "checkbox"];
   return campos
     .slice(0, index)
-    .filter((f) => tipos.includes(f.type))
-    .filter((f) => (kind === "sum" ? f.type === "number" || f.type === "currency" : true));
+    .filter((f) => f.type === "number" || f.type === "currency");
 }
 
 /** Fase 7 — computa o valor de um campo calculado a partir das respostas
  *  já dadas aos campos referenciados em `calc.fieldIds`. "sum" soma os
  *  valores numéricos; "concat" junta os textos com o separador definido. */
+/** Ajuste doc — extrai um número de um valor de campo "Valor em reais" ou
+ *  "Número", removendo prefixo de moeda/espaços antes de interpretar
+ *  separadores de milhar/decimal no padrão brasileiro. */
+function numeroDoValor(v: AtendimentoFormValues[string] | undefined): number {
+  const texto = typeof v === "string" ? v : "";
+  if (!texto.trim()) return 0;
+  const limpo = texto.replace(/[^\d,.-]/g, "");
+  const num = Number(limpo.replace(/\./g, "").replace(",", "."));
+  return Number.isNaN(num) ? 0 : num;
+}
+
 export function calcularValor(
   campo: AtendimentoFormField,
   todosOsCampos: AtendimentoFormField[],
@@ -368,29 +378,20 @@ export function calcularValor(
     .map((id) => todosOsCampos.find((c) => c.id === id))
     .filter((c): c is AtendimentoFormField => !!c);
   if (calc.kind === "sum") {
-    const soma = referenciados.reduce((acc, c) => {
-      const v = values[c.id];
-      const texto = typeof v === "string" ? v : "";
-      if (!texto.trim()) return acc;
-      const num = Number(texto.replace(/\./g, "").replace(",", "."));
-      return acc + (Number.isNaN(num) ? 0 : num);
-    }, 0);
+    const soma = referenciados.reduce((acc, c) => acc + numeroDoValor(values[c.id]), 0);
     return calc.outputCurrency
       ? soma.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
       : soma.toLocaleString("pt-BR");
   }
-  const sep = calc.separator ?? ", ";
-  return referenciados
-    .map((c) => {
-      const v = values[c.id];
-      if (typeof v === "string") return v.trim() ? textoDeExibicaoPorTipo(c, v) : "";
-      if (Array.isArray(v) && (v.length === 0 || typeof v[0] === "string")) {
-        return (v as string[]).map((x) => textoDeExibicaoPorTipo(c, x)).join(", ");
-      }
-      return "";
-    })
-    .filter((t) => t.trim().length > 0)
-    .join(sep);
+  // subtract — primeiro campo referenciado menos os demais, na ordem em
+  // que foram selecionados.
+  const [primeiro, ...resto] = referenciados;
+  const resultado =
+    numeroDoValor(primeiro ? values[primeiro.id] : undefined) -
+    resto.reduce((acc, c) => acc + numeroDoValor(values[c.id]), 0);
+  return calc.outputCurrency
+    ? resultado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    : resultado.toLocaleString("pt-BR");
 }
 
 /** Fase 7 — texto de exibição unificado de uma resposta, para qualquer

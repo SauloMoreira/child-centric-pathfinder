@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   Copy,
-  Info,
-  ListChecks,
   Loader2,
+  MessageSquare,
   Pencil,
-  Plus,
   Printer,
   SeparatorHorizontal,
   Sparkles,
@@ -47,10 +45,8 @@ import {
   isChoiceField,
   montarRespostasParaResumo,
   montarTextoExpandido,
-  novaOrientacao,
   novaSecao,
   novoCampo,
-  novoChecklist,
   obrigatoriosFaltando,
   removerReferenciaDaCondicao,
   valorInicial,
@@ -98,7 +94,10 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
   useEffect(() => {
     if (!open || !data) return;
-    setCampos(data.campos);
+    // Ajuste doc — no formulário formulado pelo Atendimento IA, todas as
+    // perguntas são de resposta opcional (mesmo que a IA/o campo original
+    // tenha marcado "obrigatório").
+    setCampos(data.campos.map((c) => ({ ...c, required: false, requiredIf: null })));
     setValues({});
     setEditando(false);
     setResumo(null);
@@ -138,8 +137,6 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
   const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
-  const addOrientacao = () => setCampos((prev) => [...prev, novaOrientacao()]);
-  const addChecklist = () => setCampos((prev) => [...prev, novoChecklist()]);
   // Ajuste doc — mesma inserção rápida entre campos do builder normal.
   const insertCampoAt = (index: number, campo: AtendimentoFormField) =>
     setCampos((prev) => {
@@ -297,7 +294,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
         <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-3xl flex-col gap-0 overflow-hidden">
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-start gap-2 pr-6 text-base">
-              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
+              <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
               <span className="break-words">{data.personName}</span>
             </DialogTitle>
           </DialogHeader>
@@ -315,7 +312,8 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
           )}
 
           {/* Ajuste doc — "Imprimir formulário" alinhado à direita, na
-              lateral direita da caixa. */}
+              lateral direita da caixa; oculto durante a edição das
+              perguntas (ajuste doc — Atendimento IA). */}
           <div className="mt-2 flex shrink-0 flex-wrap items-center gap-1.5">
             <Button
               variant="ghost"
@@ -326,14 +324,16 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
               <Pencil className="h-3.5 w-3.5" />
               {editando ? "Concluir edição das perguntas" : "Editar perguntas"}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto h-7 gap-1.5 text-[11px] text-muted-foreground"
-              onClick={handleImprimirBranco}
-            >
-              <Printer className="h-3.5 w-3.5" /> Imprimir formulário
-            </Button>
+            {!editando && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto h-7 gap-1.5 text-[11px] text-muted-foreground"
+                onClick={handleImprimirBranco}
+              >
+                <Printer className="h-3.5 w-3.5" /> Imprimir formulário
+              </Button>
+            )}
           </div>
 
           <div className="mt-2 flex min-h-0 flex-1 flex-col gap-3">
@@ -342,16 +342,10 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-1.5">
                     <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
-                      <Plus className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
+                      <MessageSquare className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
                     </Button>
                     <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addSecao}>
                       <SeparatorHorizontal className="h-3.5 w-3.5" aria-hidden /> Adicionar seção
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addOrientacao}>
-                      <Info className="h-3.5 w-3.5" aria-hidden /> Adicionar orientação
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addChecklist}>
-                      <ListChecks className="h-3.5 w-3.5" aria-hidden /> Adicionar checklist
                     </Button>
                   </div>
                   {campos.length === 0 ? (

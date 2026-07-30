@@ -233,10 +233,8 @@ export type AtendimentoFieldCondition =
 /** Fase 7: definição de um campo calculado — somente leitura, computado a
  *  partir de outros campos escalares anteriores na lista. */
 export type AtendimentoCalc = {
-  kind: "sum" | "concat";
+  kind: "sum" | "subtract";
   fieldIds: string[];
-  /** Apenas para "concat": texto entre os valores concatenados. */
-  separator?: string;
   /** Apenas para "sum": formata o resultado como moeda (R$). */
   outputCurrency?: boolean;
 };

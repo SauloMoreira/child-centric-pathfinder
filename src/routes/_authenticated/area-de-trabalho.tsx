@@ -965,7 +965,7 @@ function ColumnsBoard({
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
             <div ref={boardContentRef} className="flex h-full min-w-max items-stretch gap-4">
               {(access.canManageColumns || orderedColumns.length > 0) && (
-                <div className="-mr-2.5 flex shrink-0 flex-col items-center justify-start gap-1 pt-1">
+                <div className="sticky left-0 z-10 -mr-2.5 flex shrink-0 flex-col items-center justify-start gap-1 rounded-md bg-background/95 pt-1 backdrop-blur-sm">
                   {access.canManageColumns && (
                     <button
                       type="button"
@@ -1368,7 +1368,7 @@ function SortableColumn(props: {
           <ChevronsRight className="h-3.5 w-3.5" />
         </button>
         <div
-          className="flex flex-1 min-h-0 items-center justify-center overflow-hidden py-2.5"
+          className="flex flex-1 min-h-0 items-start justify-center overflow-hidden py-2.5"
           title={column.nome}
         >
           <span
@@ -1515,7 +1515,7 @@ function SortableColumn(props: {
         </SortableContext>
         {cards.length === 0 && (
           <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-border/70 text-center text-[11px] text-muted-foreground">
-            {isSearching ? "Nenhum resultado encontrado" : "Arraste ou adicione um card"}
+            {isSearching ? "Nenhum resultado encontrado" : "Arreste ou adicione"}
           </div>
         )}
       </div>
