@@ -17,7 +17,11 @@ export type BibliotecaItem = {
   visibility: ContentVisibility;
   status: ContentStatus;
   owner_user_id: string;
+  owner_nome: string;
   updated_at: string;
+  favorite_count: number;
+  is_favorited: boolean;
+  access_count: number;
 };
 
 export type BibliotecaCategoria = {
@@ -495,6 +499,9 @@ export async function listarBiblioteca(params: {
   categoria_id?: string;
   query?: string;
   apenas_meus?: boolean;
+  owner_user_id?: string;
+  favoritos_apenas?: boolean;
+  order_by?: "recentes" | "favoritos" | "utilizados";
   limit?: number;
   offset?: number;
 }): Promise<BibliotecaItem[]> {
@@ -503,11 +510,43 @@ export async function listarBiblioteca(params: {
     p_category_id: params.categoria_id ?? undefined,
     p_query: params.query ?? undefined,
     p_apenas_meus: params.apenas_meus ?? false,
+    p_owner_user_id: params.owner_user_id ?? undefined,
+    p_favoritos_apenas: params.favoritos_apenas ?? false,
+    p_order_by: params.order_by ?? "recentes",
     p_limit: params.limit ?? 50,
     p_offset: params.offset ?? 0,
   } as never);
   if (error) throw error;
   return (data ?? []) as BibliotecaItem[];
+}
+
+/** Ajuste doc — lista de autores com itens na Biblioteca, para o filtro
+ *  "Autoria: (Usuário)". */
+export async function listarAutoresBiblioteca(): Promise<{ user_id: string; nome: string }[]> {
+  const { data, error } = await supabase.rpc("listar_autores_biblioteca");
+  if (error) throw error;
+  return (data ?? []) as { user_id: string; nome: string }[];
+}
+
+/** Ajuste doc — alterna favorito/desfavorito do item para o usuário
+ *  logado, retornando o novo estado e a contagem total. */
+export async function alternarFavoritoBiblioteca(
+  itemId: string,
+): Promise<{ is_favorited: boolean; favorite_count: number }> {
+  const { data, error } = await supabase.rpc("alternar_favorito_biblioteca", {
+    p_item_id: itemId,
+  } as never);
+  if (error) throw error;
+  return data as { is_favorited: boolean; favorite_count: number };
+}
+
+/** Ajuste doc — registra que o item foi acessado, para o ranking "Mais
+ *  utilizados". Fire-and-forget: falha aqui não deve travar a navegação. */
+export async function registrarAcessoBiblioteca(itemId: string): Promise<void> {
+  const { error } = await supabase.rpc("registrar_acesso_biblioteca", {
+    p_item_id: itemId,
+  } as never);
+  if (error) throw error;
 }
 
 export async function listarCategoriasBiblioteca(): Promise<BibliotecaCategoria[]> {
