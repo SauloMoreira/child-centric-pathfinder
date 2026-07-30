@@ -133,6 +133,7 @@ export function novaOrientacao(): AtendimentoFormField {
     placeholder: null,
     options: null,
     visibleIf: null,
+    nivelImportancia: "media",
   };
 }
 
@@ -150,6 +151,7 @@ export function novoChecklist(): AtendimentoFormField {
     options: null,
     visibleIf: null,
     checklistItems: ["Item 1"],
+    nivelImportancia: "media",
   };
 }
 

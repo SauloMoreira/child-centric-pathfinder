@@ -87,7 +87,7 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
         <div className="space-y-4">
           {(etapa?.campos ?? []).map((field) =>
             field.type === "orientation" ? (
-              <OrientacaoBox key={field.id} texto={field.label} />
+              <OrientacaoBox key={field.id} texto={field.label} nivel={field.nivelImportancia} />
             ) : field.type === "checklist" ? (
               <ChecklistField
                 key={field.id}
@@ -147,7 +147,7 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
             </p>
           </div>
         ) : field.type === "orientation" ? (
-          <OrientacaoBox key={field.id} texto={field.label} />
+          <OrientacaoBox key={field.id} texto={field.label} nivel={field.nivelImportancia} />
         ) : field.type === "checklist" ? (
           <ChecklistField
             key={field.id}
@@ -176,12 +176,18 @@ export function FormRenderer({ fields, values, onChange, disabled }: FormRendere
 /** Ajuste doc — nota de orientação do Defensor Público para quem preenche,
  *  em destaque no formulário (mesmo estilo da antiga descrição do
  *  Atendimento). Não é um campo de resposta: sem Label/FieldInput. */
-function OrientacaoBox({ texto }: { texto: string }) {
+function OrientacaoBox({ texto, nivel }: { texto: string; nivel?: "media" | "alta" | null }) {
   if (!texto) return null;
-  // Ajuste doc — caixinha âmbar, não mais verde/institucional.
+  // Ajuste doc — grau de importância: "media" (Âmbar, padrão) ou "alta" (Bordô).
+  const alta = nivel === "alta";
   return (
-    <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/[0.1] p-2.5">
-      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+    <div
+      className={cn(
+        "flex items-start gap-2 rounded-md border p-2.5",
+        alta ? "border-bordo/30 bg-bordo/[0.1]" : "border-warning/30 bg-warning/[0.1]",
+      )}
+    >
+      <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
       <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
     </div>
   );
@@ -206,12 +212,18 @@ function ChecklistField({
 }) {
   const items = field.checklistItems ?? [];
   const selected = Array.isArray(value) ? (value as string[]) : [];
+  const alta = field.nivelImportancia === "alta";
   return (
-    // Ajuste doc — mesmo fundo âmbar do campo Orientação, layout mais discreto.
-    <div className="space-y-1 rounded-md border border-warning/30 bg-warning/[0.1] p-2.5">
+    // Ajuste doc — mesmo esquema de cor da Orientação: âmbar (média) ou bordô (alta).
+    <div
+      className={cn(
+        "space-y-1 rounded-md border p-2.5",
+        alta ? "border-bordo/30 bg-bordo/[0.1]" : "border-warning/30 bg-warning/[0.1]",
+      )}
+    >
       {field.label && (
         <div className="flex items-center gap-2">
-          <ListChecks className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+          <ListChecks className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
           <p className="text-xs font-medium text-foreground">
             {field.label}
             {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}

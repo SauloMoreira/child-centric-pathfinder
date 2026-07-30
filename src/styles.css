@@ -55,6 +55,8 @@
   --color-institutional-foreground: var(--institutional-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-bordo: var(--bordo);
+  --color-bordo-foreground: var(--bordo-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
 
@@ -114,6 +116,11 @@
   --warning: oklch(0.72 0.16 75);
   --warning-foreground: oklch(0.2 0 0);
 
+  /* Ajuste doc — grau de importância "alta" em Orientação/Checklist:
+     "Bordô", mesma família de tom do data-col-color="burgundy". */
+  --bordo: oklch(0.44 0.14 20);
+  --bordo-foreground: oklch(0.985 0.003 95);
+
   --success: oklch(0.55 0.13 150);
   --success-foreground: oklch(0.985 0.003 95);
 
@@ -158,6 +165,8 @@
   --destructive-foreground: oklch(0.98 0 0);
   --warning: oklch(0.75 0.16 75);
   --warning-foreground: oklch(0.15 0 0);
+  --bordo: oklch(0.56 0.15 20);
+  --bordo-foreground: oklch(0.98 0 0);
   --success: oklch(0.62 0.13 150);
   --success-foreground: oklch(0.98 0 0);
   --border: oklch(0.28 0 0);

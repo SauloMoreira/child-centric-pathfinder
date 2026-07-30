@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RichTextViewer } from "@/components/cota/rich-text-editor";
 import { useCotaDetalhe, useExcluirCota, mensagemErroCota } from "@/features/cota/hooks";
-import { copyRichText } from "@/lib/utils";
+import { cn, copyRichText } from "@/lib/utils";
 
 interface CotaDetailSheetProps {
   itemId: string | null;
@@ -122,8 +122,21 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
 
                 <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
                   {detalhe.data.orientacao && (
-                    <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/[0.1] p-2.5">
-                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+                    <div
+                      className={cn(
+                        "mb-3 flex items-start gap-2 rounded-md border p-2.5",
+                        detalhe.data.orientacaoNivel === "alta"
+                          ? "border-bordo/30 bg-bordo/[0.1]"
+                          : "border-warning/30 bg-warning/[0.1]",
+                      )}
+                    >
+                      <Info
+                        className={cn(
+                          "mt-0.5 h-3.5 w-3.5 shrink-0",
+                          detalhe.data.orientacaoNivel === "alta" ? "text-bordo" : "text-warning",
+                        )}
+                        aria-hidden
+                      />
                       <p className="whitespace-pre-wrap text-xs text-foreground">
                         {detalhe.data.orientacao}
                       </p>

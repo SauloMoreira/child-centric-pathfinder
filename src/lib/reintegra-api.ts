@@ -65,6 +65,7 @@ export type CotaDetalhe = {
   bodyJson: unknown;
   bodyText: string;
   orientacao: string | null;
+  orientacaoNivel: "media" | "alta";
   categorias: CotaCategoria[];
   ownerUserId: string;
   ownerDisplayName: string;
@@ -79,6 +80,7 @@ export async function criarCota(params: {
   bodyText: string;
   categoryIds?: string[];
   orientacao?: string;
+  orientacaoNivel?: "media" | "alta";
 }): Promise<{ item_id: string; version_id: string }> {
   const { data, error } = await supabase.rpc("criar_cota", {
     p_titulo: params.titulo,
@@ -86,6 +88,7 @@ export async function criarCota(params: {
     p_body_text: params.bodyText,
     p_category_ids: (params.categoryIds ?? null) as never,
     p_orientacao: params.orientacao ?? null,
+    p_orientacao_nivel: params.orientacaoNivel ?? "media",
   } as never);
   if (error) throw error;
   return data as { item_id: string; version_id: string };
@@ -99,6 +102,7 @@ export async function atualizarCota(params: {
   bodyText: string;
   categoryIds?: string[];
   orientacao?: string;
+  orientacaoNivel?: "media" | "alta";
 }): Promise<{ optimisticVersion: number; versionId: string; versionNumber: number }> {
   const { data, error } = await supabase.rpc("atualizar_cota", {
     p_item_id: params.itemId,
@@ -109,6 +113,7 @@ export async function atualizarCota(params: {
     p_body_text: params.bodyText,
     p_category_ids: (params.categoryIds ?? null) as never,
     p_orientacao: params.orientacao ?? null,
+    p_orientacao_nivel: params.orientacaoNivel ?? "media",
   } as never);
   if (error) throw error;
   return data as { optimisticVersion: number; versionId: string; versionNumber: number };
@@ -270,6 +275,9 @@ export type AtendimentoFormField = {
   /** Bloco grande (Ajuste 8) — checklist: os itens marcáveis. Título
    *  (`label`) é opcional; quem carrega o conteúdo obrigatório é a lista. */
   checklistItems?: string[] | null;
+  /** Ajuste doc — grau de importância de Orientação/Checklist: "media"
+   *  (Âmbar, padrão) ou "alta" (Bordô). Ignorado por outros tipos de campo. */
+  nivelImportancia?: "media" | "alta" | null;
 };
 
 export type AtendimentoDetalhe = {

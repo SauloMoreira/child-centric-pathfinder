@@ -14,6 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -63,6 +70,7 @@ export function CotaFormSheet({
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState<RichTextValue>({ html: "", text: "" });
   const [orientacao, setOrientacao] = useState("");
+  const [orientacaoNivel, setOrientacaoNivel] = useState<"media" | "alta">("media");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
 
   const isEdit = target?.mode === "edit";
@@ -75,11 +83,13 @@ export function CotaFormSheet({
       const bj = target.detalhe.bodyJson as { html?: string } | null;
       setTexto({ html: bj?.html ?? "", text: target.detalhe.bodyText });
       setOrientacao(target.detalhe.orientacao ?? "");
+      setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
     } else {
       setTitulo("");
       setTexto({ html: "", text: "" });
       setOrientacao("");
+      setOrientacaoNivel("media");
       setCategoriaIds([]);
     }
   }, [open, target]);
@@ -111,6 +121,7 @@ export function CotaFormSheet({
           bodyText: texto.text,
           categoryIds: categoriaIds,
           orientacao: orientacao.trim(),
+          orientacaoNivel,
         },
         {
           onSuccess: () => {
@@ -129,6 +140,7 @@ export function CotaFormSheet({
           bodyText: texto.text,
           categoryIds: categoriaIds,
           orientacao: orientacao.trim(),
+          orientacaoNivel,
         },
         {
           onSuccess: (result) => {
@@ -173,9 +185,20 @@ export function CotaFormSheet({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cota-orientacao" className="text-xs">
-              Orientação (opcional)
-            </Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="cota-orientacao" className="text-xs">
+                Orientação (opcional)
+              </Label>
+              <Select value={orientacaoNivel} onValueChange={(v) => setOrientacaoNivel(v as "media" | "alta")}>
+                <SelectTrigger className="h-6 w-[110px] text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="media">Grau: Média</SelectItem>
+                  <SelectItem value="alta">Grau: Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Textarea
               id="cota-orientacao"
               value={orientacao}

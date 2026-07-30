@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   ArrowDown,
   ArrowUp,
@@ -762,20 +763,35 @@ export function FieldEditor({
   }
 
   if (isOrientation) {
+    const alta = campo.nivelImportancia === "alta";
     return (
-      // Ajuste doc — caixa âmbar (não mais verde/institucional), igual à
-      // cor do campo Orientação no formulário preenchível.
+      // Ajuste doc — caixa âmbar (média) ou bordô (alta), grau de importância.
       <div
         ref={sortable.setNodeRef}
         style={sortableStyle}
-        className="rounded-md border border-dashed border-warning/40 bg-warning/[0.06] p-3"
+        className={cn(
+          "rounded-md border border-dashed p-3",
+          alta ? "border-bordo/40 bg-bordo/[0.06]" : "border-warning/40 bg-warning/[0.06]",
+        )}
       >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-center gap-2">
-              <Info className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
-              <p className="text-xs font-medium text-warning">Orientação</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Info className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
+              <p className={cn("text-xs font-medium", alta ? "text-bordo" : "text-warning")}>Orientação</p>
+              <Select
+                value={campo.nivelImportancia ?? "media"}
+                onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
+              >
+                <SelectTrigger className="ml-auto h-6 w-[110px] text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="media">Grau: Média</SelectItem>
+                  <SelectItem value="alta">Grau: Alta</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Textarea
               value={campo.label}
@@ -803,24 +819,40 @@ export function FieldEditor({
   }
 
   if (isChecklist) {
+    const alta = campo.nivelImportancia === "alta";
     return (
-      // Ajuste doc — mesmo fundo âmbar do campo Orientação.
+      // Ajuste doc — mesmo esquema de cor da Orientação (âmbar/bordô).
       <div
         ref={sortable.setNodeRef}
         style={sortableStyle}
-        className="rounded-md border border-dashed border-warning/40 bg-warning/[0.06] p-3"
+        className={cn(
+          "rounded-md border border-dashed p-3",
+          alta ? "border-bordo/40 bg-bordo/[0.06]" : "border-warning/40 bg-warning/[0.06]",
+        )}
       >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-center gap-2">
-              <ListChecks className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+            <div className="flex flex-wrap items-center gap-2">
+              <ListChecks className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
               <Input
                 value={campo.label}
                 onChange={(e) => onChange({ label: e.target.value })}
                 placeholder="Título do checklist (opcional)"
-                className="bg-surface text-xs"
+                className="min-w-0 flex-1 bg-surface text-xs"
               />
+              <Select
+                value={campo.nivelImportancia ?? "media"}
+                onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
+              >
+                <SelectTrigger className="h-6 w-[110px] shrink-0 text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="media">Grau: Média</SelectItem>
+                  <SelectItem value="alta">Grau: Alta</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Itens</p>
