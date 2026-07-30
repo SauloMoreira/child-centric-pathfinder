@@ -802,7 +802,10 @@ function ColumnsBoard({
 
   // Atendimento: criar/editar (side sheet) e detalhe expandido (side sheet)
   const [atendimentoFormTarget, setAtendimentoFormTarget] = useState<
-    { mode: "create" } | { mode: "edit"; itemId: string; detalhe: AtendimentoDetalhe } | null
+    | { mode: "create" }
+    | { mode: "edit"; itemId: string; detalhe: AtendimentoDetalhe }
+    | { mode: "inspire"; detalhe: AtendimentoDetalhe }
+    | null
   >(null);
   const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
   const [atendimentoDetailId, setAtendimentoDetailId] = useState<string | null>(null);
@@ -814,6 +817,12 @@ function ColumnsBoard({
 
   const openEditAtendimento = useCallback((detalhe: AtendimentoDetalhe) => {
     setAtendimentoFormTarget({ mode: "edit", itemId: detalhe.id, detalhe });
+    setAtendimentoFormOpen(true);
+  }, []);
+
+  // Ajuste doc (AJUSTE 9) — "Inspirar novo atendimento".
+  const openInspireAtendimento = useCallback((detalhe: AtendimentoDetalhe) => {
+    setAtendimentoFormTarget({ mode: "inspire", detalhe });
     setAtendimentoFormOpen(true);
   }, []);
 
@@ -849,6 +858,22 @@ function ColumnsBoard({
       }
     },
     [qc, openEditAtendimento],
+  );
+
+  // Ajuste doc (AJUSTE 9) — "Inspirar novo atendimento" a partir do card.
+  const handleInspireAtendimento = useCallback(
+    async (card: WorkspaceCardDto) => {
+      try {
+        const detalhe = await qc.fetchQuery({
+          queryKey: atendimentoKeys.detalhe(card.itemId),
+          queryFn: () => obterAtendimentoDetalhe(card.itemId),
+        });
+        openInspireAtendimento(detalhe);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao carregar o atendimento de referência");
+      }
+    },
+    [qc, openInspireAtendimento],
   );
 
   return (
@@ -1075,6 +1100,7 @@ function ColumnsBoard({
                   onEditCota={handleEditCota}
                   onOpenAtendimento={(card) => setAtendimentoDetailId(card.itemId)}
                   onEditAtendimento={handleEditAtendimento}
+                  onInspireAtendimento={handleInspireAtendimento}
                   onAdded={onRefetch}
                   isSearching={isSearching}
                   collapsed={collapsedColumns.has(c.id)}
@@ -1169,6 +1195,15 @@ function ColumnsBoard({
         onDeleted={() => {
           setAtendimentoDetailId(null);
           onRefetch();
+        }}
+        onInspire={() => {
+          const detalhe = qc.getQueryData<AtendimentoDetalhe>(
+            atendimentoKeys.detalhe(atendimentoDetailId ?? ""),
+          );
+          if (detalhe) {
+            setAtendimentoDetailId(null);
+            openInspireAtendimento(detalhe);
+          }
         }}
       />
 
@@ -1322,6 +1357,7 @@ function SortableColumn(props: {
   onEditCota: (card: WorkspaceCardDto) => void;
   onOpenAtendimento: (card: WorkspaceCardDto) => void;
   onEditAtendimento: (card: WorkspaceCardDto) => void;
+  onInspireAtendimento: (card: WorkspaceCardDto) => void;
   onAdded: () => void;
   isSearching?: boolean;
   collapsed: boolean;
@@ -1346,6 +1382,7 @@ function SortableColumn(props: {
     onEditCota,
     onOpenAtendimento,
     onEditAtendimento,
+    onInspireAtendimento,
     onAdded,
     isSearching,
     collapsed,
@@ -1561,6 +1598,7 @@ function SortableColumn(props: {
               onEditCota={() => onEditCota(card)}
               onOpenAtendimento={() => onOpenAtendimento(card)}
               onEditAtendimento={() => onEditAtendimento(card)}
+              onInspireAtendimento={() => onInspireAtendimento(card)}
             />
           ))}
         </SortableContext>
@@ -1864,6 +1902,7 @@ function SortableCard(props: {
   onEditCota: () => void;
   onOpenAtendimento: () => void;
   onEditAtendimento: () => void;
+  onInspireAtendimento: () => void;
 }) {
   const {
     card,
@@ -1881,6 +1920,7 @@ function SortableCard(props: {
     onEditCota,
     onOpenAtendimento,
     onEditAtendimento,
+    onInspireAtendimento,
   } = props;
 
   const sortable = useSortable({
@@ -2051,6 +2091,16 @@ function SortableCard(props: {
                   <DropdownMenuSeparator />
                 </>
               )}
+              {access.accessMode === "owner" && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onInspireAtendimento();
+                  }}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" /> Inspirar novo atendimento
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={(e) => {
@@ -2058,7 +2108,7 @@ function SortableCard(props: {
                   onRemove();
                 }}
               >
-                <X className="mr-2 h-4 w-4" /> Excluir da coluna
+                <X className="mr-2 h-4 w-4" /> Remover da coluna
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

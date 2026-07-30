@@ -103,7 +103,11 @@ import type {
 
 type AtendimentoFormMode =
   | { mode: "create" }
-  | { mode: "edit"; itemId: string; detalhe: AtendimentoDetalhe };
+  | { mode: "edit"; itemId: string; detalhe: AtendimentoDetalhe }
+  // Ajuste doc (AJUSTE 9) — "Inspirar novo atendimento": cria um atendimento
+  // NOVO herdando todo o formulário de um já existente, exceto título,
+  // descrição e categoria(s), que começam em branco.
+  | { mode: "inspire"; detalhe: AtendimentoDetalhe };
 
 const RESERVED_CATEGORY_NAME = "Sem categoria";
 
@@ -149,6 +153,9 @@ export function AtendimentoFormSheet({
   // fechar (sem precisar marcar "sujo" em cada setter individualmente).
   const [confirmClose, setConfirmClose] = useState(false);
   const initialSnapshotRef = useRef("");
+  // Ajuste doc (AJUSTE 9) — base de comparação para bloquear a criação
+  // quando, no modo "inspire", nem o título nem o formulário mudaram.
+  const inspireBaseRef = useRef<{ titulo: string; camposJson: string } | null>(null);
 
   const isEdit = target?.mode === "edit";
   const pending = criar.isPending || atualizar.isPending;
@@ -160,17 +167,35 @@ export function AtendimentoFormSheet({
       setDescricao(target.detalhe.descricao ?? "");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
       setCampos(target.detalhe.formSchema);
+      inspireBaseRef.current = null;
       initialSnapshotRef.current = JSON.stringify({
         titulo: target.detalhe.titulo,
         descricao: target.detalhe.descricao ?? "",
         categoriaIds: target.detalhe.categorias.map((c) => c.id),
         campos: target.detalhe.formSchema,
       });
+    } else if (target.mode === "inspire") {
+      const camposClonados = JSON.parse(JSON.stringify(target.detalhe.formSchema)) as AtendimentoFormField[];
+      setTitulo("");
+      setDescricao("");
+      setCategoriaIds([]);
+      setCampos(camposClonados);
+      inspireBaseRef.current = {
+        titulo: target.detalhe.titulo,
+        camposJson: JSON.stringify(camposClonados),
+      };
+      initialSnapshotRef.current = JSON.stringify({
+        titulo: "",
+        descricao: "",
+        categoriaIds: [],
+        campos: camposClonados,
+      });
     } else {
       setTitulo("");
       setDescricao("");
       setCategoriaIds([]);
       setCampos([]);
+      inspireBaseRef.current = null;
       initialSnapshotRef.current = JSON.stringify({ titulo: "", descricao: "", categoriaIds: [], campos: [] });
     }
   }, [open, target]);
@@ -312,6 +337,16 @@ export function AtendimentoFormSheet({
     }
     if (!camposValidos) {
       toast.error("Todo campo do formulário precisa de um rótulo (e ao menos uma opção, quando aplicável).");
+      return;
+    }
+    if (
+      inspireBaseRef.current &&
+      titulo.trim() === inspireBaseRef.current.titulo &&
+      JSON.stringify(campos) === inspireBaseRef.current.camposJson
+    ) {
+      toast.error(
+        "Altere ao menos o título ou o formulário em relação ao atendimento usado como referência.",
+      );
       return;
     }
 

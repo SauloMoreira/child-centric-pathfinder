@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Loader2, MessageSquare, Pencil, Printer, Trash2 } from "lucide-react";
+import { Copy, Loader2, MessageSquare, Pencil, Printer, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,9 @@ interface AtendimentoDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
   onDeleted: () => void;
+  /** Ajuste doc (AJUSTE 9) — "Inspirar novo": abre a criação de um
+   *  atendimento novo herdando o formulário deste. */
+  onInspire?: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -94,6 +97,7 @@ export function AtendimentoDetailSheet({
   onOpenChange,
   onEdit,
   onDeleted,
+  onInspire,
 }: AtendimentoDetailSheetProps) {
   const detalhe = useAtendimentoDetalhe(itemId);
   const excluir = useExcluirAtendimento();
@@ -370,6 +374,11 @@ export function AtendimentoDetailSheet({
                         <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
                           <Pencil className="h-3.5 w-3.5" /> Editar modelo
                         </Button>
+                        {onInspire && (
+                          <Button variant="outline" size="sm" className="gap-1.5" onClick={onInspire}>
+                            <Sparkles className="h-3.5 w-3.5" /> Inspirar novo
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
