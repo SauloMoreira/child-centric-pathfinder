@@ -13,6 +13,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  FoldVertical,
+  UnfoldVertical,
   GripVertical,
   Copy,
   User,
@@ -464,6 +466,12 @@ function ColumnsBoard({
   // à sessão do navegador (não é salvo no Painel), já que o pedido é sobre
   // ganhar espaço horizontal na tela, não sobre uma preferência persistente.
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+
+  // Ajuste doc — botão de ajuste vertical: por padrão as colunas são
+  // limitadas à altura da tela (rolagem interna por coluna, comportamento
+  // já existente). Ao clicar, alternam para altura natural (crescem com o
+  // conteúdo e a rolagem vertical passa a ser da tela/board como um todo).
+  const [colunasAlturaNatural, setColunasAlturaNatural] = useState(false);
   const toggleColumnCollapsed = useCallback((columnId: string) => {
     setCollapsedColumns((prev) => {
       const next = new Set(prev);
@@ -957,13 +965,22 @@ function ColumnsBoard({
         <div
           ref={boardScrollRef}
           onScroll={handleBoardScroll}
-          className="kanban-scroll flex-1 overflow-x-auto overflow-y-hidden pl-2 pr-4 py-4 lg:pl-3 lg:pr-8"
+          className={cn(
+            "kanban-scroll flex-1 overflow-x-auto pl-2 pr-4 py-4 lg:pl-3 lg:pr-8",
+            colunasAlturaNatural ? "overflow-y-auto" : "overflow-y-hidden",
+          )}
           style={{
             minHeight: 0,
           }}
         >
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-            <div ref={boardContentRef} className="flex h-full min-w-max items-stretch gap-4">
+            <div
+              ref={boardContentRef}
+              className={cn(
+                "flex min-w-max items-stretch gap-4",
+                colunasAlturaNatural ? "h-auto items-start" : "h-full",
+              )}
+            >
               {(access.canManageColumns || orderedColumns.length > 0) && (
                 <div className="sticky left-0 z-10 -mr-2.5 flex shrink-0 flex-col items-center justify-start gap-1 rounded-md bg-background/95 pt-1 backdrop-blur-sm">
                   {access.canManageColumns && (
@@ -1006,6 +1023,32 @@ function ColumnsBoard({
                       <ChevronsRight className="h-3.5 w-3.5" />
                     </button>
                   )}
+                  {orderedColumns.length > 0 && (
+                    <button
+                      type="button"
+                      className={cn(
+                        "rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground",
+                        colunasAlturaNatural && "bg-institutional/[0.08] text-institutional",
+                      )}
+                      aria-label={
+                        colunasAlturaNatural
+                          ? "Ajustar colunas à altura da tela"
+                          : "Permitir colunas maiores que a tela"
+                      }
+                      title={
+                        colunasAlturaNatural
+                          ? "Ajustar colunas à altura da tela"
+                          : "Permitir colunas maiores que a tela"
+                      }
+                      onClick={() => setColunasAlturaNatural((v) => !v)}
+                    >
+                      {colunasAlturaNatural ? (
+                        <FoldVertical className="h-3.5 w-3.5" />
+                      ) : (
+                        <UnfoldVertical className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
               {orderedColumns.map((c, idx) => (
@@ -1036,6 +1079,7 @@ function ColumnsBoard({
                   isSearching={isSearching}
                   collapsed={collapsedColumns.has(c.id)}
                   onToggleCollapsed={() => toggleColumnCollapsed(c.id)}
+                  alturaNatural={colunasAlturaNatural}
                 />
               ))}
 
@@ -1282,6 +1326,7 @@ function SortableColumn(props: {
   isSearching?: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  alturaNatural?: boolean;
 }) {
   const {
     column,
@@ -1305,6 +1350,7 @@ function SortableColumn(props: {
     isSearching,
     collapsed,
     onToggleCollapsed,
+    alturaNatural = false,
   } = props;
 
   const sortable = useSortable({
@@ -1391,7 +1437,10 @@ function SortableColumn(props: {
       ref={sortable.setNodeRef}
       style={style}
       data-col-color={colorToken}
-      className="kanban-column relative flex h-full min-h-0 flex-col overflow-hidden"
+      className={cn(
+        "kanban-column relative flex flex-col overflow-hidden",
+        alturaNatural ? "h-auto min-h-[16rem]" : "h-full min-h-0",
+      )}
     >
       {/* faixa lateral colorida */}
       <span
@@ -1479,11 +1528,13 @@ function SortableColumn(props: {
         )}
       </header>
 
-      {/* corpo com rolagem interna */}
+      {/* corpo — rolagem interna por padrão; altura natural quando o
+          ajuste vertical está ativo (a rolagem passa a ser do board). */}
       <div
         ref={setDropRef}
         className={cn(
-          "kanban-scroll flex-1 min-h-0 space-y-2 overflow-y-auto pl-4 pr-2 py-2.5 transition",
+          "kanban-scroll space-y-2 pl-4 pr-2 py-2.5 transition",
+          alturaNatural ? "" : "flex-1 min-h-0 overflow-y-auto",
           isOver && "bg-institutional/[0.04] ring-1 ring-inset ring-institutional/30",
         )}
       >
