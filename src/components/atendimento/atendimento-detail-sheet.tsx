@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Copy, Loader2, MessageSquare, Pencil, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -101,6 +101,7 @@ export function AtendimentoDetailSheet({
   const [confirmClose, setConfirmClose] = useState(false);
   const [values, setValues] = useState<AtendimentoFormValues>({});
   const [resumo, setResumo] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const [resumoDesatualizado, setResumoDesatualizado] = useState(false);
   const [gerandoResumo, setGerandoResumo] = useState(false);
 
@@ -171,6 +172,11 @@ export function AtendimentoDetailSheet({
       setResumo(texto);
       setResumoDesatualizado(false);
       toast.success("Relato do atendimento gerado");
+      // Ajuste doc — rolar automaticamente até o fim para já mostrar o
+      // relato/resumo gerado, sem o usuário precisar rolar manualmente.
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      });
     } catch (e) {
       toast.error(mensagemErroResumoIA(e));
     } finally {
@@ -295,7 +301,10 @@ export function AtendimentoDetailSheet({
               )}
 
               <div className="mt-2 flex min-h-0 flex-1 flex-col gap-3">
-                <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
+                <div
+                  ref={scrollRef}
+                  className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3"
+                >
                   <FormRenderer fields={detalhe.data.formSchema} values={values} onChange={handleChange} />
 
                   {resumo && (

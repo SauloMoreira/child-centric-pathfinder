@@ -46,7 +46,12 @@ const NOVO_CONTEXTO = "__novo__";
 interface AtendimentoIaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGenerated: (result: { personName: string; context: string; campos: AtendimentoFormField[] }) => void;
+  onGenerated: (result: {
+    personName: string;
+    context: string;
+    campos: AtendimentoFormField[];
+    file: File;
+  }) => void;
 }
 
 function primeiroNome(nomeCompleto: string): string {
@@ -214,7 +219,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
         file,
       });
       toast.success("Formulário gerado pelo Atendimento IA");
-      onGenerated({ personName: personName.trim(), context: context.trim(), campos });
+      onGenerated({ personName: personName.trim(), context: context.trim(), campos, file });
       setPersonName("");
       setContext("");
       setFile(null);

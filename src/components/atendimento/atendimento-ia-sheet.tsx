@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Copy,
   Loader2,
@@ -26,6 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +58,7 @@ import {
   montarFormularioBrancoHtml,
   montarFormularioPreenchidoHtml,
 } from "@/components/atendimento/print";
-import { gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
+import { gerarAtendimentoComIA, gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
 import { mensagemErroResumoIA } from "@/components/atendimento/atendimento-detail-sheet";
 import type { AtendimentoFieldType, AtendimentoFormField } from "@/lib/reintegra-api";
 
@@ -65,6 +66,9 @@ export type AtendimentoIaResultado = {
   personName: string;
   context: string;
   campos: AtendimentoFormField[];
+  /** Ajuste doc — mantido em memória (nunca persistido) só para permitir
+   *  "Alterar contexto e reformular" sem pedir novo upload. */
+  file: File;
 };
 
 interface AtendimentoIaSheetProps {
@@ -88,9 +92,18 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   const [values, setValues] = useState<AtendimentoFormValues>({});
   const [editando, setEditando] = useState(false);
   const [resumo, setResumo] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const [resumoDesatualizado, setResumoDesatualizado] = useState(false);
   const [gerandoResumo, setGerandoResumo] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
+
+  // Ajuste doc — "Alterar contexto e reformular": mantém o arquivo
+  // original em memória (nunca persistido) para reprocessar com um novo
+  // contexto, sem pedir novo upload.
+  const [reformularAberto, setReformularAberto] = useState(false);
+  const [novoContexto, setNovoContexto] = useState("");
+  const [reformulando, setReformulando] = useState(false);
+  const [contextoAtual, setContextoAtual] = useState("");
 
   useEffect(() => {
     if (!open || !data) return;
@@ -102,6 +115,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     setEditando(false);
     setResumo(null);
     setResumoDesatualizado(false);
+    setContextoAtual(data.context);
   }, [open, data]);
 
   // Garante valor inicial para qualquer campo novo (gerado pela IA ou
@@ -137,6 +151,32 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
   const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
+
+  // Ajuste doc — "Alterar contexto e reformular": reprocessa o mesmo
+  // arquivo original com um novo contexto, substituindo as perguntas e
+  // descartando respostas/relato já preenchidos (o formulário muda).
+  const handleReformular = async () => {
+    if (!data || !novoContexto.trim()) return;
+    setReformulando(true);
+    try {
+      const novosCampos = await gerarAtendimentoComIA({
+        personName: data.personName,
+        context: novoContexto.trim(),
+        file: data.file,
+      });
+      setCampos(novosCampos.map((c) => ({ ...c, required: false, requiredIf: null })));
+      setValues({});
+      setResumo(null);
+      setResumoDesatualizado(false);
+      setContextoAtual(novoContexto.trim());
+      setReformularAberto(false);
+      toast.success("Atendimento reformulado com o novo contexto");
+    } catch (e) {
+      toast.error(mensagemErroResumoIA(e));
+    } finally {
+      setReformulando(false);
+    }
+  };
   // Ajuste doc — mesma inserção rápida entre campos do builder normal.
   const insertCampoAt = (index: number, campo: AtendimentoFormField) =>
     setCampos((prev) => {
@@ -229,12 +269,15 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       const respostas = montarRespostasParaResumo(campos, values);
       const texto = await gerarResumoAtendimentoIA({
         titulo: data.personName,
-        descricao: data.context,
+        descricao: contextoAtual,
         respostas,
       });
       setResumo(texto);
       setResumoDesatualizado(false);
       toast.success("Relato do atendimento gerado");
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      });
     } catch (e) {
       toast.error(mensagemErroResumoIA(e));
     } finally {
@@ -264,7 +307,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
   const handleImprimirBranco = () => {
     if (!data) return;
-    const html = montarFormularioBrancoHtml(data.personName, data.context, campos);
+    const html = montarFormularioBrancoHtml(data.personName, contextoAtual, campos);
     if (!abrirImpressao(data.personName, html)) {
       toast.error("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
     }
@@ -272,7 +315,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
   const handleImprimirPreenchido = () => {
     if (!data) return;
-    const html = montarFormularioPreenchidoHtml(data.personName, data.context, campos, values, resumo);
+    const html = montarFormularioPreenchidoHtml(data.personName, contextoAtual, campos, values, resumo);
     if (!abrirImpressao(data.personName, html)) {
       toast.error("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
     }
@@ -305,9 +348,9 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
             </span>
           </div>
 
-          {data.context && (
+          {contextoAtual && (
             <p className="mt-2 shrink-0 whitespace-pre-wrap text-[11px] text-muted-foreground">
-              <span className="font-semibold text-foreground">Contexto:</span> {data.context}
+              <span className="font-semibold text-foreground">Contexto:</span> {contextoAtual}
             </p>
           )}
 
@@ -328,6 +371,19 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
               <Button
                 variant="ghost"
                 size="sm"
+                className="h-7 gap-1.5 text-[11px] text-muted-foreground"
+                onClick={() => {
+                  setNovoContexto(data?.context ?? "");
+                  setReformularAberto(true);
+                }}
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Alterar contexto e reformular
+              </Button>
+            )}
+            {!editando && (
+              <Button
+                variant="ghost"
+                size="sm"
                 className="ml-auto h-7 gap-1.5 text-[11px] text-muted-foreground"
                 onClick={handleImprimirBranco}
               >
@@ -337,7 +393,10 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
           </div>
 
           <div className="mt-2 flex min-h-0 flex-1 flex-col gap-3">
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
+            <div
+              ref={scrollRef}
+              className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3"
+            >
               {editando ? (
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-1.5">
@@ -462,6 +521,39 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
               }}
             >
               Fechar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reformularAberto} onOpenChange={setReformularAberto}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar contexto e reformular</AlertDialogTitle>
+            <AlertDialogDescription>
+              O mesmo documento anexado será reanalisado com o novo contexto, gerando um formulário
+              novo. Perguntas respondidas e o relato já gerado (se houver) serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={novoContexto}
+            onChange={(e) => setNovoContexto(e.target.value)}
+            placeholder="Novo contexto para a formulação do atendimento…"
+            rows={4}
+            className="resize-none bg-surface text-xs"
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reformulando}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!novoContexto.trim() || reformulando}
+              onClick={(e) => {
+                e.preventDefault();
+                handleReformular();
+              }}
+            >
+              {reformulando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
+              Reformular
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
