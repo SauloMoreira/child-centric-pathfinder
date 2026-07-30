@@ -22,6 +22,7 @@ import {
   User,
   Pencil,
   Check,
+  Loader2,
   Search,
   Sparkles,
 } from "lucide-react";
