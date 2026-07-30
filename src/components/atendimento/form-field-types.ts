@@ -217,7 +217,7 @@ export function condicaoSatisfeita(
   const regraSatisfeita = (regra: AtendimentoConditionRule): boolean => {
     const resposta = values[regra.fieldId];
     if (resposta === undefined) return false;
-    if (Array.isArray(resposta)) return resposta.includes(regra.value);
+    if (Array.isArray(resposta)) return (resposta as unknown[]).includes(regra.value);
     return resposta === regra.value;
   };
   return condicao.operator === "OR"
