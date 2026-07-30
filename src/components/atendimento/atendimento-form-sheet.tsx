@@ -711,6 +711,13 @@ export function FieldEditor({
   };
   const addOption = () => onChange({ options: [...options, `Opção ${options.length + 1}`] });
   const removeOption = (i: number) => onChange({ options: options.filter((_, oi) => oi !== i) });
+  // Ajuste doc (AJUSTE 12) — arrastar opções para reposicionar, igual já
+  // ocorre com as perguntas.
+  const moveOption = (from: number, to: number) => onChange({ options: arrayMove(options, from, to) });
+  const moveMatrixRow = (from: number, to: number) =>
+    onChange({ matrixRows: arrayMove(campo.matrixRows ?? [], from, to) });
+  const moveTableColumn = (from: number, to: number) =>
+    onChange({ tableColumns: arrayMove(campo.tableColumns ?? [], from, to) });
 
   const setChecklistItem = (i: number, value: string) => {
     const next = [...checklistItems];
@@ -721,6 +728,8 @@ export function FieldEditor({
     onChange({ checklistItems: [...checklistItems, `Item ${checklistItems.length + 1}`] });
   const removeChecklistItem = (i: number) =>
     onChange({ checklistItems: checklistItems.filter((_, ci) => ci !== i) });
+  const moveChecklistItem = (from: number, to: number) =>
+    onChange({ checklistItems: arrayMove(checklistItems, from, to) });
 
   const moveButtons = (
     <div className="flex shrink-0 flex-col items-center gap-0.5">
@@ -892,7 +901,22 @@ export function FieldEditor({
             <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Itens</p>
               {checklistItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-1.5">
+                <div
+                  key={i}
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = Number(e.dataTransfer.getData("text/plain"));
+                    if (!Number.isNaN(from) && from !== i) moveChecklistItem(from, i);
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <GripVertical
+                    className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
+                    aria-hidden
+                  />
                   <Input
                     value={item}
                     onChange={(e) => setChecklistItem(i, e.target.value)}
@@ -1135,7 +1159,22 @@ export function FieldEditor({
                 Opções
               </p>
               {options.map((opt, i) => (
-                <div key={i} className="flex items-center gap-1.5">
+                <div
+                  key={i}
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = Number(e.dataTransfer.getData("text/plain"));
+                    if (!Number.isNaN(from) && from !== i) moveOption(from, i);
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <GripVertical
+                    className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
+                    aria-hidden
+                  />
                   <Input
                     value={opt}
                     onChange={(e) => setOption(i, e.target.value)}
@@ -1210,6 +1249,8 @@ function RepeatSubfieldEditor({
   };
   const addOption = () => onChange({ options: [...options, `Opção ${options.length + 1}`] });
   const removeOption = (i: number) => onChange({ options: options.filter((_, oi) => oi !== i) });
+  // Ajuste doc (AJUSTE 12) — arrastar opções para reposicionar.
+  const moveOption = (from: number, to: number) => onChange({ options: arrayMove(options, from, to) });
 
   return (
     <div className="space-y-1.5 rounded border border-border bg-background p-2">
