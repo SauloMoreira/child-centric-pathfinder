@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      atendimento_ia_contextos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          texto: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          texto: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          texto?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comarcas: {
         Row: {
           created_at: string
@@ -192,6 +219,7 @@ export type Database = {
           is_published: boolean
           item_id: string
           orientacao: string | null
+          orientacao_nivel: string
           published_at: string | null
           title: string
           version_number: number
@@ -206,6 +234,7 @@ export type Database = {
           is_published?: boolean
           item_id: string
           orientacao?: string | null
+          orientacao_nivel?: string
           published_at?: string | null
           title: string
           version_number: number
@@ -220,6 +249,7 @@ export type Database = {
           is_published?: boolean
           item_id?: string
           orientacao?: string | null
+          orientacao_nivel?: string
           published_at?: string | null
           title?: string
           version_number?: number
@@ -798,6 +828,7 @@ export type Database = {
           p_idempotency_key: string
           p_item_id: string
           p_orientacao?: string
+          p_orientacao_nivel?: string
           p_titulo: string
         }
         Returns: Json
@@ -903,6 +934,7 @@ export type Database = {
           p_body_text: string
           p_category_ids?: string[]
           p_orientacao?: string
+          p_orientacao_nivel?: string
           p_titulo: string
         }
         Returns: Json
@@ -962,6 +994,10 @@ export type Database = {
         }
         Returns: number
       }
+      excluir_contexto_atendimento_ia: {
+        Args: { p_context_id: string }
+        Returns: undefined
+      }
       excluir_cota: {
         Args: {
           p_expected_version: number
@@ -1003,6 +1039,14 @@ export type Database = {
           id: string
           nome: string
           order_position: number
+        }[]
+      }
+      listar_contextos_atendimento_ia: {
+        Args: never
+        Returns: {
+          id: string
+          nome: string
+          texto: string
         }[]
       }
       listar_convites_equipe: {
@@ -1223,6 +1267,10 @@ export type Database = {
           p_items: Json
         }
         Returns: Json
+      }
+      salvar_contexto_atendimento_ia: {
+        Args: { p_nome: string; p_texto: string }
+        Returns: string
       }
       selecionar_contexto_defensor: {
         Args: { p_defensor_user_id: string; p_idempotency_key: string }
