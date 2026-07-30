@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Loader2, Scale, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -35,7 +35,13 @@ import {
 } from "@/features/cota/hooks";
 import type { CotaDetalhe } from "@/lib/reintegra-api";
 
-type CotaFormMode = { mode: "create" } | { mode: "edit"; itemId: string; detalhe: CotaDetalhe };
+type CotaFormMode =
+  | { mode: "create" }
+  | { mode: "edit"; itemId: string; detalhe: CotaDetalhe }
+  // Ajuste doc (AJUSTE 10) — "Inspirar nova cota": cria uma cota NOVA
+  // herdando texto e orientação de uma já existente, exceto título e
+  // categoria(s), que começam em branco.
+  | { mode: "inspire"; detalhe: CotaDetalhe };
 
 const RESERVED_CATEGORY_NAME = "Sem categoria";
 
@@ -75,6 +81,9 @@ export function CotaFormSheet({
 
   const isEdit = target?.mode === "edit";
   const pending = criar.isPending || atualizar.isPending;
+  // Ajuste doc (AJUSTE 10) — base de comparação para bloquear a criação
+  // quando, no modo "inspire", nem o título nem o texto mudaram.
+  const inspireBaseRef = useRef<{ titulo: string; textoHtml: string } | null>(null);
 
   useEffect(() => {
     if (!open || !target) return;
@@ -85,12 +94,23 @@ export function CotaFormSheet({
       setOrientacao(target.detalhe.orientacao ?? "");
       setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
+      inspireBaseRef.current = null;
+    } else if (target.mode === "inspire") {
+      const bj = target.detalhe.bodyJson as { html?: string } | null;
+      const html = bj?.html ?? "";
+      setTitulo("");
+      setTexto({ html, text: target.detalhe.bodyText });
+      setOrientacao(target.detalhe.orientacao ?? "");
+      setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
+      setCategoriaIds([]);
+      inspireBaseRef.current = { titulo: target.detalhe.titulo, textoHtml: html };
     } else {
       setTitulo("");
       setTexto({ html: "", text: "" });
       setOrientacao("");
       setOrientacaoNivel("media");
       setCategoriaIds([]);
+      inspireBaseRef.current = null;
     }
   }, [open, target]);
 
@@ -109,6 +129,14 @@ export function CotaFormSheet({
     }
     if (categoriaIds.length === 0) {
       toast.error("Selecione ao menos uma categoria.");
+      return;
+    }
+    if (
+      inspireBaseRef.current &&
+      titulo.trim() === inspireBaseRef.current.titulo &&
+      texto.html === inspireBaseRef.current.textoHtml
+    ) {
+      toast.error("Altere ao menos o título ou o texto em relação à cota usada como referência.");
       return;
     }
     if (target?.mode === "edit") {

@@ -775,13 +775,22 @@ function ColumnsBoard({
 
   // Cota: criar/editar (side sheet) e detalhe expandido (side sheet)
   const [cotaFormTarget, setCotaFormTarget] = useState<
-    { mode: "create" } | { mode: "edit"; itemId: string; detalhe: CotaDetalhe } | null
+    | { mode: "create" }
+    | { mode: "edit"; itemId: string; detalhe: CotaDetalhe }
+    | { mode: "inspire"; detalhe: CotaDetalhe }
+    | null
   >(null);
   const [cotaFormOpen, setCotaFormOpen] = useState(false);
   const [cotaDetailId, setCotaDetailId] = useState<string | null>(null);
 
   const openEditCota = useCallback((detalhe: CotaDetalhe) => {
     setCotaFormTarget({ mode: "edit", itemId: detalhe.id, detalhe });
+    setCotaFormOpen(true);
+  }, []);
+
+  // Ajuste doc (AJUSTE 10) — "Inspirar nova cota".
+  const openInspireCota = useCallback((detalhe: CotaDetalhe) => {
+    setCotaFormTarget({ mode: "inspire", detalhe });
     setCotaFormOpen(true);
   }, []);
 
@@ -798,6 +807,21 @@ function ColumnsBoard({
       }
     },
     [qc, openEditCota],
+  );
+
+  const handleInspireCota = useCallback(
+    async (card: WorkspaceCardDto) => {
+      try {
+        const detalhe = await qc.fetchQuery({
+          queryKey: cotaKeys.detalhe(card.itemId),
+          queryFn: () => obterCotaDetalhe(card.itemId),
+        });
+        openInspireCota(detalhe);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao carregar a cota de referência");
+      }
+    },
+    [qc, openInspireCota],
   );
 
   // Atendimento: criar/editar (side sheet) e detalhe expandido (side sheet)
@@ -1098,6 +1122,7 @@ function ColumnsBoard({
                   onCopyToPanel={(card) => setCopyTarget(card)}
                   onOpenCota={(card) => setCotaDetailId(card.itemId)}
                   onEditCota={handleEditCota}
+                  onInspireCota={handleInspireCota}
                   onOpenAtendimento={(card) => setAtendimentoDetailId(card.itemId)}
                   onEditAtendimento={handleEditAtendimento}
                   onInspireAtendimento={handleInspireAtendimento}
@@ -1168,6 +1193,13 @@ function ColumnsBoard({
         onDeleted={() => {
           setCotaDetailId(null);
           onRefetch();
+        }}
+        onInspire={() => {
+          const detalhe = qc.getQueryData<CotaDetalhe>(cotaKeys.detalhe(cotaDetailId ?? ""));
+          if (detalhe) {
+            setCotaDetailId(null);
+            openInspireCota(detalhe);
+          }
         }}
       />
 
@@ -1355,6 +1387,7 @@ function SortableColumn(props: {
   onCopyToPanel: (card: WorkspaceCardDto) => void;
   onOpenCota: (card: WorkspaceCardDto) => void;
   onEditCota: (card: WorkspaceCardDto) => void;
+  onInspireCota: (card: WorkspaceCardDto) => void;
   onOpenAtendimento: (card: WorkspaceCardDto) => void;
   onEditAtendimento: (card: WorkspaceCardDto) => void;
   onInspireAtendimento: (card: WorkspaceCardDto) => void;
@@ -1380,6 +1413,7 @@ function SortableColumn(props: {
     onCopyToPanel,
     onOpenCota,
     onEditCota,
+    onInspireCota,
     onOpenAtendimento,
     onEditAtendimento,
     onInspireAtendimento,
@@ -1596,6 +1630,7 @@ function SortableColumn(props: {
               onCopyToPanel={() => onCopyToPanel(card)}
               onOpenCota={() => onOpenCota(card)}
               onEditCota={() => onEditCota(card)}
+              onInspireCota={() => onInspireCota(card)}
               onOpenAtendimento={() => onOpenAtendimento(card)}
               onEditAtendimento={() => onEditAtendimento(card)}
               onInspireAtendimento={() => onInspireAtendimento(card)}
@@ -1900,6 +1935,7 @@ function SortableCard(props: {
   onCopyToPanel: () => void;
   onOpenCota: () => void;
   onEditCota: () => void;
+  onInspireCota: () => void;
   onOpenAtendimento: () => void;
   onEditAtendimento: () => void;
   onInspireAtendimento: () => void;
@@ -1918,6 +1954,7 @@ function SortableCard(props: {
     onCopyToPanel,
     onOpenCota,
     onEditCota,
+    onInspireCota,
     onOpenAtendimento,
     onEditAtendimento,
     onInspireAtendimento,
@@ -2018,6 +2055,16 @@ function SortableCard(props: {
                     <DropdownMenuSeparator />
                   </>
                 )}
+                {access.accessMode === "owner" && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onInspireCota();
+                    }}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" /> Inspirar nova cota
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="text-destructive"
                   onClick={(e) => {
@@ -2025,7 +2072,7 @@ function SortableCard(props: {
                     onRemove();
                   }}
                 >
-                  <X className="mr-2 h-4 w-4" /> Excluir da coluna
+                  <X className="mr-2 h-4 w-4" /> Remover da coluna
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

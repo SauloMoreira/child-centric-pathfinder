@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Info, Loader2, Pencil, StickyNote, Trash2 } from "lucide-react";
+import { Copy, Info, Loader2, Pencil, Sparkles, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,9 @@ interface CotaDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
   onDeleted: () => void;
+  /** Ajuste doc (AJUSTE 10) — "Inspirar novo": abre a criação de uma
+   *  cota nova herdando texto e orientação desta. */
+  onInspire?: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -38,7 +41,7 @@ function formatDate(iso: string): string {
  * texto, data da última edição, copiar, editar (autor) e excluir
  * permanentemente com confirmação (autor).
  */
-export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: CotaDetailSheetProps) {
+export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onInspire }: CotaDetailSheetProps) {
   const detalhe = useCotaDetalhe(itemId);
   const excluir = useExcluirCota();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -157,6 +160,11 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted }: Cot
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
                       <Pencil className="h-3.5 w-3.5" /> Editar
                     </Button>
+                    {onInspire && (
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={onInspire}>
+                        <Sparkles className="h-3.5 w-3.5" /> Inspirar novo
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
