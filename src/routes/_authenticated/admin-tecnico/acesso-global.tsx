@@ -38,7 +38,7 @@ function AcessoGlobal() {
       const { error } = await supabase.rpc("registrar_acesso_defensor_externo", {
         p_defensor_user_id: defensor,
         p_modulo: modulo,
-        p_finalidade: finalidade || null,
+        p_finalidade: finalidade || undefined,
       });
       if (error) throw error;
     },
