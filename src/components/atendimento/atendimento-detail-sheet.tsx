@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Loader2, MessageSquare, Pencil, Printer, Sparkles, Trash2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy, Loader2, MessageSquare, Pencil, Printer, Sparkles, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +31,11 @@ import {
   montarFormularioBrancoHtml,
   montarFormularioPreenchidoHtml,
 } from "@/components/atendimento/print";
-import { gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
+import {
+  gerarResumoAtendimentoIA,
+  obterFavoritoBiblioteca,
+  alternarFavoritoBiblioteca,
+} from "@/lib/reintegra-api";
 import {
   useAtendimentoDetalhe,
   useExcluirAtendimento,
@@ -101,6 +107,23 @@ export function AtendimentoDetailSheet({
 }: AtendimentoDetailSheetProps) {
   const detalhe = useAtendimentoDetalhe(itemId);
   const excluir = useExcluirAtendimento();
+  const qc = useQueryClient();
+  // Ajuste doc — estrelinha de favorito também dentro do Atendimento (não
+  // só no card da Biblioteca). Consulta leve e independente do detalhe,
+  // que não traz favorito/contagem.
+  const favoritoQuery = useQuery({
+    queryKey: ["biblioteca-favorito", itemId],
+    queryFn: () => obterFavoritoBiblioteca(itemId as string),
+    enabled: !!itemId,
+  });
+  const favoritar = useMutation({
+    mutationFn: () => alternarFavoritoBiblioteca(itemId as string),
+    onSuccess: (res) => {
+      qc.setQueryData(["biblioteca-favorito", itemId], res);
+      qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
+    },
+    onError: () => toast.error("Não foi possível atualizar o favorito"),
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [values, setValues] = useState<AtendimentoFormValues>({});
@@ -258,7 +281,23 @@ export function AtendimentoDetailSheet({
               <DialogHeader className="shrink-0">
                 <DialogTitle className="flex items-start gap-2 pr-6 text-base">
                   <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
-                  <span className="break-words">{detalhe.data.titulo}</span>
+                  <span className="min-w-0 flex-1 break-words">{detalhe.data.titulo}</span>
+                  <button
+                    type="button"
+                    onClick={() => favoritar.mutate()}
+                    disabled={favoritar.isPending || !itemId}
+                    aria-label={favoritoQuery.data?.is_favorited ? "Desfavoritar" : "Favoritar"}
+                    className={cn(
+                      "flex shrink-0 items-center gap-1 rounded p-1 text-xs font-normal transition hover:bg-muted",
+                      favoritoQuery.data?.is_favorited ? "text-warning" : "text-muted-foreground",
+                    )}
+                  >
+                    <Star
+                      className={cn("h-3.5 w-3.5", favoritoQuery.data?.is_favorited && "fill-current")}
+                      aria-hidden
+                    />
+                    {favoritoQuery.data?.favorite_count ?? 0}
+                  </button>
                 </DialogTitle>
               </DialogHeader>
 

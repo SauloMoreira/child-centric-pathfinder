@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Copy, Info, Loader2, Pencil, Sparkles, StickyNote, Trash2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy, Info, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { alternarFavoritoBiblioteca, obterFavoritoBiblioteca } from "@/lib/reintegra-api";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +46,21 @@ function formatDate(iso: string): string {
 export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onInspire }: CotaDetailSheetProps) {
   const detalhe = useCotaDetalhe(itemId);
   const excluir = useExcluirCota();
+  const qc = useQueryClient();
+  // Ajuste doc — estrelinha de favorito também dentro da Cota.
+  const favoritoQuery = useQuery({
+    queryKey: ["biblioteca-favorito", itemId],
+    queryFn: () => obterFavoritoBiblioteca(itemId as string),
+    enabled: !!itemId,
+  });
+  const favoritar = useMutation({
+    mutationFn: () => alternarFavoritoBiblioteca(itemId as string),
+    onSuccess: (res) => {
+      qc.setQueryData(["biblioteca-favorito", itemId], res);
+      qc.invalidateQueries({ queryKey: ["biblioteca-itens"] });
+    },
+    onError: () => toast.error("Não foi possível atualizar o favorito"),
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleCopy = async () => {
@@ -92,7 +109,23 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
               <SheetHeader className="shrink-0">
                 <SheetTitle className="flex items-start gap-2 pr-6 text-base">
                   <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
-                  <span className="break-words">{detalhe.data.titulo}</span>
+                  <span className="min-w-0 flex-1 break-words">{detalhe.data.titulo}</span>
+                  <button
+                    type="button"
+                    onClick={() => favoritar.mutate()}
+                    disabled={favoritar.isPending || !itemId}
+                    aria-label={favoritoQuery.data?.is_favorited ? "Desfavoritar" : "Favoritar"}
+                    className={cn(
+                      "flex shrink-0 items-center gap-1 rounded p-1 text-xs font-normal transition hover:bg-muted",
+                      favoritoQuery.data?.is_favorited ? "text-warning" : "text-muted-foreground",
+                    )}
+                  >
+                    <Star
+                      className={cn("h-3.5 w-3.5", favoritoQuery.data?.is_favorited && "fill-current")}
+                      aria-hidden
+                    />
+                    {favoritoQuery.data?.favorite_count ?? 0}
+                  </button>
                 </SheetTitle>
               </SheetHeader>
 
