@@ -2412,7 +2412,13 @@ function AddCardDialog({
 // -----------------------------------------------------------------------------
 // MoveToPanelDialog — Adicionar card a outro Painel do mesmo Defensor
 // -----------------------------------------------------------------------------
-function MoveToPanelDialog({
+/** Item mínimo aceito por MoveToPanelDialog — WorkspaceCardDto satisfaz
+ *  esta forma estruturalmente, mas o diálogo também é reaproveitado pela
+ *  Biblioteca ("Adicionar em painel"), que só tem um BibliotecaItem à mão
+ *  (sem cardId/columnId, que não fazem sentido fora de um Painel aberto). */
+export type MoveToPanelTarget = { itemId: string; title: string };
+
+export function MoveToPanelDialog({
   open,
   onOpenChange,
   card,
@@ -2423,7 +2429,7 @@ function MoveToPanelDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  card: WorkspaceCardDto | null;
+  card: MoveToPanelTarget | null;
   currentPanelId: string;
   defensorId: string;
   allPanels: PanelSummary[];
