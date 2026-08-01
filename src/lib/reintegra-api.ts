@@ -833,6 +833,21 @@ export async function excluirColunaWorkspace(params: {
   return Number(data);
 }
 
+/** Ajuste doc — "Esvaziar coluna": remove todos os cards de uma vez, sem
+ *  excluir a coluna nem o conteúdo (Atendimento/Cota) vinculado. */
+export async function esvaziarColunaWorkspace(params: {
+  columnId: string;
+  expectedWorkspaceVersion: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("esvaziar_coluna_workspace", {
+    p_column_id: params.columnId,
+    p_expected_workspace_version: params.expectedWorkspaceVersion,
+    p_idempotency_key: uuid(),
+  } as never);
+  if (error) throw error;
+  return Number(data);
+}
+
 /** Ajuste doc (AJUSTE 13) — duplica a coluna no MESMO painel, logo à
  *  direita, com os cards copiados. */
 export async function duplicarColunaWorkspace(params: {

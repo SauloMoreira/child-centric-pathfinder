@@ -5,6 +5,7 @@ import {
   Plus,
   X,
   Trash2,
+  Eraser,
   FileText,
   StickyNote,
   MessageSquare,
@@ -55,6 +56,7 @@ import {
   adicionarCardWorkspace,
   atualizarColunaWorkspace,
   duplicarColunaWorkspace,
+  esvaziarColunaWorkspace,
   listarCategoriasBiblioteca,
   copiarColunaParaPainel,
   moverColunaParaPainel,
@@ -622,6 +624,16 @@ function ColumnsBoard({
     },
     onError: handleMutationError,
   });
+  // Ajuste doc (AJUSTE 2) — "Esvaziar coluna".
+  const esvaziarCol = useMutation({
+    mutationFn: (columnId: string) =>
+      esvaziarColunaWorkspace({ columnId, expectedWorkspaceVersion: workspace.optimisticVersion }),
+    onSuccess: () => {
+      toast.success("Coluna esvaziada");
+      onRefetch();
+    },
+    onError: handleMutationError,
+  });
   const copiarColParaPainel = useMutation({
     mutationFn: (v: { columnId: string; targetWorkspaceId: string }) =>
       copiarColunaParaPainel(v),
@@ -1167,6 +1179,7 @@ function ColumnsBoard({
                   onMoveCol={(dir) => moverCol.mutate({ columnId: c.id, direction: dir })}
                   onEditCol={(v) => editarCol.mutate({ columnId: c.id, ...v })}
                   onDuplicateCol={() => duplicarCol.mutate(c.id)}
+                  onEmptyCol={() => esvaziarCol.mutate(c.id)}
                   onCopyColToPanel={() => setColumnPanelPicker({ columnId: c.id, columnName: c.nome, mode: "copy" })}
                   onMoveColToPanel={() => setColumnPanelPicker({ columnId: c.id, columnName: c.nome, mode: "move" })}
                   onDeleteCol={(destinationColumnId) =>
@@ -1467,6 +1480,7 @@ function SortableColumn(props: {
     icone: string | null;
   }) => void;
   onDuplicateCol: () => void;
+  onEmptyCol: () => void;
   onCopyColToPanel: () => void;
   onMoveColToPanel: () => void;
   onDeleteCol: (destinationColumnId: string | null) => void;
@@ -1496,6 +1510,7 @@ function SortableColumn(props: {
     onMoveCol,
     onEditCol,
     onDuplicateCol,
+    onEmptyCol,
     onCopyColToPanel,
     onMoveColToPanel,
     onDeleteCol,
@@ -1530,6 +1545,7 @@ function SortableColumn(props: {
     ? column.corToken
     : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
   // Ajuste doc — permite abrir 'Inserir cota ou atendimento' clicando
   // diretamente na área vazia da coluna.
   const [addCardOpen, setAddCardOpen] = useState(false);
@@ -1685,16 +1701,6 @@ function SortableColumn(props: {
                 <Pencil className="mr-2 h-4 w-4" /> Editar coluna
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
-                <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={index === totalColumns - 1}
-                onClick={() => onMoveCol("right")}
-              >
-                <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onDuplicateCol}>
                 <Copy className="mr-2 h-4 w-4" /> Duplicar coluna
               </DropdownMenuItem>
@@ -1703,6 +1709,19 @@ function SortableColumn(props: {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onMoveColToPanel}>
                 <FolderOutput className="mr-2 h-4 w-4" /> Mover para…
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setConfirmEmpty(true)}>
+                <Eraser className="mr-2 h-4 w-4" /> Esvaziar coluna
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={index === 0} onClick={() => onMoveCol("left")}>
+                <ChevronLeft className="mr-2 h-4 w-4" /> Mover para a esquerda
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={index === totalColumns - 1}
+                onClick={() => onMoveCol("right")}
+              >
+                <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -1798,6 +1817,30 @@ function SortableColumn(props: {
           }}
         />
       )}
+
+      <AlertDialog open={confirmEmpty} onOpenChange={setConfirmEmpty}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Esvaziar coluna?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os cards desta coluna serão removidos. O conteúdo vinculado (Atendimentos e
+              Cotas em si) não é excluído — apenas os cards de visualização aqui aglutinados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onEmptyCol();
+                setConfirmEmpty(false);
+              }}
+            >
+              Esvaziar coluna
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <EditColumnSheet
         open={editOpen}

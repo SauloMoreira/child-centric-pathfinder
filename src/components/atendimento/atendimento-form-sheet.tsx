@@ -1341,6 +1341,9 @@ function CalcEditor({
 }) {
   const calc: AtendimentoCalc = campo.calc ?? { kind: "sum", fieldIds: [], outputCurrency: false };
   const elegiveis = camposElegiveisParaCalculo(campos, index, calc.kind);
+  const selecionados = calc.fieldIds
+    .map((id) => elegiveis.find((c) => c.id === id))
+    .filter((c): c is AtendimentoFormField => !!c);
 
   const toggleField = (fieldId: string) => {
     const next = calc.fieldIds.includes(fieldId)
@@ -1348,6 +1351,10 @@ function CalcEditor({
       : [...calc.fieldIds, fieldId];
     onChange({ calc: { ...calc, fieldIds: next } });
   };
+  // Ajuste doc (AJUSTE 3) — arrastar os campos já selecionados para
+  // reposicioná-los, deixando explícita a ordem usada no cálculo.
+  const moveSelected = (from: number, to: number) =>
+    onChange({ calc: { ...calc, fieldIds: arrayMove(calc.fieldIds, from, to) } });
 
   return (
     <div className="space-y-2 rounded-md bg-muted/30 p-2">
@@ -1372,12 +1379,9 @@ function CalcEditor({
         </p>
       ) : (
         <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Campos a usar</p>
-          {calc.kind === "subtract" && (
-            <p className="text-[10px] text-muted-foreground">
-              A ordem de seleção importa: o primeiro campo marcado é o valor inicial, e os demais são subtraídos dele.
-            </p>
-          )}
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Campos disponíveis
+          </p>
           {elegiveis.map((c) => (
             <label key={c.id} className="flex items-center gap-2 text-xs">
               <input type="checkbox" checked={calc.fieldIds.includes(c.id)} onChange={() => toggleField(c.id)} />
@@ -1386,18 +1390,54 @@ function CalcEditor({
           ))}
         </div>
       )}
-      {calc.kind === "sum" && (
-        <div className="flex items-center gap-2">
-          <Switch
-            id={`calc-currency-${campo.id}`}
-            checked={!!calc.outputCurrency}
-            onCheckedChange={(v) => onChange({ calc: { ...calc, outputCurrency: v } })}
-          />
-          <Label htmlFor={`calc-currency-${campo.id}`} className="text-[11px] font-normal">
-            Exibir resultado como moeda (R$)
-          </Label>
+      {selecionados.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Ordem de uso no cálculo
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {calc.kind === "subtract"
+              ? "Arraste para reordenar: o primeiro da lista é o valor inicial, os demais são subtraídos dele, nesta ordem."
+              : "Arraste para reordenar (não afeta o resultado da soma)."}
+          </p>
+          <div className="space-y-1">
+            {selecionados.map((c, i) => (
+              <div
+                key={c.id}
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = Number(e.dataTransfer.getData("text/plain"));
+                  if (!Number.isNaN(from) && from !== i) moveSelected(from, i);
+                }}
+                className="flex items-center gap-1.5 rounded border border-border bg-surface px-2 py-1 text-xs"
+              >
+                <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">
+                  {calc.kind === "subtract" && (
+                    <span className="mr-1 font-mono text-[10px] text-muted-foreground">
+                      {i === 0 ? "valor inicial" : "− "}
+                    </span>
+                  )}
+                  {c.label || "(sem rótulo)"}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+      <div className="flex items-center gap-2">
+        <Switch
+          id={`calc-currency-${campo.id}`}
+          checked={!!calc.outputCurrency}
+          onCheckedChange={(v) => onChange({ calc: { ...calc, outputCurrency: v } })}
+        />
+        <Label htmlFor={`calc-currency-${campo.id}`} className="text-[11px] font-normal">
+          Exibir resultado como moeda (R$)
+        </Label>
+      </div>
     </div>
   );
 }
