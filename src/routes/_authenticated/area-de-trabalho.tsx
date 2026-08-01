@@ -55,6 +55,7 @@ import {
   adicionarCardWorkspace,
   atualizarColunaWorkspace,
   duplicarColunaWorkspace,
+  listarCategoriasBiblioteca,
   copiarColunaParaPainel,
   moverColunaParaPainel,
   criarColunaWorkspace,
@@ -130,6 +131,7 @@ import { PanelTabs } from "@/features/work-area/components/PanelTabs";
 import { CreatePanelSheet } from "@/features/work-area/components/CreatePanelSheet";
 import { RenamePanelSheet } from "@/features/work-area/components/RenamePanelSheet";
 import { ArchivePanelDialog } from "@/features/work-area/components/ArchivePanelDialog";
+import { ColumnIcon, columnIconPalette } from "@/features/work-area/components/column-icon";
 import { panelIconComponent } from "@/features/work-area/components/panel-icon";
 import { RequestDefenderAccessSheet } from "@/features/team/components/request-defender-access-sheet";
 import { CotaFormSheet } from "@/components/cota/cota-form-sheet";
@@ -591,6 +593,7 @@ function ColumnsBoard({
       nome: string;
       descricao: string | null;
       corToken: WorkspaceColor;
+      icone: string | null;
     }) =>
       atualizarColunaWorkspace({
         columnId: v.columnId,
@@ -599,6 +602,7 @@ function ColumnsBoard({
         descricao: v.descricao ?? undefined,
         corToken: v.corToken,
         corCustom: null,
+        icone: v.icone,
       }),
     onSuccess: () => {
       toast.success("Coluna atualizada");
@@ -1456,7 +1460,12 @@ function SortableColumn(props: {
   access: WorkspaceAccess;
   workspace: WorkspaceMeta;
   onMoveCol: (dir: "left" | "right") => void;
-  onEditCol: (v: { nome: string; descricao: string | null; corToken: WorkspaceColor }) => void;
+  onEditCol: (v: {
+    nome: string;
+    descricao: string | null;
+    corToken: WorkspaceColor;
+    icone: string | null;
+  }) => void;
   onDuplicateCol: () => void;
   onCopyColToPanel: () => void;
   onMoveColToPanel: () => void;
@@ -1570,9 +1579,16 @@ function SortableColumn(props: {
           <ChevronsRight className="h-3.5 w-3.5" />
         </button>
         <div
-          className="flex flex-1 min-h-0 items-start justify-center overflow-hidden py-2.5"
+          className="flex flex-1 min-h-0 flex-col items-center gap-1.5 overflow-hidden py-2.5"
           title={column.nome}
         >
+          {column.icone && (
+            <ColumnIcon
+              name={column.icone}
+              className="h-3.5 w-3.5 shrink-0"
+              style={{ color: "var(--col-accent-strong)" }}
+            />
+          )}
           <span
             className="truncate text-xs font-semibold"
             style={{
@@ -1619,18 +1635,25 @@ function SortableColumn(props: {
         style={{ backgroundColor: "var(--col-accent-soft)" }}
         {...(access.canManageColumns ? { ...sortable.attributes, ...sortable.listeners } : {})}
       >
-        <div className="min-w-0 flex-1">
-          <h3
-            className="truncate text-sm font-semibold"
+        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+          <ColumnIcon
+            name={column.icone}
+            className="mt-0.5 h-3.5 w-3.5 shrink-0"
             style={{ color: "var(--col-accent-strong)" }}
-          >
-            {column.nome}
-          </h3>
-          {column.descricao && (
-            <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-              {column.descricao}
-            </p>
-          )}
+          />
+          <div className="min-w-0 flex-1">
+            <h3
+              className="truncate text-sm font-semibold"
+              style={{ color: "var(--col-accent-strong)" }}
+            >
+              {column.nome}
+            </h3>
+            {column.descricao && (
+              <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                {column.descricao}
+              </p>
+            )}
+          </div>
         </div>
         <button
           type="button"
@@ -1793,7 +1816,12 @@ function EditColumnSheet(props: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   column: WorkspaceColumn;
-  onSubmit: (v: { nome: string; descricao: string | null; corToken: WorkspaceColor }) => void;
+  onSubmit: (v: {
+    nome: string;
+    descricao: string | null;
+    corToken: WorkspaceColor;
+    icone: string | null;
+  }) => void;
 }) {
   const { open, onOpenChange, column, onSubmit } = props;
   const initialToken: WorkspaceColor = VALID_COL_COLORS.has(column.corToken)
@@ -1802,16 +1830,27 @@ function EditColumnSheet(props: {
   const [nome, setNome] = useState(column.nome);
   const [descricao, setDescricao] = useState(column.descricao ?? "");
   const [corToken, setCorToken] = useState<WorkspaceColor>(initialToken);
+  const [icone, setIcone] = useState<string | null>(column.icone ?? null);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Ajuste doc (AJUSTE 1) — a paleta de ícones da coluna cresce conforme
+  // mais categorias existem no sistema (sem vínculo real com elas).
+  const categoriasQuery = useQuery({
+    queryKey: ["biblioteca-categorias"],
+    queryFn: () => listarCategoriasBiblioteca(),
+    enabled: open,
+  });
+  const paletaIcones = columnIconPalette(categoriasQuery.data?.length ?? 0);
 
   useEffect(() => {
     if (open) {
       setNome(column.nome);
       setDescricao(column.descricao ?? "");
       setCorToken(initialToken);
+      setIcone(column.icone ?? null);
       setErro(null);
     }
-  }, [open, column.id, column.nome, column.descricao, initialToken]);
+  }, [open, column.id, column.nome, column.descricao, column.icone, initialToken]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1828,6 +1867,7 @@ function EditColumnSheet(props: {
       nome: trimmed,
       descricao: descricao.trim() ? descricao.trim() : null,
       corToken,
+      icone,
     });
   };
 
@@ -1913,6 +1953,47 @@ function EditColumnSheet(props: {
             </div>
 
             <div className="space-y-2">
+              <Label>Ícone (opcional)</Label>
+              <div className="grid grid-cols-8 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIcone(null)}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-md border text-[10px] text-muted-foreground transition",
+                    icone === null
+                      ? "border-institutional bg-institutional/10 text-institutional"
+                      : "border-border hover:bg-muted",
+                  )}
+                  aria-pressed={icone === null}
+                  aria-label="Sem ícone"
+                  title="Sem ícone"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                {paletaIcones.map((name) => {
+                  const active = icone === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setIcone(name)}
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition",
+                        active
+                          ? "border-institutional bg-institutional/10 text-institutional"
+                          : "border-border hover:bg-muted",
+                      )}
+                      aria-pressed={active}
+                      aria-label={`Ícone ${name}`}
+                    >
+                      <ColumnIcon name={name} className="h-4 w-4" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Pré-visualização</Label>
               <div
                 data-col-color={corToken}
@@ -1924,20 +2005,26 @@ function EditColumnSheet(props: {
                   style={{ backgroundColor: "var(--col-accent)" }}
                 />
                 <div
-                  className="border-b border-border pl-4 pr-2 py-2.5"
+                  className="flex items-start gap-1.5 border-b border-border pl-4 pr-2 py-2.5"
                   style={{ backgroundColor: "var(--col-accent-soft)" }}
                 >
-                  <h4
-                    className="truncate text-sm font-semibold"
-                    style={{ color: "var(--col-accent-strong)" }}
-                  >
-                    {nome.trim() || "Nome da coluna"}
-                  </h4>
-                  {descricao.trim() && (
-                    <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-                      {descricao}
-                    </p>
-                  )}
+                  <ColumnIcon
+                    name={icone}
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4
+                      className="truncate text-sm font-semibold"
+                      style={{ color: "var(--col-accent-strong)" }}
+                    >
+                      {nome.trim() || "Nome da coluna"}
+                    </h4>
+                    {descricao.trim() && (
+                      <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                        {descricao}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

@@ -13,9 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import {
-  PANEL_ICON_ALLOWLIST,
   PANEL_MAX,
   PANEL_NAME_MAX,
   createPanelSchema,
@@ -23,7 +21,6 @@ import {
   type CreatePanelFormInput,
 } from "@/features/work-area";
 import { useCreatePanel } from "@/features/work-area";
-import { panelIconComponent } from "./panel-icon";
 
 export function CreatePanelSheet({
   open,
@@ -102,33 +99,6 @@ export function CreatePanelSheet({
                 {...register("name")}
               />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Ícone</Label>
-              <div className="grid grid-cols-8 gap-1">
-                {PANEL_ICON_ALLOWLIST.map((name) => {
-                  const Icon = panelIconComponent(name);
-                  const active = icon === name;
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setIcon(name)}
-                      className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-md border text-muted-foreground transition",
-                        active
-                          ? "border-institutional bg-institutional/10 text-institutional"
-                          : "border-border hover:bg-muted",
-                      )}
-                      aria-pressed={active}
-                      aria-label={`Ícone ${name}`}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             <SheetFooter>

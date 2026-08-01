@@ -238,7 +238,9 @@ function PanelTabButton({
   actions?: React.ReactNode;
   dragging?: boolean;
 }) {
-  const Icon = panelIconComponent(panel.icon);
+  // Ajuste doc — a personalização de ícone por painel foi retirada; todos
+  // os botões de painel usam o mesmo ícone, simbolizando um painel.
+  const Icon = panelIconComponent(null);
   return (
     <div
       className={cn(

@@ -671,6 +671,9 @@ export type WorkspaceColumn = {
   corToken: WorkspaceColor;
   corCustom: string | null;
   orderPosition: number;
+  /** Ajuste doc (AJUSTE 1 — Ícones na área de trabalho): chave do ícone
+   *  visual da coluna (sem vínculo real com categorias). */
+  icone: string | null;
 };
 
 export type WorkspaceCardDto = {
@@ -746,6 +749,7 @@ export async function criarColunaWorkspace(params: {
   descricao?: string;
   corToken?: WorkspaceColor;
   corCustom?: string | null;
+  icone?: string | null;
 }): Promise<{ column_id: string; workspace_version: number }> {
   const { data, error } = await supabase.rpc("criar_coluna_workspace", {
     p_workspace_id: params.workspaceId,
@@ -755,6 +759,7 @@ export async function criarColunaWorkspace(params: {
     p_descricao: params.descricao ?? null,
     p_cor_token: params.corToken ?? "neutral",
     p_cor_custom: params.corCustom ?? null,
+    p_icone: params.icone ?? null,
   } as never);
   if (error) throw error;
   return data as { column_id: string; workspace_version: number };
@@ -767,6 +772,7 @@ export async function atualizarColunaWorkspace(params: {
   descricao?: string;
   corToken?: WorkspaceColor;
   corCustom?: string | null;
+  icone?: string | null;
 }): Promise<number> {
   const { data, error } = await supabase.rpc("atualizar_coluna_workspace", {
     p_column_id: params.columnId,
@@ -776,6 +782,7 @@ export async function atualizarColunaWorkspace(params: {
     p_descricao: params.descricao ?? null,
     p_cor_token: params.corToken ?? "neutral",
     p_cor_custom: params.corCustom ?? null,
+    p_icone: params.icone ?? null,
   } as never);
   if (error) throw error;
   return Number(data);
