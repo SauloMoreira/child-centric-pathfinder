@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Info, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2 } from "lucide-react";
+import { Copy, Info, Link as LinkIcon, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { alternarFavoritoBiblioteca, obterFavoritoBiblioteca } from "@/lib/reintegra-api";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
@@ -183,6 +183,31 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                   />
                 </div>
               </div>
+
+              {/* Ajuste doc (AJUSTE 17) — links sugeridos, ao final da
+                  página, antes dos botões. */}
+              {detalhe.data.links.length > 0 && (
+                <div className="mt-3 shrink-0 space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Links sugeridos
+                  </p>
+                  <ul className="space-y-1">
+                    {detalhe.data.links.map((link, i) => (
+                      <li key={i}>
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="flex items-center gap-1.5 text-xs text-institutional hover:underline"
+                        >
+                          <LinkIcon className="h-3 w-3 shrink-0" aria-hidden />
+                          <span className="truncate">{link.titulo}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <SheetFooter className="mt-3 shrink-0 sm:justify-between">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopy}>

@@ -63,6 +63,8 @@ export type MutationResult = {
 // gera uma nova versão imutável. Apenas o Defensor autor edita ou exclui.
 export type CotaCategoria = { id: string; nome: string };
 
+export type CotaLink = { titulo: string; url: string };
+
 export type CotaDetalhe = {
   id: string;
   titulo: string;
@@ -70,6 +72,7 @@ export type CotaDetalhe = {
   bodyText: string;
   orientacao: string | null;
   orientacaoNivel: "media" | "alta";
+  links: CotaLink[];
   categorias: CotaCategoria[];
   ownerUserId: string;
   ownerDisplayName: string;
@@ -85,6 +88,7 @@ export async function criarCota(params: {
   categoryIds?: string[];
   orientacao?: string;
   orientacaoNivel?: "media" | "alta";
+  links?: CotaLink[];
 }): Promise<{ item_id: string; version_id: string }> {
   const { data, error } = await supabase.rpc("criar_cota", {
     p_titulo: params.titulo,
@@ -93,6 +97,7 @@ export async function criarCota(params: {
     p_category_ids: (params.categoryIds ?? null) as never,
     p_orientacao: params.orientacao ?? null,
     p_orientacao_nivel: params.orientacaoNivel ?? "media",
+    p_links: (params.links ?? []) as never,
   } as never);
   if (error) throw error;
   return data as { item_id: string; version_id: string };
@@ -107,6 +112,7 @@ export async function atualizarCota(params: {
   categoryIds?: string[];
   orientacao?: string;
   orientacaoNivel?: "media" | "alta";
+  links?: CotaLink[];
 }): Promise<{ optimisticVersion: number; versionId: string; versionNumber: number }> {
   const { data, error } = await supabase.rpc("atualizar_cota", {
     p_item_id: params.itemId,
@@ -118,6 +124,7 @@ export async function atualizarCota(params: {
     p_category_ids: (params.categoryIds ?? null) as never,
     p_orientacao: params.orientacao ?? null,
     p_orientacao_nivel: params.orientacaoNivel ?? "media",
+    p_links: (params.links ?? []) as never,
   } as never);
   if (error) throw error;
   return data as { optimisticVersion: number; versionId: string; versionNumber: number };

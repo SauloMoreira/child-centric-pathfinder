@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Info, Loader2, Scale, X } from "lucide-react";
+import { ChevronDown, Info, Loader2, Plus, Scale, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -34,7 +34,7 @@ import {
   useAtualizarCota,
   mensagemErroCota,
 } from "@/features/cota/hooks";
-import type { CotaDetalhe } from "@/lib/reintegra-api";
+import type { CotaDetalhe, CotaLink } from "@/lib/reintegra-api";
 
 type CotaFormMode =
   | { mode: "create" }
@@ -79,6 +79,8 @@ export function CotaFormSheet({
   const [orientacao, setOrientacao] = useState("");
   const [mostrarOrientacao, setMostrarOrientacao] = useState(false);
   const [orientacaoNivel, setOrientacaoNivel] = useState<"media" | "alta">("media");
+  // Ajuste doc (AJUSTE 17) — links sugeridos (título + url).
+  const [links, setLinks] = useState<CotaLink[]>([]);
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
   const [buscaCategoria, setBuscaCategoria] = useState("");
 
@@ -98,6 +100,7 @@ export function CotaFormSheet({
       setMostrarOrientacao(!!target.detalhe.orientacao);
       setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
+      setLinks(target.detalhe.links ?? []);
       inspireBaseRef.current = null;
     } else if (target.mode === "inspire") {
       const bj = target.detalhe.bodyJson as { html?: string } | null;
@@ -108,6 +111,7 @@ export function CotaFormSheet({
       setMostrarOrientacao(!!target.detalhe.orientacao);
       setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
       setCategoriaIds([]);
+      setLinks(target.detalhe.links ?? []);
       inspireBaseRef.current = { titulo: target.detalhe.titulo, textoHtml: html };
     } else {
       setTitulo("");
@@ -116,6 +120,7 @@ export function CotaFormSheet({
       setMostrarOrientacao(false);
       setOrientacaoNivel("media");
       setCategoriaIds([]);
+      setLinks([]);
       inspireBaseRef.current = null;
     }
   }, [open, target]);
@@ -156,6 +161,7 @@ export function CotaFormSheet({
           categoryIds: categoriaIds,
           orientacao: orientacao.trim(),
           orientacaoNivel,
+          links: links.filter((l) => l.titulo.trim() && l.url.trim()),
         },
         {
           onSuccess: () => {
@@ -175,6 +181,7 @@ export function CotaFormSheet({
           categoryIds: categoriaIds,
           orientacao: orientacao.trim(),
           orientacaoNivel,
+          links: links.filter((l) => l.titulo.trim() && l.url.trim()),
         },
         {
           onSuccess: (result) => {
@@ -277,6 +284,50 @@ export function CotaFormSheet({
               <Info className="h-3.5 w-3.5" aria-hidden /> Adicionar orientação
             </Button>
           )}
+
+          {/* Ajuste doc (AJUSTE 17) — links sugeridos (título + url). */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Links sugeridos (opcional)</Label>
+            <div className="space-y-1.5">
+              {links.map((link, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Input
+                    value={link.titulo}
+                    onChange={(e) =>
+                      setLinks((prev) => prev.map((l, li) => (li === i ? { ...l, titulo: e.target.value } : l)))
+                    }
+                    placeholder="Título (ex.: Tabela de valores INSS)"
+                    className="h-7 flex-1 bg-background text-xs"
+                  />
+                  <Input
+                    value={link.url}
+                    onChange={(e) =>
+                      setLinks((prev) => prev.map((l, li) => (li === i ? { ...l, url: e.target.value } : l)))
+                    }
+                    placeholder="https://…"
+                    className="h-7 flex-1 bg-background text-xs"
+                  />
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+                    aria-label="Remover link"
+                    onClick={() => setLinks((prev) => prev.filter((_, li) => li !== i))}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 text-[11px]"
+                onClick={() => setLinks((prev) => [...prev, { titulo: "", url: "" }])}
+              >
+                <Plus className="h-3 w-3" aria-hidden /> Adicionar link
+              </Button>
+            </div>
+          </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs">Categoria(s)</Label>
