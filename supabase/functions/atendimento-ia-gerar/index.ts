@@ -70,6 +70,11 @@ type Payload = {
   /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
   campoTipo?: "curto" | "ambos";
   gerarSugestoes?: boolean;
+  /** Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": rótulos das
+   *  perguntas já existentes (para não duplicar) e o teto de novas
+   *  perguntas (nunca maior que a quantidade já realizada). */
+  perguntasExistentes?: string[];
+  maxNovas?: number;
 };
 
 const SYSTEM_PROMPT = `Você ajuda Defensores Públicos e suas equipes a montar formulários de atendimento ao público na Defensoria Pública do Estado do Rio Grande do Sul.
@@ -88,8 +93,13 @@ Regras estritas:
 
 // Ajuste doc (AJUSTE 13) — "Configurações opcionais": ajusta o prompt do
 // sistema conforme as preferências do usuário (tipo de campo e geração
-// de sugestões de resposta).
-function montarSystemPrompt(campoTipo: "curto" | "ambos", gerarSugestoes: boolean): string {
+// de sugestões de resposta). Ajuste doc (AJUSTE 15) — modo "gerar mais
+// perguntas".
+function montarSystemPrompt(
+  campoTipo: "curto" | "ambos",
+  gerarSugestoes: boolean,
+  modoMaisPerguntas: boolean,
+): string {
   let prompt = SYSTEM_PROMPT;
   if (campoTipo === "curto") {
     prompt += `\n- Preferência do usuário: use SOMENTE o tipo "text_short" para todas as perguntas, mesmo para relatos mais longos (nunca "text_long").`;
@@ -97,16 +107,36 @@ function montarSystemPrompt(campoTipo: "curto" | "ambos", gerarSugestoes: boolea
   if (!gerarSugestoes) {
     prompt += `\n- Preferência do usuário: NÃO gere "sugestoesResposta" para nenhuma pergunta — deixe sempre null.`;
   }
+  if (modoMaisPerguntas) {
+    prompt += `\n- Modo "gerar mais perguntas": o usuário já respondeu/recebeu um conjunto de perguntas (listadas a seguir no prompt do usuário). Gere APENAS perguntas NOVAS, relevantes e pertinentes, que não dupliquem nem sejam próximas demais das já existentes. Gere o máximo de perguntas adicionais realmente pertinentes, mas NUNCA mais do que o limite indicado no prompt do usuário. Se o conteúdo de referência e o contexto já estiverem esgotados — ou seja, não houver nenhuma pergunta nova genuinamente relevante a acrescentar — retorne "campos": [] e preencha "esgotado": true com uma "justificativa" curta (1-3 frases) explicando por que não há mais perguntas pertinentes a fazer. Caso ainda haja perguntas pertinentes a acrescentar, retorne "esgotado": false e "justificativa": null. Formato de resposta neste modo: {"campos": [...], "esgotado": true|false, "justificativa": "..." | null}.`;
+  }
   return prompt;
 }
 
-function montarPromptUsuario(personName: string, context: string): string {
-  return [
+function montarPromptUsuario(
+  personName: string,
+  context: string,
+  perguntasExistentes?: string[],
+  maxNovas?: number,
+): string {
+  const linhas = [
     `Pessoa a ser atendida: ${personName}`,
     `Contexto informado pelo usuário: ${context}`,
     "",
-    "Analise o documento anexado e formule as perguntas do formulário de atendimento conforme as regras do sistema.",
-  ].join("\n");
+  ];
+  if (perguntasExistentes && perguntasExistentes.length > 0) {
+    linhas.push(
+      "Perguntas JÁ EXISTENTES no formulário (não repita nem gere perguntas muito parecidas com estas):",
+      ...perguntasExistentes.map((p, i) => `${i + 1}. ${p}`),
+      "",
+      `Gere no máximo ${maxNovas ?? perguntasExistentes.length} pergunta(s) NOVA(s), relevantes e pertinentes ao caso e ao contexto.`,
+    );
+  } else {
+    linhas.push(
+      "Analise o documento anexado e formule as perguntas do formulário de atendimento conforme as regras do sistema.",
+    );
+  }
+  return linhas.join("\n");
 }
 
 function normalizarCampo(
@@ -170,6 +200,13 @@ Deno.serve(async (req) => {
   const fileMimeType = payload.fileMimeType || "application/pdf";
   const campoTipo: "curto" | "ambos" = payload.campoTipo === "ambos" ? "ambos" : "curto";
   const gerarSugestoes = payload.gerarSugestoes !== false;
+  const perguntasExistentes = Array.isArray(payload.perguntasExistentes)
+    ? payload.perguntasExistentes.filter((p): p is string => typeof p === "string" && p.trim().length > 0)
+    : [];
+  const modoMaisPerguntas = perguntasExistentes.length > 0;
+  const maxNovas = modoMaisPerguntas
+    ? Math.max(1, Math.min(perguntasExistentes.length, Number(payload.maxNovas) || perguntasExistentes.length))
+    : undefined;
 
   if (!personName || !context || !fileBase64) {
     return json({ error: "INVALID_PAYLOAD" }, 400);
@@ -195,11 +232,11 @@ Deno.serve(async (req) => {
         model: MODEL,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: montarSystemPrompt(campoTipo, gerarSugestoes) },
+          { role: "system", content: montarSystemPrompt(campoTipo, gerarSugestoes, modoMaisPerguntas) },
           {
             role: "user",
             content: [
-              { type: "text", text: montarPromptUsuario(personName, context) },
+              { type: "text", text: montarPromptUsuario(personName, context, perguntasExistentes, maxNovas) },
               {
                 type: "image_url",
                 image_url: { url: `data:${fileMimeType};base64,${fileBase64}` },
@@ -251,14 +288,22 @@ Deno.serve(async (req) => {
   const rawCampos = Array.isArray((parsed as Record<string, unknown>)?.campos)
     ? ((parsed as Record<string, unknown>).campos as unknown[])
     : [];
+  const camposLimite = modoMaisPerguntas ? (maxNovas ?? MAX_CAMPOS) : MAX_CAMPOS;
   const campos = rawCampos
     .map((raw) => normalizarCampo(raw, campoTipo, gerarSugestoes))
     .filter((c): c is CampoGerado => c !== null)
-    .slice(0, MAX_CAMPOS);
+    .slice(0, camposLimite);
 
-  if (campos.length === 0) {
+  const parsedObj = parsed as Record<string, unknown>;
+  const esgotado = modoMaisPerguntas && parsedObj?.esgotado === true;
+  const justificativa =
+    modoMaisPerguntas && typeof parsedObj?.justificativa === "string" && parsedObj.justificativa.trim()
+      ? parsedObj.justificativa.trim().slice(0, 600)
+      : null;
+
+  if (campos.length === 0 && !(modoMaisPerguntas && (esgotado || justificativa))) {
     return json({ error: "EMPTY_AI_RESPONSE" }, 502);
   }
 
-  return json({ ok: true, campos });
+  return json({ ok: true, campos, esgotado, justificativa });
 });

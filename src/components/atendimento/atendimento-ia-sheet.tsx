@@ -47,6 +47,7 @@ import {
   montarRespostasParaResumo,
   montarTextoExpandido,
   novoCampo,
+  novaOrientacao,
   novoChecklist,
   obrigatoriosFaltando,
   removerReferenciaDaCondicao,
@@ -58,7 +59,7 @@ import {
   montarFormularioBrancoHtml,
   montarFormularioPreenchidoHtml,
 } from "@/components/atendimento/print";
-import { gerarAtendimentoComIA, gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
+import { gerarAtendimentoComIA, gerarMaisPerguntasAtendimentoIA, gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
 import { mensagemErroResumoIA } from "@/components/atendimento/atendimento-detail-sheet";
 import type { AtendimentoFieldType, AtendimentoFormField } from "@/lib/reintegra-api";
 
@@ -101,6 +102,11 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   // original em memória (nunca persistido) para reprocessar com um novo
   // contexto, sem pedir novo upload.
   const [reformularAberto, setReformularAberto] = useState(false);
+  // Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": só pode ser usado
+  // uma vez, some depois (independente do resultado ter sido perguntas
+  // novas ou esgotamento com justificativa).
+  const [maisPerguntasUsado, setMaisPerguntasUsado] = useState(false);
+  const [gerandoMaisPerguntas, setGerandoMaisPerguntas] = useState(false);
   const [novoContexto, setNovoContexto] = useState("");
   const [reformulando, setReformulando] = useState(false);
   const [contextoAtual, setContextoAtual] = useState("");
@@ -116,6 +122,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     setResumo(null);
     setResumoDesatualizado(false);
     setContextoAtual(data.context);
+    setMaisPerguntasUsado(false);
   }, [open, data]);
 
   // Garante valor inicial para qualquer campo novo (gerado pela IA ou
@@ -169,6 +176,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       setResumo(null);
       setResumoDesatualizado(false);
       setContextoAtual(novoContexto.trim());
+      setMaisPerguntasUsado(false);
       setReformularAberto(false);
       toast.success("Atendimento reformulado com o novo contexto");
     } catch (e) {
@@ -177,6 +185,47 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       setReformulando(false);
     }
   };
+
+  // Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": acrescenta perguntas
+  // novas e pertinentes ao final do formulário, no máximo tantas quanto
+  // as já existentes. Se esgotado, insere uma Orientação com a
+  // justificativa da IA. Uso único por formulário gerado/reformulado.
+  const handleGerarMaisPerguntas = async () => {
+    if (!data || maisPerguntasUsado) return;
+    setGerandoMaisPerguntas(true);
+    try {
+      const perguntasAtuais = campos
+        .filter((c) => c.type !== "section" && c.type !== "orientation")
+        .map((c) => c.label)
+        .filter((l) => l.trim());
+      const resultado = await gerarMaisPerguntasAtendimentoIA({
+        personName: data.personName,
+        context: contextoAtual,
+        file: data.file,
+        perguntasExistentes: perguntasAtuais,
+      });
+      if (resultado.campos.length > 0) {
+        setCampos((prev) => [
+          ...prev,
+          ...resultado.campos.map((c) => ({ ...c, required: false, requiredIf: null })),
+        ]);
+        toast.success(`${resultado.campos.length} nova(s) pergunta(s) adicionada(s)`);
+      } else if (resultado.justificativa) {
+        const orientacao = novaOrientacao();
+        orientacao.label = resultado.justificativa;
+        setCampos((prev) => [...prev, orientacao]);
+        toast.info("Não há novas perguntas pertinentes a acrescentar");
+      } else {
+        toast.info("Não foi possível gerar novas perguntas");
+      }
+      setMaisPerguntasUsado(true);
+    } catch (e) {
+      toast.error(mensagemErroResumoIA(e));
+    } finally {
+      setGerandoMaisPerguntas(false);
+    }
+  };
+
   // Ajuste doc — mesma inserção rápida entre campos do builder normal.
   const insertCampoAt = (index: number, campo: AtendimentoFormField) =>
     setCampos((prev) => {
@@ -468,6 +517,26 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                       setCampos((prev) => prev.map((c) => (c.id === fieldId ? { ...c, label: novoLabel } : c)))
                     }
                   />
+
+                  {!maisPerguntasUsado && (
+                    <div className="mt-2 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 gap-1 text-[11px] text-muted-foreground hover:text-institutional"
+                        disabled={gerandoMaisPerguntas}
+                        onClick={handleGerarMaisPerguntas}
+                      >
+                        {gerandoMaisPerguntas ? (
+                          <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                        ) : (
+                          <Sparkles className="h-3 w-3" aria-hidden />
+                        )}
+                        Gerar mais perguntas
+                      </Button>
+                    </div>
+                  )}
 
                   {resumo && (
                     <div className="mt-4 rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">

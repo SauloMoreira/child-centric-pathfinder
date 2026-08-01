@@ -468,6 +468,50 @@ export async function gerarAtendimentoComIA(params: {
   return campos as AtendimentoFormField[];
 }
 
+/** Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": reprocessa o mesmo
+ *  arquivo pedindo perguntas NOVAS e não duplicadas, até o limite da
+ *  quantidade já existente. Se o conteúdo estiver esgotado, retorna sem
+ *  campos e com uma justificativa (para ser exibida como Orientação). */
+export async function gerarMaisPerguntasAtendimentoIA(params: {
+  personName: string;
+  context: string;
+  file: File;
+  perguntasExistentes: string[];
+  campoTipo?: "curto" | "ambos";
+  gerarSugestoes?: boolean;
+}): Promise<{ campos: AtendimentoFormField[]; esgotado: boolean; justificativa: string | null }> {
+  const fileBase64 = await arquivoParaBase64(params.file);
+  const { data, error } = await supabase.functions.invoke("atendimento-ia-gerar", {
+    body: {
+      personName: params.personName,
+      context: params.context,
+      fileBase64,
+      fileMimeType: params.file.type,
+      campoTipo: params.campoTipo ?? "curto",
+      gerarSugestoes: params.gerarSugestoes ?? true,
+      perguntasExistentes: params.perguntasExistentes,
+      maxNovas: params.perguntasExistentes.length,
+    },
+  });
+  if (error) {
+    let code: string | undefined;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx) code = (await ctx.clone().json())?.error;
+    } catch {
+      // corpo não era JSON (ou já foi consumido) — segue com o fallback abaixo
+    }
+    throw new Error(code ?? error.message ?? "AI_GATEWAY_ERROR");
+  }
+  const body = data as { campos?: unknown; esgotado?: boolean; justificativa?: string | null } | null;
+  const campos = Array.isArray(body?.campos) ? (body.campos as AtendimentoFormField[]) : [];
+  return {
+    campos,
+    esgotado: body?.esgotado === true,
+    justificativa: typeof body?.justificativa === "string" ? body.justificativa : null,
+  };
+}
+
 /** Ajuste doc — "Configurações opcionais" do Atendimento IA, persistidas
  *  por usuário. */
 export type AtendimentoIaPreferencias = {
