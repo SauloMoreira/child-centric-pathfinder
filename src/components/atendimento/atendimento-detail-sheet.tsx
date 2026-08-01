@@ -378,9 +378,18 @@ export function AtendimentoDetailSheet({
                       <Button
                         size="sm"
                         variant={resumo && !resumoDesatualizado ? "outline" : "default"}
-                        className="gap-1.5"
+                        className={cn(
+                          "gap-1.5",
+                          !resumo &&
+                            obrigatoriosFaltando(detalhe.data.formSchema, values).length > 0 &&
+                            "border-institutional/30 bg-transparent text-institutional/60 opacity-70",
+                        )}
                         onClick={handleConcluir}
-                        disabled={gerandoResumo || (!!resumo && !resumoDesatualizado)}
+                        disabled={
+                          gerandoResumo ||
+                          (!!resumo && !resumoDesatualizado) ||
+                          (!resumo && obrigatoriosFaltando(detalhe.data.formSchema, values).length > 0)
+                        }
                       >
                         {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                         {resumo ? (resumoDesatualizado ? "Atualizar relato" : "Concluído") : "Gerar relato"}

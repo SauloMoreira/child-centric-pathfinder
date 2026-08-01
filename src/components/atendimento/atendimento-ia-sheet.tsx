@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   DndContext,
   KeyboardSensor,
@@ -621,9 +622,18 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                 <Button
                   size="sm"
                   variant={resumo && !resumoDesatualizado ? "outline" : "default"}
-                  className="gap-1.5"
+                  className={cn(
+                    "gap-1.5",
+                    !resumo &&
+                      obrigatoriosFaltando(campos, values).length > 0 &&
+                      "border-institutional/30 bg-transparent text-institutional/60 opacity-70",
+                  )}
                   onClick={handleConcluir}
-                  disabled={gerandoResumo || (!!resumo && !resumoDesatualizado)}
+                  disabled={
+                    gerandoResumo ||
+                    (!!resumo && !resumoDesatualizado) ||
+                    (!resumo && obrigatoriosFaltando(campos, values).length > 0)
+                  }
                 >
                   {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                   {resumo ? (resumoDesatualizado ? "Atualizar relato" : "Concluído") : "Gerar relato"}

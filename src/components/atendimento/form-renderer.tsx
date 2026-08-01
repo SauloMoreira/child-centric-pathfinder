@@ -218,6 +218,12 @@ export function FormRenderer({
 
   const listaCampos = (
     <div className="space-y-4">
+      {onInsertFieldAt && visiveis.length > 0 && (
+        <InsertFieldHere
+          onInsert={(novo) => onInsertFieldAt(0, novo)}
+          opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+        />
+      )}
       {visiveis.map((field, i) => {
         const conteudo =
           field.type === "section" ? (
@@ -348,6 +354,12 @@ export function FormRenderer({
           </div>
         );
       })}
+      {onInsertFieldAt && visiveis.length > 0 && (
+        <InsertFieldHere
+          onInsert={(novo) => onInsertFieldAt(fields.length, novo)}
+          opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+        />
+      )}
     </div>
   );
 

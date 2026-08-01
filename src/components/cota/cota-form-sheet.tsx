@@ -10,6 +10,16 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,6 +92,10 @@ export function CotaFormSheet({
   // Ajuste doc (AJUSTE 17) — links sugeridos (título + url).
   const [links, setLinks] = useState<CotaLink[]>([]);
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
+  // Ajuste doc (AJUSTE 20) — confirmação ao fechar com alterações não
+  // salvas, mesmo padrão já usado no Atendimento.
+  const [confirmClose, setConfirmClose] = useState(false);
+  const initialSnapshotRef = useRef("");
   const [buscaCategoria, setBuscaCategoria] = useState("");
 
   const isEdit = target?.mode === "edit";
@@ -102,6 +116,14 @@ export function CotaFormSheet({
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
       setLinks(target.detalhe.links ?? []);
       inspireBaseRef.current = null;
+      initialSnapshotRef.current = JSON.stringify({
+        titulo: target.detalhe.titulo,
+        textoHtml: bj?.html ?? "",
+        orientacao: target.detalhe.orientacao ?? "",
+        orientacaoNivel: target.detalhe.orientacaoNivel ?? "media",
+        categoriaIds: target.detalhe.categorias.map((c) => c.id),
+        links: target.detalhe.links ?? [],
+      });
     } else if (target.mode === "inspire") {
       const bj = target.detalhe.bodyJson as { html?: string } | null;
       const html = bj?.html ?? "";
@@ -113,6 +135,14 @@ export function CotaFormSheet({
       setCategoriaIds([]);
       setLinks(target.detalhe.links ?? []);
       inspireBaseRef.current = { titulo: target.detalhe.titulo, textoHtml: html };
+      initialSnapshotRef.current = JSON.stringify({
+        titulo: "",
+        textoHtml: html,
+        orientacao: target.detalhe.orientacao ?? "",
+        orientacaoNivel: target.detalhe.orientacaoNivel ?? "media",
+        categoriaIds: [],
+        links: target.detalhe.links ?? [],
+      });
     } else {
       setTitulo("");
       setTexto({ html: "", text: "" });
@@ -122,8 +152,36 @@ export function CotaFormSheet({
       setCategoriaIds([]);
       setLinks([]);
       inspireBaseRef.current = null;
+      initialSnapshotRef.current = JSON.stringify({
+        titulo: "",
+        textoHtml: "",
+        orientacao: "",
+        orientacaoNivel: "media",
+        categoriaIds: [],
+        links: [],
+      });
     }
   }, [open, target]);
+
+  // Ajuste doc (AJUSTE 20) — confirmação ao fechar com alterações não
+  // salvas.
+  const formEstaSujo = () =>
+    JSON.stringify({
+      titulo,
+      textoHtml: texto.html,
+      orientacao,
+      orientacaoNivel,
+      categoriaIds,
+      links,
+    }) !== initialSnapshotRef.current;
+
+  const handleOpenChange = (v: boolean) => {
+    if (!v && formEstaSujo()) {
+      setConfirmClose(true);
+      return;
+    }
+    onOpenChange(v);
+  };
 
   const toggleCategoria = (id: string) => {
     setCategoriaIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
@@ -196,7 +254,8 @@ export function CotaFormSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-sm">
@@ -427,5 +486,28 @@ export function CotaFormSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza que deseja fechar?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Ao fechar, as alterações feitas nesta {isEdit ? "cota" : "nova cota"} serão perdidas.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              setConfirmClose(false);
+              onOpenChange(false);
+            }}
+          >
+            Fechar sem salvar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
