@@ -52,6 +52,11 @@ interface FormRendererProps {
   /** Ajuste doc — Atendimento IA: botão discreto no hover do rótulo para
    *  renomear a pergunta rapidamente, sem entrar em "Editar". */
   onRenameField?: (fieldId: string, novoLabel: string) => void;
+  /** Ajuste doc (AJUSTE 14) — botão de pedir orientação/justificativa da
+   *  IA sobre a pergunta ANTERIOR, entre uma pergunta e outra. */
+  onRequestJustification?: (fieldId: string) => void;
+  justificativas?: Record<string, { texto: string; minimizada: boolean }>;
+  onToggleJustificativaMinimizada?: (fieldId: string) => void;
 }
 
 /**
@@ -78,6 +83,9 @@ export function FormRenderer({
   onInsertFieldAt,
   respostaCompacta,
   onRenameField,
+  onRequestJustification,
+  justificativas,
+  onToggleJustificativaMinimizada,
 }: FormRendererProps) {
   const usaEtapas = fields.filter((f) => f.type === "section").length >= 2;
   const visiveis = fields.filter((f) => campoVisivel(f, values));
@@ -203,12 +211,32 @@ export function FormRenderer({
         return (
           <div key={field.id}>
             {onInsertFieldAt && i > 0 && (
-              <InsertFieldHere
-                onInsert={(novo) => onInsertFieldAt(indiceReal, novo)}
-                opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
-              />
+              <div className="group/insertrow relative -my-1.5 flex h-4 items-center justify-center gap-1">
+                {onRequestJustification && fields[indiceReal - 1] && podeJustificar(fields[indiceReal - 1]) && (
+                  <button
+                    type="button"
+                    className="flex h-4 w-4 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground opacity-0 shadow-sm transition-opacity hover:border-warning hover:text-warning focus-visible:opacity-100 group-hover/insertrow:opacity-100"
+                    aria-label="Pedir orientação sobre a pergunta anterior"
+                    title="Pedir orientação sobre a pergunta anterior"
+                    onClick={() => onRequestJustification(fields[indiceReal - 1].id)}
+                  >
+                    <Info className="h-2.5 w-2.5" aria-hidden />
+                  </button>
+                )}
+                <InsertFieldHere
+                  onInsert={(novo) => onInsertFieldAt(indiceReal, novo)}
+                  opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+                />
+              </div>
             )}
-            <div className="group/campo relative">
+            <div
+              className={cn(
+                "group/campo relative",
+                respostaCompacta &&
+                  field.type !== "section" &&
+                  "rounded-md border border-border bg-surface/60 p-2.5",
+              )}
+            >
               {podeExcluirAqui && (
                 <button
                   type="button"
@@ -221,12 +249,47 @@ export function FormRenderer({
                 </button>
               )}
               {conteudo}
+              {justificativas?.[field.id] && (
+                <div className="mt-2 rounded-md border border-warning/30 bg-warning/[0.08] p-2">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                      <Info className="h-3 w-3" aria-hidden /> Orientação da IA
+                    </p>
+                    {onToggleJustificativaMinimizada && (
+                      <button
+                        type="button"
+                        className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                        aria-label={justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"}
+                        title={justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"}
+                        onClick={() => onToggleJustificativaMinimizada(field.id)}
+                      >
+                        {justificativas[field.id].minimizada ? (
+                          <Maximize2 className="h-3 w-3" />
+                        ) : (
+                          <Minimize2 className="h-3 w-3" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {!justificativas[field.id].minimizada && (
+                    <p className="whitespace-pre-wrap text-[11px] text-foreground">
+                      {justificativas[field.id].texto}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         );
       })}
     </div>
   );
+}
+
+/** Ajuste doc (AJUSTE 14) — só faz sentido pedir orientação de perguntas
+ *  de fato (não seção/orientação/checklist). */
+function podeJustificar(field: AtendimentoFormField): boolean {
+  return field.type !== "section" && field.type !== "orientation" && field.type !== "checklist";
 }
 
 /** Ajuste doc — nota de orientação do Defensor Público para quem preenche,

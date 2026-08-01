@@ -59,7 +59,12 @@ import {
   montarFormularioBrancoHtml,
   montarFormularioPreenchidoHtml,
 } from "@/components/atendimento/print";
-import { gerarAtendimentoComIA, gerarMaisPerguntasAtendimentoIA, gerarResumoAtendimentoIA } from "@/lib/reintegra-api";
+import {
+  gerarAtendimentoComIA,
+  gerarJustificativaAtendimentoIA,
+  gerarMaisPerguntasAtendimentoIA,
+  gerarResumoAtendimentoIA,
+} from "@/lib/reintegra-api";
 import { mensagemErroResumoIA } from "@/components/atendimento/atendimento-detail-sheet";
 import type { AtendimentoFieldType, AtendimentoFormField } from "@/lib/reintegra-api";
 
@@ -107,6 +112,13 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   // novas ou esgotamento com justificativa).
   const [maisPerguntasUsado, setMaisPerguntasUsado] = useState(false);
   const [gerandoMaisPerguntas, setGerandoMaisPerguntas] = useState(false);
+  // Ajuste doc (AJUSTE 14) — justificativa da IA por pergunta (nunca
+  // persistida, só em memória durante a sessão, como o resto do
+  // Atendimento IA).
+  const [justificativas, setJustificativas] = useState<
+    Record<string, { texto: string; minimizada: boolean }>
+  >({});
+  const [gerandoJustificativaPara, setGerandoJustificativaPara] = useState<string | null>(null);
   const [novoContexto, setNovoContexto] = useState("");
   const [reformulando, setReformulando] = useState(false);
   const [contextoAtual, setContextoAtual] = useState("");
@@ -123,6 +135,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     setResumoDesatualizado(false);
     setContextoAtual(data.context);
     setMaisPerguntasUsado(false);
+    setJustificativas({});
   }, [open, data]);
 
   // Garante valor inicial para qualquer campo novo (gerado pela IA ou
@@ -177,6 +190,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       setResumoDesatualizado(false);
       setContextoAtual(novoContexto.trim());
       setMaisPerguntasUsado(false);
+      setJustificativas({});
       setReformularAberto(false);
       toast.success("Atendimento reformulado com o novo contexto");
     } catch (e) {
@@ -224,6 +238,35 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     } finally {
       setGerandoMaisPerguntas(false);
     }
+  };
+
+  // Ajuste doc (AJUSTE 14) — pede à IA a justificativa (fundamento,
+  // relevância e propósito) de uma pergunta específica. Não editável nem
+  // excluível pelo usuário; só minimizável.
+  const handleGerarJustificativa = async (fieldId: string) => {
+    if (!data || gerandoJustificativaPara) return;
+    const campo = campos.find((c) => c.id === fieldId);
+    if (!campo) return;
+    setGerandoJustificativaPara(fieldId);
+    try {
+      const texto = await gerarJustificativaAtendimentoIA({
+        personName: data.personName,
+        context: contextoAtual,
+        file: data.file,
+        pergunta: campo.label,
+      });
+      setJustificativas((prev) => ({ ...prev, [fieldId]: { texto, minimizada: false } }));
+    } catch (e) {
+      toast.error(mensagemErroResumoIA(e));
+    } finally {
+      setGerandoJustificativaPara(null);
+    }
+  };
+
+  const handleToggleJustificativaMinimizada = (fieldId: string) => {
+    setJustificativas((prev) =>
+      prev[fieldId] ? { ...prev, [fieldId]: { ...prev[fieldId], minimizada: !prev[fieldId].minimizada } } : prev,
+    );
   };
 
   // Ajuste doc — mesma inserção rápida entre campos do builder normal.
@@ -516,6 +559,9 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     onRenameField={(fieldId, novoLabel) =>
                       setCampos((prev) => prev.map((c) => (c.id === fieldId ? { ...c, label: novoLabel } : c)))
                     }
+                    onRequestJustification={handleGerarJustificativa}
+                    justificativas={justificativas}
+                    onToggleJustificativaMinimizada={handleToggleJustificativaMinimizada}
                   />
 
                   {!maisPerguntasUsado && (

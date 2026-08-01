@@ -468,6 +468,39 @@ export async function gerarAtendimentoComIA(params: {
   return campos as AtendimentoFormField[];
 }
 
+/** Ajuste doc (AJUSTE 14) — gera a justificativa da IA para uma pergunta
+ *  específica do Atendimento IA (fundamento, relevância e propósito). */
+export async function gerarJustificativaAtendimentoIA(params: {
+  personName: string;
+  context: string;
+  file: File;
+  pergunta: string;
+}): Promise<string> {
+  const fileBase64 = await arquivoParaBase64(params.file);
+  const { data, error } = await supabase.functions.invoke("atendimento-ia-justificar", {
+    body: {
+      personName: params.personName,
+      context: params.context,
+      fileBase64,
+      fileMimeType: params.file.type,
+      pergunta: params.pergunta,
+    },
+  });
+  if (error) {
+    let code: string | undefined;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx) code = (await ctx.clone().json())?.error;
+    } catch {
+      // corpo não era JSON (ou já foi consumido) — segue com o fallback abaixo
+    }
+    throw new Error(code ?? error.message ?? "AI_GATEWAY_ERROR");
+  }
+  const justificativa = (data as { justificativa?: unknown } | null)?.justificativa;
+  if (typeof justificativa !== "string" || !justificativa.trim()) throw new Error("EMPTY_AI_RESPONSE");
+  return justificativa;
+}
+
 /** Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": reprocessa o mesmo
  *  arquivo pedindo perguntas NOVAS e não duplicadas, até o limite da
  *  quantidade já existente. Se o conteúdo estiver esgotado, retorna sem
