@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Info, Link as LinkIcon, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
@@ -62,6 +62,10 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
       return next;
     });
   };
+  // Ajuste doc (AJUSTE 25) — lê o texto AO VIVO (já com eventuais
+  // preenchimentos feitos pelo usuário nos trechos editáveis) na hora de
+  // copiar, em vez do texto original armazenado.
+  const textoRef = useRef<HTMLDivElement>(null);
   // Ajuste doc — estrelinha de favorito também dentro da Cota.
   const favoritoQuery = useQuery({
     queryKey: ["biblioteca-favorito", itemId],
@@ -81,8 +85,13 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
   const handleCopy = async () => {
     if (!detalhe.data) return;
     try {
-      const html = (detalhe.data.bodyJson as { html?: string } | null)?.html ?? null;
-      await copyRichText(html, detalhe.data.bodyText);
+      // Ajuste doc (AJUSTE 25) — copia o texto AO VIVO (já refletindo
+      // eventuais preenchimentos nos trechos editáveis); cai para o texto
+      // original armazenado se, por algum motivo, a referência não
+      // estiver disponível ainda.
+      const html = textoRef.current?.innerHTML ?? (detalhe.data.bodyJson as { html?: string } | null)?.html ?? null;
+      const text = textoRef.current?.innerText ?? detalhe.data.bodyText;
+      await copyRichText(html, text);
       toast.success("Texto da cota copiado");
     } catch {
       toast.error("Não foi possível copiar o texto");
@@ -196,7 +205,9 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                   )}
                   <div style={{ fontSize: `${ZOOM_STEPS[zoomIndex]}em` }} className="pb-6">
                     <RichTextViewer
+                      ref={textoRef}
                       html={(detalhe.data.bodyJson as { html?: string } | null)?.html ?? ""}
+                      interactive
                     />
                   </div>
                   <div className="sticky bottom-0 left-0 flex justify-end gap-0.5 pt-1">

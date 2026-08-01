@@ -298,4 +298,19 @@
   padding: 0 0.1em;
   border-radius: 2px;
 }
+/* Ajuste doc (AJUSTE 25) — trecho editável pelo usuário que visualiza a
+ * cota (não pelo Defensor Público, que só o cria). Precisa se destacar
+ * como "clicável/preenchível" à primeira vista. */
+.cota-editable {
+  border-bottom: 1.5px dashed var(--color-institutional);
+  background-color: color-mix(in oklab, var(--color-institutional) 8%, transparent);
+  border-radius: 2px;
+  padding: 0 0.15em;
+  cursor: text;
+}
+.cota-editable:focus {
+  outline: 1.5px solid var(--color-institutional);
+  outline-offset: 1px;
+  background-color: color-mix(in oklab, var(--color-institutional) 14%, transparent);
+}
 

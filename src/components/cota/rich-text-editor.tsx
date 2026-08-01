@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
-import { Bold, Highlighter, Italic, RectangleHorizontal, RemoveFormatting, Strikethrough, Underline } from "lucide-react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, type ReactNode } from "react";
+import { Bold, Highlighter, Italic, PencilLine, RectangleHorizontal, RemoveFormatting, Strikethrough, Underline } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ const ALLOWED_TAGS = new Set([
 // implementados como classes CSS fixas (nunca style inline, para não
 // afrouxar a sanitização contra XSS). Só esses dois valores de `class`
 // sobrevivem à sanitização; qualquer outro é removido como antes.
-const ALLOWED_CLASSES = new Set(["cota-boxed", "cota-highlight"]);
+const ALLOWED_CLASSES = new Set(["cota-boxed", "cota-highlight", "cota-editable"]);
 
 /**
  * Sanitização por allowlist: mantém apenas negrito/itálico/sublinhado e
@@ -74,6 +74,7 @@ type RichTextTool =
   | "case"
   | "box"
   | "highlight"
+  | "editable"
   | "clear";
 
 interface RichTextEditorProps {
@@ -104,7 +105,7 @@ export function RichTextEditor({
   placeholder = "Escreva o texto da cota…",
   minHeight = "220px",
   className,
-  tools = ["bold", "italic", "underline", "strike", "case", "box", "highlight", "clear"],
+  tools = ["bold", "italic", "underline", "strike", "case", "box", "highlight", "editable", "clear"],
   trailingToolbar,
 }: RichTextEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -357,6 +358,20 @@ export function RichTextEditor({
             <Highlighter className="h-3.5 w-3.5" />
           </Button>
         )}
+        {tools.includes("editable") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => wrapSelection("span", "cota-editable")}
+            aria-label="Criar campo editável"
+            title="Tornar seleção um trecho editável por quem visualizar a cota"
+          >
+            <PencilLine className="h-3.5 w-3.5" />
+          </Button>
+        )}
         {tools.includes("clear") && (
           <Button
             type="button"
@@ -392,11 +407,36 @@ export function RichTextEditor({
 }
 
 /** Renderização somente-leitura do HTML de uma cota (camada de detalhe / impressão). */
-export function RichTextViewer({ html, className }: { html: string; className?: string }) {
+/** Renderização do HTML de uma cota (camada de detalhe / impressão).
+ *  Ajuste doc (AJUSTE 25) — quando `interactive` for true, os trechos
+ *  marcados como "campo editável" (.cota-editable) pelo Defensor Público
+ *  na criação/edição ficam preenchíveis por quem visualiza a cota,
+ *  diretamente no texto (contentEditable só nesses trechos — o restante
+ *  do texto permanece somente-leitura). O `ref` expõe o elemento
+ *  container, para que o botão "Copiar" leia o conteúdo JÁ COM as
+ *  eventuais modificações feitas pelo usuário. */
+export const RichTextViewer = forwardRef<
+  HTMLDivElement,
+  { html: string; className?: string; interactive?: boolean }
+>(function RichTextViewer({ html, className, interactive }, ref) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => innerRef.current as HTMLDivElement);
+
+  useEffect(() => {
+    if (!interactive || !innerRef.current) return;
+    const editableSpans = innerRef.current.querySelectorAll<HTMLElement>(".cota-editable");
+    editableSpans.forEach((el) => {
+      el.contentEditable = "true";
+      el.setAttribute("role", "textbox");
+      el.setAttribute("aria-label", "Trecho editável — clique para preencher");
+    });
+  }, [interactive, html]);
+
   return (
     <div
+      ref={innerRef}
       className={cn("cota-rich-text-content text-xs leading-relaxed", className)}
       dangerouslySetInnerHTML={{ __html: sanitizeCotaHtml(html) }}
     />
   );
-}
+});
