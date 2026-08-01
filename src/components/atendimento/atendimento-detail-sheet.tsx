@@ -344,7 +344,7 @@ export function AtendimentoDetailSheet({
                         disabled={gerandoResumo || (!!resumo && !resumoDesatualizado)}
                       >
                         {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
-                        {resumo ? (resumoDesatualizado ? "Atualizar conclusão" : "Concluído") : "Concluir"}
+                        {resumo ? (resumoDesatualizado ? "Atualizar relato" : "Concluído") : "Gerar relato"}
                       </Button>
                     )}
                     {temCampos && hasRespostaPreenchida(values) && (
@@ -376,7 +376,7 @@ export function AtendimentoDetailSheet({
                         </Button>
                         {onInspire && (
                           <Button variant="outline" size="sm" className="gap-1.5" onClick={onInspire}>
-                            <Sparkles className="h-3.5 w-3.5" /> Inspirar novo
+                            <Sparkles className="h-3.5 w-3.5" /> Criar novo a partir deste
                           </Button>
                         )}
                         <Button

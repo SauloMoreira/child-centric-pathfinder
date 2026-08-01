@@ -129,14 +129,14 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                       className={cn(
                         "mb-3 flex items-start gap-2 rounded-md border p-2.5",
                         detalhe.data.orientacaoNivel === "alta"
-                          ? "border-bordo/30 bg-bordo/[0.1]"
+                          ? "border-critical/30 bg-critical/[0.1]"
                           : "border-warning/30 bg-warning/[0.1]",
                       )}
                     >
                       <Info
                         className={cn(
                           "mt-0.5 h-3.5 w-3.5 shrink-0",
-                          detalhe.data.orientacaoNivel === "alta" ? "text-bordo" : "text-warning",
+                          detalhe.data.orientacaoNivel === "alta" ? "text-critical" : "text-warning",
                         )}
                         aria-hidden
                       />
@@ -153,7 +153,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
 
               <SheetFooter className="mt-3 shrink-0 sm:justify-between">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopy}>
-                  <Copy className="h-3.5 w-3.5" /> Copiar
+                  <Copy className="h-3.5 w-3.5" /> Copiar texto
                 </Button>
                 {detalhe.data.canEdit && (
                   <div className="flex gap-2">
@@ -162,7 +162,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                     </Button>
                     {onInspire && (
                       <Button variant="outline" size="sm" className="gap-1.5" onClick={onInspire}>
-                        <Sparkles className="h-3.5 w-3.5" /> Inspirar novo
+                        <Sparkles className="h-3.5 w-3.5" /> Criar a nova partir desta
                       </Button>
                     )}
                     <Button

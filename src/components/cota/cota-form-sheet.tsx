@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Loader2, Scale, X } from "lucide-react";
+import { ChevronDown, Info, Loader2, Scale, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -76,6 +77,7 @@ export function CotaFormSheet({
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState<RichTextValue>({ html: "", text: "" });
   const [orientacao, setOrientacao] = useState("");
+  const [mostrarOrientacao, setMostrarOrientacao] = useState(false);
   const [orientacaoNivel, setOrientacaoNivel] = useState<"media" | "alta">("media");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
 
@@ -92,6 +94,7 @@ export function CotaFormSheet({
       const bj = target.detalhe.bodyJson as { html?: string } | null;
       setTexto({ html: bj?.html ?? "", text: target.detalhe.bodyText });
       setOrientacao(target.detalhe.orientacao ?? "");
+      setMostrarOrientacao(!!target.detalhe.orientacao);
       setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
       setCategoriaIds(target.detalhe.categorias.map((c) => c.id));
       inspireBaseRef.current = null;
@@ -101,6 +104,7 @@ export function CotaFormSheet({
       setTitulo("");
       setTexto({ html, text: target.detalhe.bodyText });
       setOrientacao(target.detalhe.orientacao ?? "");
+      setMostrarOrientacao(!!target.detalhe.orientacao);
       setOrientacaoNivel(target.detalhe.orientacaoNivel ?? "media");
       setCategoriaIds([]);
       inspireBaseRef.current = { titulo: target.detalhe.titulo, textoHtml: html };
@@ -108,6 +112,7 @@ export function CotaFormSheet({
       setTitulo("");
       setTexto({ html: "", text: "" });
       setOrientacao("");
+      setMostrarOrientacao(false);
       setOrientacaoNivel("media");
       setCategoriaIds([]);
       inspireBaseRef.current = null;
@@ -212,30 +217,65 @@ export function CotaFormSheet({
             <RichTextEditor html={texto.html} onChange={setTexto} minHeight="260px" />
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="cota-orientacao" className="text-xs">
-                Orientação (opcional)
-              </Label>
-              <Select value={orientacaoNivel} onValueChange={(v) => setOrientacaoNivel(v as "media" | "alta")}>
-                <SelectTrigger className="h-6 w-[110px] text-[11px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="media">Grau: Média</SelectItem>
-                  <SelectItem value="alta">Grau: Alta</SelectItem>
-                </SelectContent>
-              </Select>
+          {mostrarOrientacao ? (
+            <div
+              className={cn(
+                "space-y-1.5 rounded-md border p-2.5",
+                orientacaoNivel === "alta"
+                  ? "border-critical/40 bg-critical/[0.06]"
+                  : "border-warning/40 bg-warning/[0.06]",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="cota-orientacao" className="text-xs">
+                  Orientação
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={orientacaoNivel}
+                    onValueChange={(v) => setOrientacaoNivel(v as "media" | "alta")}
+                  >
+                    <SelectTrigger className="h-6 w-[135px] text-[11px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="media">Importância: Média</SelectItem>
+                      <SelectItem value="alta">Importância: Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <button
+                    type="button"
+                    className="text-[11px] text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      setMostrarOrientacao(false);
+                      setOrientacao("");
+                      setOrientacaoNivel("media");
+                    }}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+              <Textarea
+                id="cota-orientacao"
+                value={orientacao}
+                onChange={(e) => setOrientacao(e.target.value)}
+                placeholder="Ex.: Indique a quantia necessária de acordo com os orçamentos apresentados pelo(a) assistido(a)."
+                rows={3}
+                className="resize-none bg-background text-xs"
+              />
             </div>
-            <Textarea
-              id="cota-orientacao"
-              value={orientacao}
-              onChange={(e) => setOrientacao(e.target.value)}
-              placeholder="Ex.: Indique a quantia necessária de acordo com os orçamentos apresentados pelo(a) assistido(a)."
-              rows={3}
-              className="resize-none bg-background text-xs"
-            />
-          </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-fit gap-1.5 text-xs"
+              onClick={() => setMostrarOrientacao(true)}
+            >
+              <Info className="h-3.5 w-3.5" aria-hidden /> Adicionar orientação
+            </Button>
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-xs">Categoria(s)</Label>

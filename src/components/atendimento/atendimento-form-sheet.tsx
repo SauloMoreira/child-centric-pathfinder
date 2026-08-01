@@ -815,25 +815,25 @@ export function FieldEditor({
         style={sortableStyle}
         className={cn(
           "rounded-md border border-dashed p-3",
-          alta ? "border-bordo/40 bg-bordo/[0.06]" : "border-warning/40 bg-warning/[0.06]",
+          alta ? "border-critical/40 bg-critical/[0.06]" : "border-warning/40 bg-warning/[0.06]",
         )}
       >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Info className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
-              <p className={cn("text-xs font-medium", alta ? "text-bordo" : "text-warning")}>Orientação</p>
+              <Info className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-critical" : "text-warning")} aria-hidden />
+              <p className={cn("text-xs font-medium", alta ? "text-critical" : "text-warning")}>Orientação</p>
               <Select
                 value={campo.nivelImportancia ?? "media"}
                 onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
               >
-                <SelectTrigger className="ml-auto h-6 w-[110px] text-[11px]">
+                <SelectTrigger className="ml-auto h-6 w-[135px] text-[11px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="media">Grau: Média</SelectItem>
-                  <SelectItem value="alta">Grau: Alta</SelectItem>
+                  <SelectItem value="media">Importância: Média</SelectItem>
+                  <SelectItem value="alta">Importância: Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -871,14 +871,14 @@ export function FieldEditor({
         style={sortableStyle}
         className={cn(
           "rounded-md border border-dashed p-3",
-          alta ? "border-bordo/40 bg-bordo/[0.06]" : "border-warning/40 bg-warning/[0.06]",
+          alta ? "border-critical/40 bg-critical/[0.06]" : "border-warning/40 bg-warning/[0.06]",
         )}
       >
         <div className="flex items-start gap-2">
           {moveButtons}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <ListChecks className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
+              <ListChecks className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-critical" : "text-warning")} aria-hidden />
               <Input
                 value={campo.label}
                 onChange={(e) => onChange({ label: e.target.value })}
@@ -889,12 +889,12 @@ export function FieldEditor({
                 value={campo.nivelImportancia ?? "media"}
                 onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
               >
-                <SelectTrigger className="h-6 w-[110px] shrink-0 text-[11px]">
+                <SelectTrigger className="h-6 w-[135px] shrink-0 text-[11px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="media">Grau: Média</SelectItem>
-                  <SelectItem value="alta">Grau: Alta</SelectItem>
+                  <SelectItem value="media">Importância: Média</SelectItem>
+                  <SelectItem value="alta">Importância: Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

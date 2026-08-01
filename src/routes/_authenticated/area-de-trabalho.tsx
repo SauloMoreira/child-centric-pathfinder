@@ -1521,6 +1521,9 @@ function SortableColumn(props: {
     ? column.corToken
     : "neutral";
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Ajuste doc — permite abrir 'Inserir cota ou atendimento' clicando
+  // diretamente na área vazia da coluna.
+  const [addCardOpen, setAddCardOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const otherColumns = allColumns.filter((c) => c.id !== column.id);
 
@@ -1730,8 +1733,18 @@ function SortableColumn(props: {
           ))}
         </SortableContext>
         {cards.length === 0 && (
-          <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-border/70 text-center text-[11px] text-muted-foreground">
-            {isSearching ? "Nenhum resultado encontrado" : "Arreste ou adicione"}
+          <div
+            role={!isSearching && access.canAddItems ? "button" : undefined}
+            tabIndex={!isSearching && access.canAddItems ? 0 : undefined}
+            onClick={() => {
+              if (!isSearching && access.canAddItems) setAddCardOpen(true);
+            }}
+            className={cn(
+              "flex h-32 items-center justify-center rounded-md border border-dashed border-border/70 text-center text-[11px] text-muted-foreground",
+              !isSearching && access.canAddItems && "cursor-pointer hover:border-institutional/40 hover:text-foreground",
+            )}
+          >
+            {isSearching ? "Nenhum resultado encontrado" : "Arraste ou insira"}
           </div>
         )}
       </div>
@@ -1744,6 +1757,8 @@ function SortableColumn(props: {
             workspace={workspace}
             existingItemIds={cards.map((c) => c.itemId)}
             onAdded={onAdded}
+            externalOpen={addCardOpen}
+            onExternalOpenChange={setAddCardOpen}
           />
         </footer>
       )}
@@ -2154,7 +2169,7 @@ function SortableCard(props: {
                       onInspireCota();
                     }}
                   >
-                    <Sparkles className="mr-2 h-4 w-4" /> Inspirar nova cota
+                    <Sparkles className="mr-2 h-4 w-4" /> Criar nova a partir desta
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
@@ -2237,7 +2252,7 @@ function SortableCard(props: {
                     onInspireAtendimento();
                   }}
                 >
-                  <Sparkles className="mr-2 h-4 w-4" /> Inspirar novo atendimento
+                  <Sparkles className="mr-2 h-4 w-4" /> Criar novo a partir deste.
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -2265,13 +2280,21 @@ function AddCardDialog({
   workspace,
   existingItemIds,
   onAdded,
+  externalOpen,
+  onExternalOpenChange,
 }: {
   columnId: string;
   workspace: WorkspaceMeta;
   existingItemIds: string[];
   onAdded: () => void;
+  /** Ajuste doc — permite abrir a caixa a partir de fora (ex.: clique na
+   *  área vazia da coluna), além do botão "Inserir cota ou atendimento". */
+  externalOpen?: boolean;
+  onExternalOpenChange?: (v: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen ?? internalOpen;
+  const setOpen = onExternalOpenChange ?? setInternalOpen;
   const [query, setQuery] = useState("");
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const qc = useQueryClient();

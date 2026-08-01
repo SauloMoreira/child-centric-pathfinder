@@ -224,10 +224,10 @@ function OrientacaoBox({ texto, nivel }: { texto: string; nivel?: "media" | "alt
     <div
       className={cn(
         "flex items-start gap-2 rounded-md border p-2.5",
-        alta ? "border-bordo/30 bg-bordo/[0.1]" : "border-warning/30 bg-warning/[0.1]",
+        alta ? "border-critical/30 bg-critical/[0.1]" : "border-warning/30 bg-warning/[0.1]",
       )}
     >
-      <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
+      <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", alta ? "text-critical" : "text-warning")} aria-hidden />
       <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
     </div>
   );
@@ -258,12 +258,12 @@ function ChecklistField({
     <div
       className={cn(
         "space-y-1 rounded-md border p-2.5",
-        alta ? "border-bordo/30 bg-bordo/[0.1]" : "border-warning/30 bg-warning/[0.1]",
+        alta ? "border-critical/30 bg-critical/[0.1]" : "border-warning/30 bg-warning/[0.1]",
       )}
     >
       {field.label && (
         <div className="flex items-center gap-2">
-          <ListChecks className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-bordo" : "text-warning")} aria-hidden />
+          <ListChecks className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-critical" : "text-warning")} aria-hidden />
           <p className="text-xs font-medium text-foreground">
             {field.label}
             {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
