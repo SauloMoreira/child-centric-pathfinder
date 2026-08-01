@@ -240,7 +240,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
           {!gerando && (
             <DialogDescription>
               Anexe um documento (peça processual, ofício, decisão judicial, etc) para que, a partir
-              do contexto indicado, seja elaborado um formulário de atendimento pertinente ao caso.
+              do contexto indicado, seja elaborado o atendimento.
             </DialogDescription>
           )}
         </DialogHeader>
@@ -255,7 +255,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
         ) : (
           <div className="mt-4 flex-1 space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="atendimento-ia-nome">Nome completo da pessoa a ser atendida</Label>
+              <Label htmlFor="atendimento-ia-nome">Nome da pessoa a ser atendida</Label>
               <Input
                 id="atendimento-ia-nome"
                 className="bg-surface text-xs"
@@ -444,7 +444,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
           </Button>
           <Button onClick={handleGerar} disabled={!podeGerar}>
             {gerando && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-            Gerar atendimento
+            Iniciar atendimento
           </Button>
         </DialogFooter>
       </DialogContent>

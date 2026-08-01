@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Info, ListChecks, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, ListChecks, Maximize2, Minimize2, Plus, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,10 @@ interface FormRendererProps {
   /** Ajuste doc — idem, para inserir um campo entre perguntas ao passar o
    *  mouse no espaço entre elas, mesma funcionalidade da página de edição. */
   onInsertFieldAt?: (index: number, campo: AtendimentoFormField) => void;
+  /** Ajuste doc — Atendimento IA: todas as perguntas de texto exibem um
+   *  campo compacto por padrão, com botão de expandir/comprimir no hover.
+   *  Não afeta o Atendimento normal (prop não passada lá). */
+  respostaCompacta?: boolean;
 }
 
 /**
@@ -69,6 +73,7 @@ export function FormRenderer({
   disabled,
   onRemoveField,
   onInsertFieldAt,
+  respostaCompacta,
 }: FormRendererProps) {
   const usaEtapas = fields.filter((f) => f.type === "section").length >= 2;
   const visiveis = fields.filter((f) => campoVisivel(f, values));
@@ -123,6 +128,7 @@ export function FormRenderer({
                 allFields={fields}
                 onChange={onChange}
                 disabled={disabled}
+                respostaCompacta={respostaCompacta}
               />
             ),
           )}
@@ -176,6 +182,7 @@ export function FormRenderer({
               allFields={fields}
               onChange={onChange}
               disabled={disabled}
+              respostaCompacta={respostaCompacta}
             />
           );
 
@@ -196,7 +203,7 @@ export function FormRenderer({
               {podeExcluirAqui && (
                 <button
                   type="button"
-                  className="absolute -left-6 top-0.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
+                  className="absolute left-1 top-0.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
                   aria-label="Excluir pergunta"
                   title="Excluir pergunta"
                   onClick={() => onRemoveField(field.id)}
@@ -309,6 +316,7 @@ function CampoRenderizado({
   allFields,
   onChange,
   disabled,
+  respostaCompacta,
 }: {
   field: AtendimentoFormField;
   value: CampoValor | undefined;
@@ -316,6 +324,7 @@ function CampoRenderizado({
   allFields: AtendimentoFormField[];
   onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
+  respostaCompacta?: boolean;
 }) {
   // Fase 7 — campo calculado: nunca editável, computado ao vivo a partir
   // dos campos que ele referencia. Não passa por FieldInput.
@@ -337,7 +346,13 @@ function CampoRenderizado({
         {field.label || "(sem rótulo)"}
         {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
       </Label>
-      <FieldInput field={field} value={value} onChange={onChange} disabled={disabled} />
+      <FieldInput
+        field={field}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        respostaCompacta={respostaCompacta}
+      />
     </div>
   );
 }
@@ -347,13 +362,20 @@ function FieldInput({
   value,
   onChange,
   disabled,
+  respostaCompacta,
 }: {
   field: AtendimentoFormField;
   value: CampoValor | undefined;
   onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
+  /** Ajuste doc — Atendimento IA: todas as perguntas de texto exibem um
+   *  campo compacto (uma linha) por padrão, com botão discreto (aparece
+   *  no hover) para expandir para texto longo sem perder o que já foi
+   *  escrito. Não afeta o Atendimento normal (prop não passada lá). */
+  respostaCompacta?: boolean;
 }) {
   const id = `campo-${field.id}`;
+  const [expandido, setExpandido] = useState(false);
 
   // Ajuste doc — Atendimento IA: sugestões de resposta rápida (até 3) para
   // campos de texto curto/longo. Clicar preenche o campo com o texto
@@ -361,30 +383,47 @@ function FieldInput({
   const sugestoes = (field.sugestoesResposta ?? []).filter((s) => s.trim());
   if ((field.type === "text_short" || field.type === "text_long") && sugestoes.length > 0) {
     const atual = (value as string) ?? "";
+    const usaTextarea = respostaCompacta ? expandido : field.type === "text_long";
     return (
       <div className="space-y-1.5">
-        {field.type === "text_long" ? (
-          <Textarea
-            id={id}
-            className="bg-surface text-xs"
-            value={atual}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            placeholder={field.placeholder ?? undefined}
-            disabled={disabled}
-            rows={3}
-            required={field.required}
-          />
-        ) : (
-          <Input
-            id={id}
-            className="bg-surface text-xs"
-            value={atual}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            placeholder={field.placeholder ?? undefined}
-            disabled={disabled}
-            required={field.required}
-          />
-        )}
+        <div className="group/campotexto relative">
+          {usaTextarea ? (
+            <Textarea
+              id={id}
+              className="bg-surface text-xs"
+              value={atual}
+              onChange={(e) => onChange(field.id, e.target.value)}
+              placeholder={field.placeholder ?? undefined}
+              disabled={disabled}
+              rows={3}
+              required={field.required}
+            />
+          ) : (
+            <Input
+              id={id}
+              className={cn("bg-surface text-xs", respostaCompacta && "pr-7")}
+              value={atual}
+              onChange={(e) => onChange(field.id, e.target.value)}
+              placeholder={field.placeholder ?? undefined}
+              disabled={disabled}
+              required={field.required}
+            />
+          )}
+          {respostaCompacta && (
+            <button
+              type="button"
+              className={cn(
+                "absolute right-1.5 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/campotexto:opacity-100",
+                usaTextarea ? "top-1.5" : "top-1/2 -translate-y-1/2",
+              )}
+              aria-label={usaTextarea ? "Compactar campo" : "Expandir campo"}
+              title={usaTextarea ? "Compactar campo" : "Expandir campo"}
+              onClick={() => setExpandido((v) => !v)}
+            >
+              {usaTextarea ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {sugestoes.map((s, i) => (
             <button
@@ -403,6 +442,49 @@ function FieldInput({
             </button>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (respostaCompacta && (field.type === "text_short" || field.type === "text_long")) {
+    const atual = (value as string) ?? "";
+    const usaTextarea = expandido;
+    return (
+      <div className="group/campotexto relative">
+        {usaTextarea ? (
+          <Textarea
+            id={id}
+            className="bg-surface text-xs"
+            value={atual}
+            onChange={(e) => onChange(field.id, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
+            disabled={disabled}
+            rows={3}
+            required={field.required}
+          />
+        ) : (
+          <Input
+            id={id}
+            className="bg-surface pr-7 text-xs"
+            value={atual}
+            onChange={(e) => onChange(field.id, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
+            disabled={disabled}
+            required={field.required}
+          />
+        )}
+        <button
+          type="button"
+          className={cn(
+            "absolute right-1.5 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/campotexto:opacity-100",
+            usaTextarea ? "top-1.5" : "top-1/2 -translate-y-1/2",
+          )}
+          aria-label={usaTextarea ? "Compactar campo" : "Expandir campo"}
+          title={usaTextarea ? "Compactar campo" : "Expandir campo"}
+          onClick={() => setExpandido((v) => !v)}
+        >
+          {usaTextarea ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+        </button>
       </div>
     );
   }
