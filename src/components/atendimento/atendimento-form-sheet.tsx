@@ -630,8 +630,13 @@ export function AtendimentoFormSheet({
  *  reaproveitar no editor inline do Atendimento IA. */
 export function InsertFieldHere({
   onInsert,
+  opcoes = ["pergunta", "secao", "orientacao", "checklist"],
 }: {
   onInsert: (campo: AtendimentoFormField) => void;
+  /** Ajuste doc — no Atendimento IA, a adição rápida entre perguntas se
+   *  restringe a Pergunta e Checklist (sem Seção nem Orientação). No
+   *  builder normal, todas as opções continuam disponíveis (padrão). */
+  opcoes?: ("pergunta" | "secao" | "orientacao" | "checklist")[];
 }) {
   return (
     <div className="group/insert relative -my-1.5 h-4">
@@ -649,18 +654,26 @@ export function InsertFieldHere({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
-            <DropdownMenuItem onClick={() => onInsert(novoCampo())}>
-              <MessageSquare className="mr-2 h-3.5 w-3.5" aria-hidden /> Pergunta
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onInsert(novaSecao())}>
-              <SeparatorHorizontal className="mr-2 h-3.5 w-3.5" aria-hidden /> Seção
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onInsert(novaOrientacao())}>
-              <Info className="mr-2 h-3.5 w-3.5" aria-hidden /> Orientação
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onInsert(novoChecklist())}>
-              <ListChecks className="mr-2 h-3.5 w-3.5" aria-hidden /> Checklist
-            </DropdownMenuItem>
+            {opcoes.includes("pergunta") && (
+              <DropdownMenuItem onClick={() => onInsert(novoCampo())}>
+                <MessageSquare className="mr-2 h-3.5 w-3.5" aria-hidden /> Pergunta
+              </DropdownMenuItem>
+            )}
+            {opcoes.includes("secao") && (
+              <DropdownMenuItem onClick={() => onInsert(novaSecao())}>
+                <SeparatorHorizontal className="mr-2 h-3.5 w-3.5" aria-hidden /> Seção
+              </DropdownMenuItem>
+            )}
+            {opcoes.includes("orientacao") && (
+              <DropdownMenuItem onClick={() => onInsert(novaOrientacao())}>
+                <Info className="mr-2 h-3.5 w-3.5" aria-hidden /> Orientação
+              </DropdownMenuItem>
+            )}
+            {opcoes.includes("checklist") && (
+              <DropdownMenuItem onClick={() => onInsert(novoChecklist())}>
+                <ListChecks className="mr-2 h-3.5 w-3.5" aria-hidden /> Checklist
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

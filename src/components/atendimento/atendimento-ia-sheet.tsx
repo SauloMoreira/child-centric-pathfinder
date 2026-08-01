@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Copy,
+  ListChecks,
   Loader2,
   MessageSquare,
   Pencil,
   Printer,
-  SeparatorHorizontal,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,8 +46,8 @@ import {
   isChoiceField,
   montarRespostasParaResumo,
   montarTextoExpandido,
-  novaSecao,
   novoCampo,
+  novoChecklist,
   obrigatoriosFaltando,
   removerReferenciaDaCondicao,
   valorInicial,
@@ -150,7 +150,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   };
 
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
-  const addSecao = () => setCampos((prev) => [...prev, novaSecao()]);
+  const addChecklist = () => setCampos((prev) => [...prev, novoChecklist()]);
 
   // Ajuste doc — "Alterar contexto e reformular": reprocessa o mesmo
   // arquivo original com um novo contexto, substituindo as perguntas e
@@ -362,7 +362,18 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
               variant="ghost"
               size="sm"
               className="h-7 gap-1.5 text-[11px] text-muted-foreground"
-              onClick={() => setEditando((v) => !v)}
+              onClick={() => {
+                // Ajuste doc — não permitir concluir a edição com alguma
+                // pergunta sem rótulo.
+                if (editando) {
+                  const semRotulo = campos.some((c) => !c.label?.trim());
+                  if (semRotulo) {
+                    toast.error("Preencha o rótulo de todas as perguntas antes de concluir a edição.");
+                    return;
+                  }
+                }
+                setEditando((v) => !v);
+              }}
             >
               <Pencil className="h-3.5 w-3.5" />
               {editando ? "Concluir edição das perguntas" : "Editar perguntas"}
@@ -403,8 +414,8 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
                       <MessageSquare className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
                     </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addSecao}>
-                      <SeparatorHorizontal className="h-3.5 w-3.5" aria-hidden /> Adicionar seção
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addChecklist}>
+                      <ListChecks className="h-3.5 w-3.5" aria-hidden /> Adicionar checklist
                     </Button>
                   </div>
                   {campos.length === 0 ? (
@@ -422,7 +433,10 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                           {campos.map((campo, index) => (
                             <div key={campo.id} className="pb-3">
                               {index > 0 && (
-                                <InsertFieldHere onInsert={(novo) => insertCampoAt(index, novo)} />
+                                <InsertFieldHere
+                                  onInsert={(novo) => insertCampoAt(index, novo)}
+                                  opcoes={["pergunta", "checklist"]}
+                                />
                               )}
                               <FieldEditor
                                 campo={campo}
@@ -450,6 +464,9 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     onRemoveField={removeCampo}
                     onInsertFieldAt={insertCampoAt}
                     respostaCompacta
+                    onRenameField={(fieldId, novoLabel) =>
+                      setCampos((prev) => prev.map((c) => (c.id === fieldId ? { ...c, label: novoLabel } : c)))
+                    }
                   />
 
                   {resumo && (

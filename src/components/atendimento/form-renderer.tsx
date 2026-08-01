@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Info, ListChecks, Maximize2, Minimize2, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, ListChecks, Maximize2, Minimize2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -49,6 +49,9 @@ interface FormRendererProps {
    *  campo compacto por padrão, com botão de expandir/comprimir no hover.
    *  Não afeta o Atendimento normal (prop não passada lá). */
   respostaCompacta?: boolean;
+  /** Ajuste doc — Atendimento IA: botão discreto no hover do rótulo para
+   *  renomear a pergunta rapidamente, sem entrar em "Editar". */
+  onRenameField?: (fieldId: string, novoLabel: string) => void;
 }
 
 /**
@@ -74,6 +77,7 @@ export function FormRenderer({
   onRemoveField,
   onInsertFieldAt,
   respostaCompacta,
+  onRenameField,
 }: FormRendererProps) {
   const usaEtapas = fields.filter((f) => f.type === "section").length >= 2;
   const visiveis = fields.filter((f) => campoVisivel(f, values));
@@ -129,6 +133,7 @@ export function FormRenderer({
                 onChange={onChange}
                 disabled={disabled}
                 respostaCompacta={respostaCompacta}
+                onRenameField={onRenameField}
               />
             ),
           )}
@@ -183,6 +188,7 @@ export function FormRenderer({
               onChange={onChange}
               disabled={disabled}
               respostaCompacta={respostaCompacta}
+              onRenameField={onRenameField}
             />
           );
 
@@ -197,7 +203,10 @@ export function FormRenderer({
         return (
           <div key={field.id}>
             {onInsertFieldAt && i > 0 && (
-              <InsertFieldHere onInsert={(novo) => onInsertFieldAt(indiceReal, novo)} />
+              <InsertFieldHere
+                onInsert={(novo) => onInsertFieldAt(indiceReal, novo)}
+                opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+              />
             )}
             <div className="group/campo relative">
               {podeExcluirAqui && (
@@ -317,6 +326,7 @@ function CampoRenderizado({
   onChange,
   disabled,
   respostaCompacta,
+  onRenameField,
 }: {
   field: AtendimentoFormField;
   value: CampoValor | undefined;
@@ -325,7 +335,13 @@ function CampoRenderizado({
   onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
   respostaCompacta?: boolean;
+  /** Ajuste doc — Atendimento IA: botão discreto no hover para editar o
+   *  rótulo da pergunta rapidamente, sem precisar entrar em "Editar". */
+  onRenameField?: (fieldId: string, novoLabel: string) => void;
 }) {
+  const [renomeando, setRenomeando] = useState(false);
+  const [rotuloTemp, setRotuloTemp] = useState(field.label);
+
   // Fase 7 — campo calculado: nunca editável, computado ao vivo a partir
   // dos campos que ele referencia. Não passa por FieldInput.
   if (field.type === "calculated") {
@@ -340,12 +356,53 @@ function CampoRenderizado({
     );
   }
 
+  const confirmarRenomeacao = () => {
+    const novo = rotuloTemp.trim();
+    if (novo && onRenameField) onRenameField(field.id, novo);
+    setRenomeando(false);
+  };
+
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={`campo-${field.id}`} className="text-xs">
-        {field.label || "(sem rótulo)"}
-        {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
-      </Label>
+      {renomeando ? (
+        <div className="flex items-center gap-1">
+          <Input
+            autoFocus
+            value={rotuloTemp}
+            onChange={(e) => setRotuloTemp(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") confirmarRenomeacao();
+              if (e.key === "Escape") {
+                setRotuloTemp(field.label);
+                setRenomeando(false);
+              }
+            }}
+            onBlur={confirmarRenomeacao}
+            className="h-6 bg-surface text-xs"
+          />
+        </div>
+      ) : (
+        <div className="group/rotulo flex items-center gap-1">
+          <Label htmlFor={`campo-${field.id}`} className="text-xs">
+            {field.label || "(sem rótulo)"}
+            {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
+          </Label>
+          {onRenameField && (
+            <button
+              type="button"
+              className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/rotulo:opacity-100"
+              aria-label="Editar rótulo da pergunta"
+              title="Editar rótulo da pergunta"
+              onClick={() => {
+                setRotuloTemp(field.label);
+                setRenomeando(true);
+              }}
+            >
+              <Pencil className="h-3 w-3" aria-hidden />
+            </button>
+          )}
+        </div>
+      )}
       <FieldInput
         field={field}
         value={value}
