@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Info, Link as LinkIcon, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2 } from "lucide-react";
+import { Copy, Info, Link as LinkIcon, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { alternarFavoritoBiblioteca, obterFavoritoBiblioteca } from "@/lib/reintegra-api";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
@@ -47,6 +47,21 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
   const detalhe = useCotaDetalhe(itemId);
   const excluir = useExcluirCota();
   const qc = useQueryClient();
+  // Ajuste doc (AJUSTE 21) — lupas de aumentar/diminuir o texto da cota;
+  // o tamanho escolhido persiste para o usuário (localStorage, preferência
+  // só de exibição, nada sensível) em novas aberturas da layer.
+  const ZOOM_STEPS = [0.85, 1, 1.15, 1.3, 1.45];
+  const [zoomIndex, setZoomIndex] = useState(() => {
+    const salvo = Number(localStorage.getItem("agora-cota-zoom-index"));
+    return Number.isInteger(salvo) && salvo >= 0 && salvo < ZOOM_STEPS.length ? salvo : 1;
+  });
+  const alterarZoom = (delta: number) => {
+    setZoomIndex((prev) => {
+      const next = Math.min(ZOOM_STEPS.length - 1, Math.max(0, prev + delta));
+      localStorage.setItem("agora-cota-zoom-index", String(next));
+      return next;
+    });
+  };
   // Ajuste doc — estrelinha de favorito também dentro da Cota.
   const favoritoQuery = useQuery({
     queryKey: ["biblioteca-favorito", itemId],
@@ -156,7 +171,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                   )}
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
+                <div className="relative min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
                   {detalhe.data.orientacao && (
                     <div
                       className={cn(
@@ -178,9 +193,33 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                       </p>
                     </div>
                   )}
-                  <RichTextViewer
-                    html={(detalhe.data.bodyJson as { html?: string } | null)?.html ?? ""}
-                  />
+                  <div style={{ fontSize: `${ZOOM_STEPS[zoomIndex]}em` }} className="pb-6">
+                    <RichTextViewer
+                      html={(detalhe.data.bodyJson as { html?: string } | null)?.html ?? ""}
+                    />
+                  </div>
+                  <div className="sticky bottom-0 left-0 flex justify-end gap-0.5 pt-1">
+                    <button
+                      type="button"
+                      className="rounded p-1 text-muted-foreground opacity-60 hover:bg-muted hover:text-foreground hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                      aria-label="Diminuir texto"
+                      title="Diminuir texto"
+                      disabled={zoomIndex === 0}
+                      onClick={() => alterarZoom(-1)}
+                    >
+                      <ZoomOut className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded p-1 text-muted-foreground opacity-60 hover:bg-muted hover:text-foreground hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                      aria-label="Aumentar texto"
+                      title="Aumentar texto"
+                      disabled={zoomIndex === ZOOM_STEPS.length - 1}
+                      onClick={() => alterarZoom(1)}
+                    >
+                      <ZoomIn className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
 

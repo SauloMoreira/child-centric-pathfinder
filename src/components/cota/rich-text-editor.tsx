@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Bold, Italic, Strikethrough, Underline } from "lucide-react";
+import { Bold, Highlighter, Italic, RectangleHorizontal, RemoveFormatting, Strikethrough, Underline } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,11 +14,18 @@ const ALLOWED_TAGS = new Set([
   "S",
   "STRIKE",
   "DEL",
+  "MARK",
   "BR",
   "DIV",
   "P",
   "SPAN",
 ]);
+
+// Ajuste doc (AJUSTE 19) — "circular caixa" e "cor de destaque/grifo" são
+// implementados como classes CSS fixas (nunca style inline, para não
+// afrouxar a sanitização contra XSS). Só esses dois valores de `class`
+// sobrevivem à sanitização; qualquer outro é removido como antes.
+const ALLOWED_CLASSES = new Set(["cota-boxed", "cota-highlight"]);
 
 /**
  * Sanitização por allowlist: mantém apenas negrito/itálico/sublinhado e
@@ -48,6 +55,7 @@ export function sanitizeCotaHtml(html: string): string {
         continue;
       }
       for (const attr of Array.from(el.attributes)) {
+        if (attr.name === "class" && ALLOWED_CLASSES.has(attr.value)) continue;
         el.removeAttribute(attr.name);
       }
       walk(el);
@@ -127,6 +135,65 @@ export function RichTextEditor({
       node.nodeValue = fn(node.nodeValue ?? "");
     }
 
+    range.deleteContents();
+    range.insertNode(fragment);
+    sel.removeAllRanges();
+    emit();
+  };
+
+  // Ajuste doc (AJUSTE 19) — envolve a seleção numa tag nova (usado para
+  // "circular caixa" e "cor de destaque/grifo").
+  const wrapSelection = (tagName: string, className: string) => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    if (!el.contains(range.commonAncestorContainer)) return;
+    const wrapper = document.createElement(tagName);
+    wrapper.className = className;
+    wrapper.appendChild(range.extractContents());
+    range.insertNode(wrapper);
+    sel.removeAllRanges();
+    emit();
+  };
+
+  // Ajuste doc (AJUSTE 19) — "limpar formatação": substitui a seleção
+  // pelo próprio texto, sem nenhuma das tags de personalização.
+  const clearFormatting = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    if (!el.contains(range.commonAncestorContainer)) return;
+    const text = range.toString();
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
+    sel.removeAllRanges();
+    emit();
+  };
+
+  // Ajuste doc (AJUSTE 19) — "primeira letra em maiúsculo": só a primeira
+  // letra da seleção, preservando o restante do texto e a formatação.
+  const capitalizeFirstLetter = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    if (!el.contains(range.commonAncestorContainer)) return;
+    const fragment = range.cloneContents();
+    const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+    const first = walker.nextNode();
+    if (first?.nodeValue) {
+      first.nodeValue = first.nodeValue.replace(/^(\s*)(\S)/, (_all, ws: string, ch: string) =>
+        ws + ch.toLocaleUpperCase("pt-BR"),
+      );
+    }
     range.deleteContents();
     range.insertNode(fragment);
     sel.removeAllRanges();
@@ -214,6 +281,55 @@ export function RichTextEditor({
           title="Colocar seleção em minúsculas"
         >
           aa
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-[11px] font-semibold"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={capitalizeFirstLetter}
+          aria-label="Primeira letra em maiúsculo"
+          title="Primeira letra em maiúsculo"
+        >
+          Aa
+        </Button>
+        <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => wrapSelection("span", "cota-boxed")}
+          aria-label="Circular caixa"
+          title="Colocar seleção numa caixa (contorno)"
+        >
+          <RectangleHorizontal className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => wrapSelection("mark", "cota-highlight")}
+          aria-label="Cor de destaque/grifo"
+          title="Destacar/grifar seleção"
+        >
+          <Highlighter className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clearFormatting}
+          aria-label="Limpar formatação"
+          title="Limpar formatação da seleção"
+        >
+          <RemoveFormatting className="h-3.5 w-3.5" />
         </Button>
       </div>
       <div
