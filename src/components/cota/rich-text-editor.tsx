@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Bold, Highlighter, Italic, RectangleHorizontal, RemoveFormatting, Strikethrough, Underline } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -66,12 +66,30 @@ export function sanitizeCotaHtml(html: string): string {
   return template.innerHTML;
 }
 
+type RichTextTool =
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strike"
+  | "case"
+  | "box"
+  | "highlight"
+  | "clear";
+
 interface RichTextEditorProps {
   html: string;
   onChange: (value: RichTextValue) => void;
   placeholder?: string;
   minHeight?: string;
   className?: string;
+  /** Ajuste doc (AJUSTE 24) — permite um editor compacto (ex.: só
+   *  negrito/sublinhado para o campo Orientação), reaproveitando o mesmo
+   *  componente. Sem essa prop, mostra todas as ferramentas (padrão da
+   *  Cota, sem alterar o comportamento existente). */
+  tools?: RichTextTool[];
+  /** Conteúdo extra ao final da barra de ferramentas (ex.: o seletor de
+   *  Importância, à direita dos botões de negrito/sublinhado). */
+  trailingToolbar?: ReactNode;
 }
 
 /**
@@ -86,6 +104,8 @@ export function RichTextEditor({
   placeholder = "Escreva o texto da cota…",
   minHeight = "220px",
   className,
+  tools = ["bold", "italic", "underline", "strike", "case", "box", "highlight", "clear"],
+  trailingToolbar,
 }: RichTextEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const skipNextSync = useRef(false);
@@ -212,125 +232,146 @@ export function RichTextEditor({
 
   return (
     <div className={cn("rounded-md border border-input bg-background", className)}>
-      <div className="flex items-center gap-1 border-b border-input p-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => exec("bold")}
-          aria-label="Negrito"
-        >
-          <Bold className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => exec("italic")}
-          aria-label="Itálico"
-        >
-          <Italic className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => exec("underline")}
-          aria-label="Sublinhado"
-        >
-          <Underline className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => exec("strikeThrough")}
-          aria-label="Tachado"
-        >
-          <Strikethrough className="h-3.5 w-3.5" />
-        </Button>
-        <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-[11px] font-semibold"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => transformSelectionCase((s) => s.toLocaleUpperCase("pt-BR"))}
-          aria-label="Maiúsculas"
-          title="Colocar seleção em maiúsculas"
-        >
-          AA
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-[11px] font-semibold"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => transformSelectionCase((s) => s.toLocaleLowerCase("pt-BR"))}
-          aria-label="Minúsculas"
-          title="Colocar seleção em minúsculas"
-        >
-          aa
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-[11px] font-semibold"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={capitalizeFirstLetter}
-          aria-label="Primeira letra em maiúsculo"
-          title="Primeira letra em maiúsculo"
-        >
-          Aa
-        </Button>
-        <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => wrapSelection("span", "cota-boxed")}
-          aria-label="Circular caixa"
-          title="Colocar seleção numa caixa (contorno)"
-        >
-          <RectangleHorizontal className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => wrapSelection("mark", "cota-highlight")}
-          aria-label="Cor de destaque/grifo"
-          title="Destacar/grifar seleção"
-        >
-          <Highlighter className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={clearFormatting}
-          aria-label="Limpar formatação"
-          title="Limpar formatação da seleção"
-        >
-          <RemoveFormatting className="h-3.5 w-3.5" />
-        </Button>
+      <div className="flex flex-1 items-center gap-1 border-b border-input p-1">
+        {tools.includes("bold") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => exec("bold")}
+            aria-label="Negrito"
+          >
+            <Bold className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {tools.includes("italic") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => exec("italic")}
+            aria-label="Itálico"
+          >
+            <Italic className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {tools.includes("underline") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => exec("underline")}
+            aria-label="Sublinhado"
+          >
+            <Underline className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {tools.includes("strike") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => exec("strikeThrough")}
+            aria-label="Tachado"
+          >
+            <Strikethrough className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {tools.includes("case") && (
+          <>
+            <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-[11px] font-semibold"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => transformSelectionCase((s) => s.toLocaleUpperCase("pt-BR"))}
+              aria-label="Maiúsculas"
+              title="Colocar seleção em maiúsculas"
+            >
+              AA
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-[11px] font-semibold"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => transformSelectionCase((s) => s.toLocaleLowerCase("pt-BR"))}
+              aria-label="Minúsculas"
+              title="Colocar seleção em minúsculas"
+            >
+              aa
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-[11px] font-semibold"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={capitalizeFirstLetter}
+              aria-label="Primeira letra em maiúsculo"
+              title="Primeira letra em maiúsculo"
+            >
+              Aa
+            </Button>
+          </>
+        )}
+        {(tools.includes("box") || tools.includes("highlight") || tools.includes("clear")) && (
+          <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
+        )}
+        {tools.includes("box") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => wrapSelection("span", "cota-boxed")}
+            aria-label="Circular caixa"
+            title="Colocar seleção numa caixa (contorno)"
+          >
+            <RectangleHorizontal className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {tools.includes("highlight") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => wrapSelection("mark", "cota-highlight")}
+            aria-label="Cor de destaque/grifo"
+            title="Destacar/grifar seleção"
+          >
+            <Highlighter className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {tools.includes("clear") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={clearFormatting}
+            aria-label="Limpar formatação"
+            title="Limpar formatação da seleção"
+          >
+            <RemoveFormatting className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {trailingToolbar && <div className="ml-auto flex items-center">{trailingToolbar}</div>}
       </div>
       <div
         ref={ref}

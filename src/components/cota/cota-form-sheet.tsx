@@ -297,7 +297,29 @@ export function CotaFormSheet({
                 <Label htmlFor="cota-orientacao" className="text-xs">
                   Orientação
                 </Label>
-                <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="text-[11px] text-muted-foreground hover:text-destructive"
+                  onClick={() => {
+                    setMostrarOrientacao(false);
+                    setOrientacao("");
+                    setOrientacaoNivel("media");
+                  }}
+                >
+                  Remover
+                </button>
+              </div>
+              {/* Ajuste doc (AJUSTE 24) — negrito/sublinhado na
+                  orientação, botões à esquerda do seletor de Importância
+                  (mesma barra, via trailingToolbar). */}
+              <RichTextEditor
+                html={orientacao}
+                onChange={(v) => setOrientacao(v.html)}
+                tools={["bold", "underline"]}
+                placeholder="Ex.: Indique a quantia necessária de acordo com os orçamentos apresentados pelo(a) assistido(a)."
+                minHeight="60px"
+                className="bg-background text-xs"
+                trailingToolbar={
                   <Select
                     value={orientacaoNivel}
                     onValueChange={(v) => setOrientacaoNivel(v as "media" | "alta")}
@@ -310,26 +332,7 @@ export function CotaFormSheet({
                       <SelectItem value="alta">Importância: Alta</SelectItem>
                     </SelectContent>
                   </Select>
-                  <button
-                    type="button"
-                    className="text-[11px] text-muted-foreground hover:text-destructive"
-                    onClick={() => {
-                      setMostrarOrientacao(false);
-                      setOrientacao("");
-                      setOrientacaoNivel("media");
-                    }}
-                  >
-                    Remover
-                  </button>
-                </div>
-              </div>
-              <Textarea
-                id="cota-orientacao"
-                value={orientacao}
-                onChange={(e) => setOrientacao(e.target.value)}
-                placeholder="Ex.: Indique a quantia necessária de acordo com os orçamentos apresentados pelo(a) assistido(a)."
-                rows={3}
-                className="resize-none bg-background text-xs"
+                }
               />
             </div>
           ) : (

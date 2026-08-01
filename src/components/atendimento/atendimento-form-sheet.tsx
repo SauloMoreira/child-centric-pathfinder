@@ -54,6 +54,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor, sanitizeCotaHtml } from "@/components/cota/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -854,25 +855,31 @@ export function FieldEditor({
             <div className="flex flex-wrap items-center gap-2">
               <Info className={cn("h-3.5 w-3.5 shrink-0", alta ? "text-critical" : "text-warning")} aria-hidden />
               <p className={cn("text-xs font-medium", alta ? "text-critical" : "text-warning")}>Orientação</p>
-              <Select
-                value={campo.nivelImportancia ?? "media"}
-                onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
-              >
-                <SelectTrigger className="ml-auto h-6 w-[135px] text-[11px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="media">Importância: Média</SelectItem>
-                  <SelectItem value="alta">Importância: Alta</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-            <Textarea
-              value={campo.label}
-              onChange={(e) => onChange({ label: e.target.value })}
+            {/* Ajuste doc (AJUSTE 24) — negrito/sublinhado na orientação,
+                botões à esquerda do seletor de Importância (mesma barra,
+                via trailingToolbar). */}
+            <RichTextEditor
+              html={campo.label}
+              onChange={(v) => onChange({ label: v.html })}
+              tools={["bold", "underline"]}
               placeholder="Texto de orientação para quem preenche o formulário…"
-              rows={2}
-              className="resize-none bg-surface text-xs"
+              minHeight="52px"
+              className="bg-surface text-xs"
+              trailingToolbar={
+                <Select
+                  value={campo.nivelImportancia ?? "media"}
+                  onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
+                >
+                  <SelectTrigger className="h-6 w-[135px] text-[11px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="media">Importância: Média</SelectItem>
+                    <SelectItem value="alta">Importância: Alta</SelectItem>
+                  </SelectContent>
+                </Select>
+              }
             />
             <p className="text-[10px] text-muted-foreground">
               Aparece em destaque no formulário. Não entra no resumo por IA nem nos PDFs gerados.
@@ -933,8 +940,6 @@ export function FieldEditor({
               {checklistItems.map((item, i) => (
                 <div
                   key={i}
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -944,6 +949,8 @@ export function FieldEditor({
                   className="flex items-center gap-1.5"
                 >
                   <GripVertical
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                     className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
                     aria-hidden
                   />
@@ -1191,8 +1198,6 @@ export function FieldEditor({
               {options.map((opt, i) => (
                 <div
                   key={i}
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -1202,6 +1207,8 @@ export function FieldEditor({
                   className="flex items-center gap-1.5"
                 >
                   <GripVertical
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                     className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
                     aria-hidden
                   />
@@ -1434,8 +1441,6 @@ function CalcEditor({
             {selecionados.map((c, i) => (
               <div
                 key={c.id}
-                draggable
-                onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -1444,7 +1449,12 @@ function CalcEditor({
                 }}
                 className="flex items-center gap-1.5 rounded border border-border bg-surface px-2 py-1 text-xs"
               >
-                <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50" aria-hidden />
+                <GripVertical
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                  className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
+                  aria-hidden
+                />
                 <span className="min-w-0 flex-1 truncate">
                   {calc.kind === "subtract" && (
                     <span className="mr-1 font-mono text-[10px] text-muted-foreground">

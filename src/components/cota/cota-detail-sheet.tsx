@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RichTextViewer } from "@/components/cota/rich-text-editor";
+import { RichTextViewer, sanitizeCotaHtml } from "@/components/cota/rich-text-editor";
 import { useCotaDetalhe, useExcluirCota, mensagemErroCota } from "@/features/cota/hooks";
 import { cn, copyRichText } from "@/lib/utils";
 
@@ -188,9 +188,10 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                         )}
                         aria-hidden
                       />
-                      <p className="whitespace-pre-wrap text-xs text-foreground">
-                        {detalhe.data.orientacao}
-                      </p>
+                      <p
+                        className="whitespace-pre-wrap text-xs text-foreground"
+                        dangerouslySetInnerHTML={{ __html: sanitizeCotaHtml(detalhe.data.orientacao) }}
+                      />
                     </div>
                   )}
                   <div style={{ fontSize: `${ZOOM_STEPS[zoomIndex]}em` }} className="pb-6">

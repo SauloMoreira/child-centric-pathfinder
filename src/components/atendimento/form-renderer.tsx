@@ -37,6 +37,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { InsertFieldHere } from "@/components/atendimento/atendimento-form-sheet";
+import { sanitizeCotaHtml } from "@/components/cota/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -433,7 +434,13 @@ function OrientacaoBox({ texto, nivel }: { texto: string; nivel?: "media" | "alt
       )}
     >
       <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", alta ? "text-critical" : "text-warning")} aria-hidden />
-      <p className="whitespace-pre-wrap text-xs text-foreground">{texto}</p>
+      {/* Ajuste doc (AJUSTE 24) — texto de orientação pode ter negrito/
+          sublinhado; sanitizado antes de renderizar (mesma allowlist já
+          usada nas Cotas). */}
+      <p
+        className="whitespace-pre-wrap text-xs text-foreground"
+        dangerouslySetInnerHTML={{ __html: sanitizeCotaHtml(texto) }}
+      />
     </div>
   );
 }
