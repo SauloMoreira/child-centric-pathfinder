@@ -98,6 +98,35 @@ export type Database = {
         }
         Relationships: []
       }
+      content_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_favorites_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_item_categories: {
         Row: {
           category_id: string
@@ -133,6 +162,7 @@ export type Database = {
       }
       content_items: {
         Row: {
+          access_count: number
           category_id: string | null
           created_at: string
           current_published_version_id: string | null
@@ -148,6 +178,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["content_visibility"]
         }
         Insert: {
+          access_count?: number
           category_id?: string | null
           created_at?: string
           current_published_version_id?: string | null
@@ -163,6 +194,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["content_visibility"]
         }
         Update: {
+          access_count?: number
           category_id?: string | null
           created_at?: string
           current_published_version_id?: string | null
@@ -351,6 +383,7 @@ export type Database = {
           cor_token: Database["public"]["Enums"]["workspace_color_enum"]
           created_at: string
           descricao: string | null
+          icone: string | null
           id: string
           nome: string
           order_position: number
@@ -362,6 +395,7 @@ export type Database = {
           cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
           created_at?: string
           descricao?: string | null
+          icone?: string | null
           id?: string
           nome: string
           order_position?: number
@@ -373,6 +407,7 @@ export type Database = {
           cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
           created_at?: string
           descricao?: string | null
+          icone?: string | null
           id?: string
           nome?: string
           order_position?: number
@@ -760,6 +795,10 @@ export type Database = {
         Args: { p_comarca: string; p_id: string; p_nome: string }
         Returns: Json
       }
+      alternar_favorito_biblioteca: {
+        Args: { p_item_id: string }
+        Returns: Json
+      }
       aprovar_solicitacao_acesso: {
         Args: { p_request_id: string; p_version: number }
         Returns: Json
@@ -807,6 +846,7 @@ export type Database = {
           p_cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
           p_descricao?: string
           p_expected_workspace_version: number
+          p_icone?: string
           p_idempotency_key: string
           p_nome: string
         }
@@ -877,6 +917,14 @@ export type Database = {
         Args: { p_aceite_termos: boolean }
         Returns: Json
       }
+      copiar_coluna_para_painel: {
+        Args: {
+          p_column_id: string
+          p_idempotency_key: string
+          p_target_workspace_id: string
+        }
+        Returns: Json
+      }
       criar_atendimento: {
         Args: {
           p_category_ids?: string[]
@@ -892,6 +940,7 @@ export type Database = {
           p_cor_token?: Database["public"]["Enums"]["workspace_color_enum"]
           p_descricao?: string
           p_expected_workspace_version: number
+          p_icone?: string
           p_idempotency_key: string
           p_nome: string
           p_workspace_id: string
@@ -953,6 +1002,14 @@ export type Database = {
         Args: { p_idempotency_key?: string; p_orgao_id: string }
         Returns: Json
       }
+      duplicar_coluna_workspace: {
+        Args: {
+          p_column_id: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       encerrar_member_defensor_bond: {
         Args: {
           p_bond_id: string
@@ -969,6 +1026,14 @@ export type Database = {
       ensure_defensor_work_area: {
         Args: { p_defensor_user_id: string; p_idempotency_key?: string }
         Returns: Json
+      }
+      esvaziar_coluna_workspace: {
+        Args: {
+          p_column_id: string
+          p_expected_workspace_version: number
+          p_idempotency_key: string
+        }
+        Returns: number
       }
       excluir_atendimento: {
         Args: {
@@ -1003,21 +1068,35 @@ export type Database = {
         Args: { p_defensor_user_id: string }
         Returns: Json
       }
+      listar_autores_biblioteca: {
+        Args: never
+        Returns: {
+          nome: string
+          user_id: string
+        }[]
+      }
       listar_biblioteca: {
         Args: {
           p_apenas_meus?: boolean
           p_category_id?: string
+          p_favoritos_apenas?: boolean
           p_kind?: Database["public"]["Enums"]["content_kind"]
           p_limit?: number
           p_offset?: number
+          p_order_by?: string
+          p_owner_user_id?: string
           p_query?: string
         }
         Returns: {
+          access_count: number
           categoria_id: string
           categoria_nome: string
           categorias: Json
+          favorite_count: number
           id: string
+          is_favorited: boolean
           kind: Database["public"]["Enums"]["content_kind"]
+          owner_nome: string
           owner_user_id: string
           status: Database["public"]["Enums"]["content_status"]
           titulo: string
@@ -1138,6 +1217,15 @@ export type Database = {
         }
         Returns: number
       }
+      mover_coluna_para_painel: {
+        Args: {
+          p_column_id: string
+          p_expected_source_workspace_version: number
+          p_idempotency_key: string
+          p_target_workspace_id: string
+        }
+        Returns: Json
+      }
       mover_coluna_workspace: {
         Args: {
           p_column_id: string
@@ -1199,6 +1287,10 @@ export type Database = {
       reenviar_convite_equipe: {
         Args: { p_invitation_id: string }
         Returns: Json
+      }
+      registrar_acesso_biblioteca: {
+        Args: { p_item_id: string }
+        Returns: undefined
       }
       registrar_acesso_defensor_externo: {
         Args: {
