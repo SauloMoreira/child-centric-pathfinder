@@ -488,7 +488,7 @@ function ColumnsBoard({
   // limitadas à altura da tela (rolagem interna por coluna, comportamento
   // já existente). Ao clicar, alternam para altura natural (crescem com o
   // conteúdo e a rolagem vertical passa a ser da tela/board como um todo).
-  const [colunasAlturaNatural, setColunasAlturaNatural] = useState(false);
+  const [colunasAlturaNatural, setColunasAlturaNatural] = useState(true);
   const toggleColumnCollapsed = useCallback((columnId: string) => {
     setCollapsedColumns((prev) => {
       const next = new Set(prev);
@@ -1143,7 +1143,7 @@ function ColumnsBoard({
                       type="button"
                       className={cn(
                         "rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground",
-                        colunasAlturaNatural && "bg-institutional/[0.08] text-institutional",
+                        !colunasAlturaNatural && "bg-institutional/[0.08] text-institutional",
                       )}
                       aria-label={
                         colunasAlturaNatural

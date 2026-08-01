@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileUp, Loader2, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ChevronDown, FileUp, Loader2, Save, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -19,13 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -107,6 +101,10 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
   const [nomeParaSalvar, setNomeParaSalvar] = useState("");
   const [salvandoContexto, setSalvandoContexto] = useState(false);
   const [contextoParaExcluir, setContextoParaExcluir] = useState<AtendimentoIaContexto | null>(null);
+  // Ajuste doc (AJUSTE 5) — popover de seleção de contexto salvo, com
+  // busca interna para quando houver muitos contextos.
+  const [contextoPopoverAberto, setContextoPopoverAberto] = useState(false);
+  const [buscaContexto, setBuscaContexto] = useState("");
 
   const carregarContextos = async () => {
     setContextosCarregando(true);
@@ -271,22 +269,96 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="atendimento-ia-contexto">Contexto</Label>
-                <Select value={contextoSelecionadoId} onValueChange={handleSelecionarContexto}>
-                  <SelectTrigger className="h-7 w-auto min-w-[9rem] gap-1 border-none bg-transparent px-2 text-[11px] shadow-none">
-                    <SelectValue placeholder="Novo contexto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NOVO_CONTEXTO}>Novo contexto</SelectItem>
-                    {contextos.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome}
-                      </SelectItem>
-                    ))}
-                    {contextosCarregando && (
-                      <div className="px-2 py-1.5 text-[11px] text-muted-foreground">Carregando…</div>
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-institutional disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={!context.trim()}
+                    title="Salvar contexto"
+                    aria-label="Salvar contexto"
+                    onClick={() => {
+                      setNomeParaSalvar("");
+                      setSalvarAberto(true);
+                    }}
+                  >
+                    <Save className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                  <Popover
+                    open={contextoPopoverAberto}
+                    onOpenChange={(v) => {
+                      setContextoPopoverAberto(v);
+                      if (!v) setBuscaContexto("");
+                    }}
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Contextos salvos"
+                        aria-label="Contextos salvos"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-64 p-1.5">
+                      {contextos.length > 3 && (
+                        <Input
+                          autoFocus
+                          value={buscaContexto}
+                          onChange={(e) => setBuscaContexto(e.target.value)}
+                          placeholder="Buscar contexto salvo…"
+                          className="mb-1.5 h-7 bg-surface text-xs"
+                        />
+                      )}
+                      <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                        {contextosCarregando ? (
+                          <p className="px-2 py-1.5 text-[11px] text-muted-foreground">Carregando…</p>
+                        ) : contextos.filter((c) =>
+                            c.nome.toLowerCase().includes(buscaContexto.trim().toLowerCase()),
+                          ).length === 0 ? (
+                          <p className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                            {contextos.length === 0
+                              ? "Nenhum contexto salvo ainda."
+                              : "Nenhum contexto encontrado."}
+                          </p>
+                        ) : (
+                          contextos
+                            .filter((c) => c.nome.toLowerCase().includes(buscaContexto.trim().toLowerCase()))
+                            .map((c) => (
+                              <div
+                                key={c.id}
+                                className="group flex items-center gap-1 rounded hover:bg-muted"
+                              >
+                                <button
+                                  type="button"
+                                  className="min-w-0 flex-1 truncate px-2 py-1.5 text-left text-xs"
+                                  onClick={() => {
+                                    handleSelecionarContexto(c.id);
+                                    setContextoPopoverAberto(false);
+                                  }}
+                                >
+                                  {c.nome}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="mr-1 shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                                  aria-label={`Excluir contexto ${c.nome}`}
+                                  title="Excluir contexto salvo"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setContextoParaExcluir(c);
+                                    setContextoPopoverAberto(false);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" aria-hidden />
+                                </button>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               <Textarea
                 id="atendimento-ia-contexto"
@@ -294,10 +366,10 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                 value={context}
                 onChange={(e) => handleContextChange(e.target.value)}
                 placeholder='Ex.: "Se trata de atendimento para contestação, refutando os fatos narrados na petição inicial anexada."'
-                rows={3}
+                rows={5}
               />
 
-              {salvarAberto ? (
+              {salvarAberto && (
                 <div className="flex items-center gap-1.5">
                   <Input
                     autoFocus
@@ -325,35 +397,6 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                   >
                     Cancelar
                   </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-institutional disabled:cursor-not-allowed disabled:opacity-40"
-                    disabled={!context.trim()}
-                    onClick={() => {
-                      setNomeParaSalvar("");
-                      setSalvarAberto(true);
-                    }}
-                  >
-                    <Save className="h-3 w-3" aria-hidden />
-                    Salvar contexto para reutilização
-                  </button>
-                  {contextoSelecionadoId !== NOVO_CONTEXTO && (
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        setContextoParaExcluir(
-                          contextos.find((c) => c.id === contextoSelecionadoId) ?? null,
-                        )
-                      }
-                    >
-                      <Trash2 className="h-3 w-3" aria-hidden />
-                      Excluir contexto salvo
-                    </button>
-                  )}
                 </div>
               )}
             </div>
