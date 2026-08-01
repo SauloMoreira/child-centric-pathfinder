@@ -26,6 +26,7 @@ import {
   Loader2,
   Search,
   Sparkles,
+  Star,
 } from "lucide-react";
 
 import {
@@ -64,6 +65,7 @@ import {
   excluirColunaWorkspace,
   isConcurrentChangeError,
   listarBiblioteca,
+  listarAutoresBiblioteca,
   listarWorkspaceCompleto,
   obterCotaDetalhe,
   obterAtendimentoDetalhe,
@@ -79,6 +81,7 @@ import {
   type WorkspaceMeta,
   type CotaDetalhe,
   type AtendimentoDetalhe,
+  type ContentKind,
 } from "@/lib/reintegra-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1700,6 +1703,9 @@ function SortableColumn(props: {
               <DropdownMenuItem onClick={() => setEditOpen(true)}>
                 <Pencil className="mr-2 h-4 w-4" /> Editar coluna
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAddCardOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Inserir cota ou atendimento
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onDuplicateCol}>
                 <Copy className="mr-2 h-4 w-4" /> Duplicar coluna
@@ -2429,21 +2435,64 @@ function AddCardDialog({
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const qc = useQueryClient();
 
+  // Ajuste doc (AJUSTE 18) — mesmos filtros do motor de busca da
+  // Biblioteca. Padrão: só os meus itens mais recentes (já estabelecido);
+  // a busca/filtros substituem esse padrão conforme usados.
+  const [tipo, setTipo] = useState<ContentKind | "todos">("todos");
+  const [categoriaId, setCategoriaId] = useState<string>("todas");
+  const [autoria, setAutoria] = useState<"todos" | "meus" | "outro">("meus");
+  const [autorEscolhido, setAutorEscolhido] = useState<string | null>(null);
+  const [ranking, setRanking] = useState<"recentes" | "favoritos" | "utilizados">("recentes");
+  const [somenteFavoritos, setSomenteFavoritos] = useState(false);
+  // Ajuste doc — "Criar cota"/"Criar atendimento" a partir desta caixa,
+  // inserindo automaticamente na coluna ao concluir.
+  const [criarTipo, setCriarTipo] = useState<"atendimento" | "cota" | null>(null);
+
+  const categoriasQuery = useQuery({
+    queryKey: ["biblioteca-categorias"],
+    queryFn: () => listarCategoriasBiblioteca(),
+    enabled: open,
+  });
+  const autoresQuery = useQuery({
+    queryKey: ["biblioteca-autores"],
+    queryFn: () => listarAutoresBiblioteca(),
+    enabled: open && autoria === "outro",
+  });
+
   const bibQuery = useQuery({
-    queryKey: ["biblioteca-picker", query],
-    queryFn: () => listarBiblioteca({ query: query.trim() || undefined, limit: 20 }),
+    queryKey: [
+      "biblioteca-picker",
+      query,
+      tipo,
+      categoriaId,
+      autoria,
+      autorEscolhido,
+      ranking,
+      somenteFavoritos,
+    ],
+    queryFn: () =>
+      listarBiblioteca({
+        query: query.trim() || undefined,
+        kind: tipo === "todos" ? undefined : tipo,
+        categoria_id: categoriaId === "todas" ? undefined : categoriaId,
+        apenas_meus: autoria === "meus",
+        owner_user_id: autoria === "outro" && autorEscolhido ? autorEscolhido : undefined,
+        favoritos_apenas: somenteFavoritos,
+        order_by: ranking,
+        limit: 20,
+      }),
     enabled: open,
   });
 
   const add = useMutation({
-    mutationFn: () =>
+    mutationFn: (itemId: string) =>
       adicionarCardWorkspace({
         columnId,
-        itemId: selecionado!,
+        itemId,
         expectedWorkspaceVersion: workspace.optimisticVersion,
       }),
     onSuccess: () => {
-      toast.success("Card adicionado");
+      toast.success("Card inserido");
       onAdded();
       setOpen(false);
       setSelecionado(null);
@@ -2475,7 +2524,7 @@ function AddCardDialog({
         toast.error("Este conteúdo não é compartilhável.");
         return;
       }
-      toast.error("Falha ao adicionar card");
+      toast.error("Falha ao inserir card");
     },
   });
 
@@ -2483,6 +2532,7 @@ function AddCardDialog({
   const existing = new Set(existingItemIds);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
@@ -2497,15 +2547,110 @@ function AddCardDialog({
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Adicionar atendimento ou cota</DialogTitle>
+          <DialogTitle>Inserir atendimento ou cota</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5"
+              onClick={() => setCriarTipo("atendimento")}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar atendimento
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5"
+              onClick={() => setCriarTipo("cota")}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar cota
+            </Button>
+          </div>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar na Biblioteca…"
             autoFocus
           />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Select value={tipo} onValueChange={(v) => setTipo(v as ContentKind | "todos")}>
+              <SelectTrigger className="h-7 w-[110px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="atendimento">Atendimentos</SelectItem>
+                <SelectItem value="cota">Cotas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoriaId} onValueChange={setCategoriaId}>
+              <SelectTrigger className="h-7 w-[130px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas categorias</SelectItem>
+                {(categoriasQuery.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={autoria}
+              onValueChange={(v) => {
+                setAutoria(v as "todos" | "meus" | "outro");
+                if (v !== "outro") setAutorEscolhido(null);
+              }}
+            >
+              <SelectTrigger className="h-7 w-[110px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="meus">Somente meus</SelectItem>
+                <SelectItem value="outro">(Usuário)…</SelectItem>
+              </SelectContent>
+            </Select>
+            {autoria === "outro" && (
+              <Select value={autorEscolhido ?? undefined} onValueChange={setAutorEscolhido}>
+                <SelectTrigger className="h-7 w-[130px] text-[11px]">
+                  <SelectValue placeholder="Usuário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(autoresQuery.data ?? []).map((a) => (
+                    <SelectItem key={a.user_id} value={a.user_id}>
+                      {a.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={ranking} onValueChange={(v) => setRanking(v as typeof ranking)}>
+              <SelectTrigger className="h-7 w-[130px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recentes">Recentes</SelectItem>
+                <SelectItem value="favoritos">Mais favoritados</SelectItem>
+                <SelectItem value="utilizados">Mais utilizados</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant={somenteFavoritos ? "default" : "outline"}
+              size="sm"
+              className="h-7 gap-1 text-[11px]"
+              onClick={() => setSomenteFavoritos((v) => !v)}
+            >
+              <Star className={somenteFavoritos ? "h-3 w-3 fill-current" : "h-3 w-3"} aria-hidden />
+              Favoritos
+            </Button>
+          </div>
           <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
             {itens.length === 0 ? (
               <p className="p-4 text-center text-xs text-muted-foreground">
@@ -2535,7 +2680,7 @@ function AddCardDialog({
                         {i.categorias.length > 0
                           ? i.categorias.map((c) => c.nome).join(", ")
                           : "Sem categoria"}{" "}
-                        · {i.status}
+                        · {i.owner_nome}
                       </p>
                     </div>
                     {alreadyIn && (
@@ -2553,12 +2698,35 @@ function AddCardDialog({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button disabled={!selecionado || add.isPending} onClick={() => add.mutate()}>
-            Adicionar
+          <Button
+            disabled={!selecionado || add.isPending}
+            onClick={() => selecionado && add.mutate(selecionado)}
+          >
+            Inserir
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AtendimentoFormSheet
+      open={criarTipo === "atendimento"}
+      onOpenChange={(v) => !v && setCriarTipo(null)}
+      target={{ mode: "create" }}
+      onCreated={(itemId) => {
+        setCriarTipo(null);
+        add.mutate(itemId);
+      }}
+    />
+    <CotaFormSheet
+      open={criarTipo === "cota"}
+      onOpenChange={(v) => !v && setCriarTipo(null)}
+      target={{ mode: "create" }}
+      onCreated={(itemId) => {
+        setCriarTipo(null);
+        add.mutate(itemId);
+      }}
+    />
+    </>
   );
 }
 
