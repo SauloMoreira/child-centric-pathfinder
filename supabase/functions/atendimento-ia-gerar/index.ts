@@ -67,6 +67,9 @@ type Payload = {
   context: string;
   fileBase64: string;
   fileMimeType?: string;
+  /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
+  campoTipo?: "curto" | "ambos";
+  gerarSugestoes?: boolean;
 };
 
 const SYSTEM_PROMPT = `Você ajuda Defensores Públicos e suas equipes a montar formulários de atendimento ao público na Defensoria Pública do Estado do Rio Grande do Sul.
@@ -83,6 +86,20 @@ Regras estritas:
 - As perguntas devem ser dirigidas à pessoa atendida (quem responde é a equipe, com base no que a pessoa relatar), em português do Brasil, claras e objetivas.
 - Não inclua perguntas sobre dados que já constam obviamente do documento anexado, a menos que seja importante confirmá-los com a pessoa atendida.`;
 
+// Ajuste doc (AJUSTE 13) — "Configurações opcionais": ajusta o prompt do
+// sistema conforme as preferências do usuário (tipo de campo e geração
+// de sugestões de resposta).
+function montarSystemPrompt(campoTipo: "curto" | "ambos", gerarSugestoes: boolean): string {
+  let prompt = SYSTEM_PROMPT;
+  if (campoTipo === "curto") {
+    prompt += `\n- Preferência do usuário: use SOMENTE o tipo "text_short" para todas as perguntas, mesmo para relatos mais longos (nunca "text_long").`;
+  }
+  if (!gerarSugestoes) {
+    prompt += `\n- Preferência do usuário: NÃO gere "sugestoesResposta" para nenhuma pergunta — deixe sempre null.`;
+  }
+  return prompt;
+}
+
 function montarPromptUsuario(personName: string, context: string): string {
   return [
     `Pessoa a ser atendida: ${personName}`,
@@ -92,15 +109,22 @@ function montarPromptUsuario(personName: string, context: string): string {
   ].join("\n");
 }
 
-function normalizarCampo(raw: unknown): CampoGerado | null {
+function normalizarCampo(
+  raw: unknown,
+  campoTipo: "curto" | "ambos",
+  gerarSugestoes: boolean,
+): CampoGerado | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const label = typeof r.label === "string" ? r.label.trim().slice(0, 300) : "";
   if (!label) return null;
   const tipoRaw = typeof r.type === "string" ? r.type : "text_short";
-  const type: CampoGeradoTipo = tipoRaw === "text_long" ? "text_long" : "text_short";
+  // Reforço da preferência do usuário (o prompt já instrui a IA, isso é
+  // só uma rede de segurança caso ela não obedeça 100%).
+  const type: CampoGeradoTipo =
+    campoTipo === "curto" ? "text_short" : tipoRaw === "text_long" ? "text_long" : "text_short";
   const required = r.required === true;
-  const rawSugestoes = Array.isArray(r.sugestoesResposta) ? r.sugestoesResposta : [];
+  const rawSugestoes = gerarSugestoes && Array.isArray(r.sugestoesResposta) ? r.sugestoesResposta : [];
   const sugestoesResposta = rawSugestoes
     .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
     .map((o) => o.trim().slice(0, 200))
@@ -144,6 +168,8 @@ Deno.serve(async (req) => {
   const context = (payload.context ?? "").trim();
   const fileBase64 = payload.fileBase64 ?? "";
   const fileMimeType = payload.fileMimeType || "application/pdf";
+  const campoTipo: "curto" | "ambos" = payload.campoTipo === "ambos" ? "ambos" : "curto";
+  const gerarSugestoes = payload.gerarSugestoes !== false;
 
   if (!personName || !context || !fileBase64) {
     return json({ error: "INVALID_PAYLOAD" }, 400);
@@ -169,7 +195,7 @@ Deno.serve(async (req) => {
         model: MODEL,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: montarSystemPrompt(campoTipo, gerarSugestoes) },
           {
             role: "user",
             content: [
@@ -226,7 +252,7 @@ Deno.serve(async (req) => {
     ? ((parsed as Record<string, unknown>).campos as unknown[])
     : [];
   const campos = rawCampos
-    .map(normalizarCampo)
+    .map((raw) => normalizarCampo(raw, campoTipo, gerarSugestoes))
     .filter((c): c is CampoGerado => c !== null)
     .slice(0, MAX_CAMPOS);
 

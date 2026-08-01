@@ -425,6 +425,9 @@ export async function gerarAtendimentoComIA(params: {
   personName: string;
   context: string;
   file: File;
+  /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
+  campoTipo?: "curto" | "ambos";
+  gerarSugestoes?: boolean;
 }): Promise<AtendimentoFormField[]> {
   if (params.file.type !== "application/pdf") {
     throw new Error("INVALID_FILE_TYPE");
@@ -439,6 +442,8 @@ export async function gerarAtendimentoComIA(params: {
       context: params.context,
       fileBase64,
       fileMimeType: params.file.type,
+      campoTipo: params.campoTipo ?? "curto",
+      gerarSugestoes: params.gerarSugestoes ?? true,
     },
   });
   if (error) {
@@ -454,6 +459,33 @@ export async function gerarAtendimentoComIA(params: {
   const campos = (data as { campos?: unknown } | null)?.campos;
   if (!Array.isArray(campos) || campos.length === 0) throw new Error("EMPTY_AI_RESPONSE");
   return campos as AtendimentoFormField[];
+}
+
+/** Ajuste doc — "Configurações opcionais" do Atendimento IA, persistidas
+ *  por usuário. */
+export type AtendimentoIaPreferencias = {
+  campoTipo: "curto" | "ambos";
+  respostasObrigatorias: boolean;
+  gerarSugestoes: boolean;
+  exibirJustificativa: boolean;
+};
+
+export async function obterPreferenciasAtendimentoIA(): Promise<AtendimentoIaPreferencias> {
+  const { data, error } = await supabase.rpc("obter_preferencias_atendimento_ia");
+  if (error) throw error;
+  return data as AtendimentoIaPreferencias;
+}
+
+export async function salvarPreferenciasAtendimentoIA(
+  prefs: AtendimentoIaPreferencias,
+): Promise<void> {
+  const { error } = await supabase.rpc("salvar_preferencias_atendimento_ia", {
+    p_campo_tipo: prefs.campoTipo,
+    p_respostas_obrigatorias: prefs.respostasObrigatorias,
+    p_gerar_sugestoes: prefs.gerarSugestoes,
+    p_exibir_justificativa: prefs.exibirJustificativa,
+  } as never);
+  if (error) throw error;
 }
 
 /** Contexto salvo pelo usuário para reutilização em futuros Atendimentos IA. */

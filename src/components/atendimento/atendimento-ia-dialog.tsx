@@ -20,18 +20,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   gerarAtendimentoComIA,
   listarContextosAtendimentoIA,
   salvarContextoAtendimentoIA,
   excluirContextoAtendimentoIA,
+  obterPreferenciasAtendimentoIA,
+  salvarPreferenciasAtendimentoIA,
   ATENDIMENTO_IA_MAX_FILE_BYTES,
 } from "@/lib/reintegra-api";
-import type { AtendimentoFormField, AtendimentoIaContexto } from "@/lib/reintegra-api";
+import type {
+  AtendimentoFormField,
+  AtendimentoIaContexto,
+  AtendimentoIaPreferencias,
+} from "@/lib/reintegra-api";
 
 /** Valor reservado para a opção "criar um novo contexto" no seletor —
  * nenhum contexto salvo pode ter esse id (são uuids gerados pelo banco). */
@@ -105,6 +120,33 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
   // busca interna para quando houver muitos contextos.
   const [contextoPopoverAberto, setContextoPopoverAberto] = useState(false);
   const [buscaContexto, setBuscaContexto] = useState("");
+
+  // Ajuste doc (AJUSTE 13) — "Configurações opcionais", persistidas por
+  // usuário para se manterem em usos futuros.
+  const [configOpen, setConfigOpen] = useState(false);
+  const [prefs, setPrefs] = useState<AtendimentoIaPreferencias>({
+    campoTipo: "curto",
+    respostasObrigatorias: false,
+    gerarSugestoes: true,
+    exibirJustificativa: false,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    obterPreferenciasAtendimentoIA()
+      .then(setPrefs)
+      .catch(() => {
+        // silencioso — mantém os padrões se falhar ao carregar
+      });
+  }, [open]);
+
+  const atualizarPrefs = (patch: Partial<AtendimentoIaPreferencias>) => {
+    const novo = { ...prefs, ...patch };
+    setPrefs(novo);
+    salvarPreferenciasAtendimentoIA(novo).catch(() => {
+      toast.error("Não foi possível salvar a preferência.");
+    });
+  };
 
   const carregarContextos = async () => {
     setContextosCarregando(true);
@@ -211,11 +253,16 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
     }
     setGerando(true);
     try {
-      const campos = await gerarAtendimentoComIA({
+      const camposBrutos = await gerarAtendimentoComIA({
         personName: personName.trim(),
         context: context.trim(),
         file,
+        campoTipo: prefs.campoTipo,
+        gerarSugestoes: prefs.gerarSugestoes,
       });
+      // Ajuste doc (AJUSTE 13) — aplica a preferência de respostas
+      // opcionais/obrigatórias (padrão: opcionais) já na geração.
+      const campos = camposBrutos.map((c) => ({ ...c, required: prefs.respostasObrigatorias }));
       toast.success("Formulário gerado pelo Atendimento IA");
       onGenerated({ personName: personName.trim(), context: context.trim(), campos, file });
       setPersonName("");
@@ -397,6 +444,78 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                   >
                     Cancelar
                   </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Ajuste doc (AJUSTE 13) — Configurações opcionais, com
+                preferências mantidas por usuário para usos futuros. */}
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setConfigOpen((v) => !v)}
+              >
+                <ChevronDown
+                  className={cn("h-3.5 w-3.5 transition-transform", configOpen && "rotate-180")}
+                  aria-hidden
+                />
+                Configurações opcionais
+              </button>
+              {configOpen && (
+                <div className="space-y-2.5 rounded-md border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="cfg-campo-tipo" className="text-[11px] font-normal">
+                      Campos de resposta em texto curto ou longo
+                    </Label>
+                    <Select
+                      value={prefs.campoTipo}
+                      onValueChange={(v) => atualizarPrefs({ campoTipo: v as "curto" | "ambos" })}
+                    >
+                      <SelectTrigger id="cfg-campo-tipo" className="h-7 w-[220px] text-[11px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="curto">Sempre texto curto (compacto)</SelectItem>
+                        <SelectItem value="ambos">Curto ou longo, conforme a pergunta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="cfg-obrigatorias" className="text-[11px] font-normal">
+                      Respostas opcionais ou obrigatórias
+                    </Label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground">
+                        {prefs.respostasObrigatorias ? "Obrigatórias" : "Opcionais"}
+                      </span>
+                      <Switch
+                        id="cfg-obrigatorias"
+                        checked={prefs.respostasObrigatorias}
+                        onCheckedChange={(v) => atualizarPrefs({ respostasObrigatorias: v })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="cfg-sugestoes" className="text-[11px] font-normal">
+                      Gerar respostas sugeridas
+                    </Label>
+                    <Switch
+                      id="cfg-sugestoes"
+                      checked={prefs.gerarSugestoes}
+                      onCheckedChange={(v) => atualizarPrefs({ gerarSugestoes: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="cfg-justificativa" className="text-[11px] font-normal">
+                      Exibir justificativa das perguntas
+                    </Label>
+                    <Switch
+                      id="cfg-justificativa"
+                      checked={prefs.exibirJustificativa}
+                      onCheckedChange={(v) => atualizarPrefs({ exibirJustificativa: v })}
+                    />
+                  </div>
                 </div>
               )}
             </div>

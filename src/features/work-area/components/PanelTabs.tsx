@@ -244,16 +244,16 @@ function PanelTabButton({
   return (
     <div
       className={cn(
-        "group relative flex shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+        "group relative flex shrink-0 items-center justify-center rounded-md px-2.5 py-1.5 text-xs transition-colors",
         selected
-          ? "border-transparent bg-muted text-foreground"
-          : "border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          ? "bg-muted text-foreground"
+          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         dragging && "shadow-md ring-1 ring-institutional/60",
       )}
     >
       <button
         type="button"
-        className="flex min-w-0 items-center gap-1.5 outline-none"
+        className="flex min-w-0 items-center justify-center gap-1.5 outline-none"
         onClick={onClick}
         aria-current={selected ? "page" : undefined}
         title={panel.name}
@@ -270,10 +270,13 @@ function PanelTabButton({
         </span>
       </button>
       {actions && (
+        // Ajuste doc — o botão de 3 pontinhos não deve dividir espaço com
+        // o ícone+texto (o que os descentralizava). Fica sobreposto,
+        // aparecendo só ao passar o mouse pelo botão do painel.
         <span
           className={cn(
-            "transition-opacity",
-            selected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
+            "absolute right-1 top-1/2 -translate-y-1/2 rounded bg-inherit opacity-0 transition-opacity",
+            "group-hover:opacity-100 focus-within:opacity-100",
           )}
         >
           {actions}

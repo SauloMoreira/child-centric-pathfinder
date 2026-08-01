@@ -110,7 +110,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     // Ajuste doc — no formulário formulado pelo Atendimento IA, todas as
     // perguntas são de resposta opcional (mesmo que a IA/o campo original
     // tenha marcado "obrigatório").
-    setCampos(data.campos.map((c) => ({ ...c, required: false, requiredIf: null })));
+    setCampos(data.campos.map((c) => ({ ...c, requiredIf: null })));
     setValues({});
     setEditando(false);
     setResumo(null);

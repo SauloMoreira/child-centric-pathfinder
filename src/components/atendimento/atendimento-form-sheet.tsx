@@ -147,6 +147,8 @@ export function AtendimentoFormSheet({
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
+  // Ajuste doc (AJUSTE 12) — motor de busca dentro do seletor de categorias.
+  const [buscaCategoria, setBuscaCategoria] = useState("");
   const [campos, setCampos] = useState<AtendimentoFormField[]>([]);
   // Ajuste doc — confirmação ao fechar com alterações não salvas: guarda uma
   // "foto" do estado logo após abrir/carregar, para comparar na hora de
@@ -494,18 +496,33 @@ export function AtendimentoFormSheet({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-64 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+                className="max-h-72 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+                onCloseAutoFocus={() => setBuscaCategoria("")}
               >
-                {categoriasSelecionaveis.map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    checked={categoriaIds.includes(c.id)}
-                    onCheckedChange={() => toggleCategoria(c.id)}
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    {c.nome}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                {categoriasSelecionaveis.length > 5 && (
+                  <div className="p-1.5">
+                    <Input
+                      autoFocus
+                      value={buscaCategoria}
+                      onChange={(e) => setBuscaCategoria(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder="Buscar categoria…"
+                      className="h-7 bg-surface text-xs"
+                    />
+                  </div>
+                )}
+                {categoriasSelecionaveis
+                  .filter((c) => c.nome.toLowerCase().includes(buscaCategoria.trim().toLowerCase()))
+                  .map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c.id}
+                      checked={categoriaIds.includes(c.id)}
+                      onCheckedChange={() => toggleCategoria(c.id)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {c.nome}
+                    </DropdownMenuCheckboxItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
             {categoriaIds.length > 0 && (

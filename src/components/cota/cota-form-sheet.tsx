@@ -80,6 +80,7 @@ export function CotaFormSheet({
   const [mostrarOrientacao, setMostrarOrientacao] = useState(false);
   const [orientacaoNivel, setOrientacaoNivel] = useState<"media" | "alta">("media");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
+  const [buscaCategoria, setBuscaCategoria] = useState("");
 
   const isEdit = target?.mode === "edit";
   const pending = criar.isPending || atualizar.isPending;
@@ -301,18 +302,33 @@ export function CotaFormSheet({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-64 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+                className="max-h-72 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+                onCloseAutoFocus={() => setBuscaCategoria("")}
               >
-                {categoriasSelecionaveis.map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    checked={categoriaIds.includes(c.id)}
-                    onCheckedChange={() => toggleCategoria(c.id)}
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    {c.nome}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                {categoriasSelecionaveis.length > 5 && (
+                  <div className="p-1.5">
+                    <Input
+                      autoFocus
+                      value={buscaCategoria}
+                      onChange={(e) => setBuscaCategoria(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder="Buscar categoria…"
+                      className="h-7 bg-background text-xs"
+                    />
+                  </div>
+                )}
+                {categoriasSelecionaveis
+                  .filter((c) => c.nome.toLowerCase().includes(buscaCategoria.trim().toLowerCase()))
+                  .map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c.id}
+                      checked={categoriaIds.includes(c.id)}
+                      onCheckedChange={() => toggleCategoria(c.id)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {c.nome}
+                    </DropdownMenuCheckboxItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
             {categoriasSelecionaveis.length === 0 && !categoriasQuery.isLoading && (
