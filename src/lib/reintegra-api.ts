@@ -549,6 +549,19 @@ export async function registrarAcessoBiblioteca(itemId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Ajuste doc — favorito/contagem de um único item, para exibir a
+ *  estrelinha dentro do próprio Atendimento/Cota (fora do contexto da
+ *  listagem da Biblioteca, que já traz isso embutido por linha). */
+export async function obterFavoritoBiblioteca(
+  itemId: string,
+): Promise<{ is_favorited: boolean; favorite_count: number }> {
+  const { data, error } = await supabase.rpc("obter_favorito_biblioteca", {
+    p_item_id: itemId,
+  } as never);
+  if (error) throw error;
+  return data as { is_favorited: boolean; favorite_count: number };
+}
+
 export async function listarCategoriasBiblioteca(): Promise<BibliotecaCategoria[]> {
   const { data, error } = await supabase.rpc("listar_categorias_biblioteca");
   if (error) throw error;
