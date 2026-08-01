@@ -562,6 +562,14 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     onRequestJustification={handleGerarJustificativa}
                     justificativas={justificativas}
                     onToggleJustificativaMinimizada={handleToggleJustificativaMinimizada}
+                    onReorderFields={(activeId, overId) =>
+                      setCampos((prev) => {
+                        const oldIndex = prev.findIndex((f) => f.id === activeId);
+                        const newIndex = prev.findIndex((f) => f.id === overId);
+                        if (oldIndex < 0 || newIndex < 0) return prev;
+                        return arrayMove(prev, oldIndex, newIndex);
+                      })
+                    }
                   />
 
                   {!maisPerguntasUsado && (

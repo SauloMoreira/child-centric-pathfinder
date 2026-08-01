@@ -1,5 +1,33 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Info, ListChecks, Maximize2, Minimize2, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Info,
+  ListChecks,
+  Maximize2,
+  Minimize2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -57,6 +85,9 @@ interface FormRendererProps {
   onRequestJustification?: (fieldId: string) => void;
   justificativas?: Record<string, { texto: string; minimizada: boolean }>;
   onToggleJustificativaMinimizada?: (fieldId: string) => void;
+  /** Ajuste doc (AJUSTE 14) — arrastar a caixa da pergunta (só pelo
+   *  ícone dedicado) para trocar de posição durante o preenchimento. */
+  onReorderFields?: (activeId: string, overId: string) => void;
 }
 
 /**
@@ -86,6 +117,7 @@ export function FormRenderer({
   onRequestJustification,
   justificativas,
   onToggleJustificativaMinimizada,
+  onReorderFields,
 }: FormRendererProps) {
   const usaEtapas = fields.filter((f) => f.type === "section").length >= 2;
   const visiveis = fields.filter((f) => campoVisivel(f, values));
@@ -96,6 +128,18 @@ export function FormRenderer({
   useEffect(() => {
     setEtapaAtual(0);
   }, [fields]);
+
+  // Ajuste doc (AJUSTE 14) — arrastar caixas de pergunta durante o
+  // preenchimento (só quando onReorderFields é fornecido).
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEndFields = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id || !onReorderFields) return;
+    onReorderFields(String(active.id), String(over.id));
+  };
 
   if (fields.length === 0) {
     return (
@@ -172,7 +216,7 @@ export function FormRenderer({
     );
   }
 
-  return (
+  const listaCampos = (
     <div className="space-y-4">
       {visiveis.map((field, i) => {
         const conteudo =
@@ -229,7 +273,9 @@ export function FormRenderer({
                 />
               </div>
             )}
-            <div
+            <DraggableFieldBox
+              id={field.id}
+              enabled={!!(respostaCompacta && onReorderFields && field.type !== "section")}
               className={cn(
                 "group/campo relative",
                 respostaCompacta &&
@@ -237,57 +283,125 @@ export function FormRenderer({
                   "rounded-md border border-border bg-surface/60 p-2.5",
               )}
             >
-              {podeExcluirAqui && (
-                <button
-                  type="button"
-                  className="absolute left-1 top-0.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
-                  aria-label="Excluir pergunta"
-                  title="Excluir pergunta"
-                  onClick={() => onRemoveField(field.id)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
-              {conteudo}
-              {justificativas?.[field.id] && (
-                <div className="mt-2 rounded-md border border-warning/30 bg-warning/[0.08] p-2">
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                      <Info className="h-3 w-3" aria-hidden /> Orientação da IA
-                    </p>
-                    {onToggleJustificativaMinimizada && (
-                      <button
-                        type="button"
-                        className="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                        aria-label={justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"}
-                        title={justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"}
-                        onClick={() => onToggleJustificativaMinimizada(field.id)}
-                      >
-                        {justificativas[field.id].minimizada ? (
-                          <Maximize2 className="h-3 w-3" />
-                        ) : (
-                          <Minimize2 className="h-3 w-3" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                  {!justificativas[field.id].minimizada && (
-                    <p className="whitespace-pre-wrap text-[11px] text-foreground">
-                      {justificativas[field.id].texto}
-                    </p>
+              {({ attributes, listeners }) => (
+                <>
+                  {respostaCompacta && onReorderFields && field.type !== "section" && (
+                    <button
+                      type="button"
+                      className="absolute left-1 top-6 cursor-grab touch-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/campo:opacity-100 active:cursor-grabbing"
+                      aria-label="Arrastar para reposicionar"
+                      title="Arrastar para reposicionar"
+                      {...attributes}
+                      {...listeners}
+                    >
+                      <GripVertical className="h-3.5 w-3.5" />
+                    </button>
                   )}
-                </div>
+                  {podeExcluirAqui && (
+                    <button
+                      type="button"
+                      className="absolute left-1 top-0.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
+                      aria-label="Excluir pergunta"
+                      title="Excluir pergunta"
+                      onClick={() => onRemoveField(field.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {conteudo}
+                  {justificativas?.[field.id] && (
+                    <div className="mt-2 rounded-md border border-warning/30 bg-warning/[0.08] p-2">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                          <Info className="h-3 w-3" aria-hidden /> Orientação da IA
+                        </p>
+                        {onToggleJustificativaMinimizada && (
+                          <button
+                            type="button"
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                            aria-label={
+                              justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"
+                            }
+                            title={
+                              justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"
+                            }
+                            onClick={() => onToggleJustificativaMinimizada(field.id)}
+                          >
+                            {justificativas[field.id].minimizada ? (
+                              <Maximize2 className="h-3 w-3" />
+                            ) : (
+                              <Minimize2 className="h-3 w-3" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {!justificativas[field.id].minimizada && (
+                        <p className="whitespace-pre-wrap text-[11px] text-foreground">
+                          {justificativas[field.id].texto}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-            </div>
+            </DraggableFieldBox>
           </div>
         );
       })}
     </div>
   );
+
+  if (respostaCompacta && onReorderFields) {
+    return (
+      <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndFields}>
+        <SortableContext items={visiveis.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+          {listaCampos}
+        </SortableContext>
+      </DndContext>
+    );
+  }
+
+  return listaCampos;
 }
 
 /** Ajuste doc (AJUSTE 14) — só faz sentido pedir orientação de perguntas
  *  de fato (não seção/orientação/checklist). */
+/** Ajuste doc (AJUSTE 14) — só arrasta pelo ícone dedicado (GripVertical),
+ *  nunca pelo texto/campo de preenchimento. useSortable é sempre chamado
+ *  (regras de hooks), mas fica "disabled" quando o recurso não está
+ *  ativo (Atendimento normal, ou seções). */
+function DraggableFieldBox({
+  id,
+  enabled,
+  className,
+  children,
+}: {
+  id: string;
+  enabled: boolean;
+  className?: string;
+  children: (drag: {
+    attributes: Record<string, unknown>;
+    listeners: Record<string, unknown> | undefined;
+  }) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !enabled,
+  });
+  const style = enabled
+    ? {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+      }
+    : undefined;
+  return (
+    <div ref={enabled ? setNodeRef : undefined} style={style} className={className}>
+      {children({ attributes, listeners })}
+    </div>
+  );
+}
+
 function podeJustificar(field: AtendimentoFormField): boolean {
   return field.type !== "section" && field.type !== "orientation" && field.type !== "checklist";
 }
