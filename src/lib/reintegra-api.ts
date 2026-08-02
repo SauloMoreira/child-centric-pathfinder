@@ -402,6 +402,33 @@ export async function gerarResumoAtendimentoIA(params: {
   return resumo;
 }
 
+/** Ajuste doc — "Atendimento livre": a partir de uma narrativa livre
+ *  (sem preocupação com organização/gramática), gera um relato limpo e
+ *  coeso e, quando pertinente, uma Orientação com o que pode ser
+ *  esclarecido/complementado/questionado (incluindo sugestões de
+ *  perguntas). */
+export async function gerarRelatoAtendimentoLivre(params: {
+  personName?: string;
+  narrativa: string;
+}): Promise<{ relato: string; orientacao: string | null }> {
+  const { data, error } = await supabase.functions.invoke("atendimento-livre-gerar", {
+    body: { personName: params.personName, narrativa: params.narrativa },
+  });
+  if (error) {
+    let code: string | undefined;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx) code = (await ctx.clone().json())?.error;
+    } catch {
+      // corpo não era JSON (ou já foi consumido) — segue com o fallback abaixo
+    }
+    throw new Error(code ?? error.message ?? "AI_GATEWAY_ERROR");
+  }
+  const body = data as { relato?: string; orientacao?: string | null } | null;
+  if (!body?.relato) throw new Error("EMPTY_AI_RESPONSE");
+  return { relato: body.relato, orientacao: body.orientacao ?? null };
+}
+
 /** Limite de tamanho do arquivo anexado no Atendimento IA, conforme o doc
  *  de especificação (60MB). Só PDF é aceito. */
 export const ATENDIMENTO_IA_MAX_FILE_BYTES = 60 * 1024 * 1024;

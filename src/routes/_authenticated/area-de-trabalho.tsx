@@ -28,6 +28,7 @@ import {
   Sparkles,
   Star,
   Filter,
+  Info,
 } from "lucide-react";
 
 import {
@@ -68,6 +69,7 @@ import {
   listarBiblioteca,
   listarAutoresBiblioteca,
   alternarFavoritoBiblioteca,
+  gerarRelatoAtendimentoLivre,
   listarWorkspaceCompleto,
   obterCotaDetalhe,
   obterAtendimentoDetalhe,
@@ -146,7 +148,7 @@ import { CotaFormSheet } from "@/components/cota/cota-form-sheet";
 import { CotaDetailSheet } from "@/components/cota/cota-detail-sheet";
 import { cotaKeys } from "@/features/cota/hooks";
 import { AtendimentoFormSheet } from "@/components/atendimento/atendimento-form-sheet";
-import { AtendimentoDetailSheet } from "@/components/atendimento/atendimento-detail-sheet";
+import { AtendimentoDetailSheet, mensagemErroResumoIA } from "@/components/atendimento/atendimento-detail-sheet";
 import { atendimentoKeys } from "@/features/atendimento/hooks";
 import { AtendimentoIaDialog } from "@/components/atendimento/atendimento-ia-dialog";
 import { AtendimentoIaSheet, type AtendimentoIaResultado } from "@/components/atendimento/atendimento-ia-sheet";
@@ -1358,7 +1360,7 @@ function ColumnsBoard({
       <AtendimentoGuiadoDialog
         open={atendimentoGuiadoOpen}
         onOpenChange={setAtendimentoGuiadoOpen}
-        panelItemIds={workspace.cards.filter((c) => c.kind === "atendimento").map((c) => c.itemId)}
+        panelItemIds={cards.filter((c) => c.kind === "atendimento").map((c) => c.itemId)}
         onEscolher={(itemId) => {
           setAtendimentoGuiadoOpen(false);
           setAtendimentoDetailId(itemId);
@@ -3326,25 +3328,146 @@ function AtendimentoGuiadoDialog({
 // por IA (edge function dedicada) ainda será implementada numa próxima
 // etapa, dado o tamanho já grande deste bloco.
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// AtendimentoLivreDialog — Ajuste doc: narrativa livre → relato por IA
+// (com possível Orientação de esclarecimento acima do relato). Nunca
+// persistido — some ao fechar, mesma regra de privacidade do resto do
+// Atendimento IA.
+// -----------------------------------------------------------------------------
 function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [narrativa, setNarrativa] = useState("");
+  const [gerando, setGerando] = useState(false);
+  const [resultado, setResultado] = useState<{ relato: string; orientacao: string | null } | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setNarrativa("");
+      setResultado(null);
+      setGerando(false);
+    }
+  }, [open]);
+
+  const handleGerar = async () => {
+    if (!narrativa.trim()) {
+      toast.error("Narre o atendimento antes de concluir.");
+      return;
+    }
+    setGerando(true);
+    try {
+      const r = await gerarRelatoAtendimentoLivre({ narrativa: narrativa.trim() });
+      setResultado(r);
+    } catch (e) {
+      toast.error(mensagemErroResumoIA(e));
+    } finally {
+      setGerando(false);
+    }
+  };
+
+  const handleCopiar = async () => {
+    if (!resultado) return;
+    try {
+      await navigator.clipboard.writeText(resultado.relato);
+      toast.success("Relato copiado");
+    } catch {
+      toast.error("Não foi possível copiar o relato");
+    }
+  };
+
+  const handleOpenChange = (v: boolean) => {
+    if (!v && (narrativa.trim() || resultado)) {
+      setConfirmClose(true);
+      return;
+    }
+    onOpenChange(v);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+    <>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col">
         <DialogHeader>
-          <DialogTitle>Atendimento livre</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <AtendimentoLivreIcon className="h-4 w-4 text-institutional" />
+            Atendimento livre
+          </DialogTitle>
           <DialogDescription>
             Narre livremente o atendimento, sem se preocupar com organização, grafia ou gramática.
+            Ao concluir, a IA organiza um relato limpo e coeso a partir do que foi narrado.
           </DialogDescription>
         </DialogHeader>
-        <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          Esta modalidade ainda está sendo implementada e chegará em breve.
+
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+          <Textarea
+            value={narrativa}
+            onChange={(e) => setNarrativa(e.target.value)}
+            placeholder="Narre aqui tudo o que a pessoa atendida relatou, na ordem que for mais prática…"
+            rows={10}
+            className="resize-none bg-surface text-sm"
+            disabled={gerando || !!resultado}
+          />
+
+          {resultado?.orientacao && (
+            <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/[0.1] p-3">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-warning">
+                  Pontos que podem ser esclarecidos ou complementados
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-xs text-foreground">{resultado.orientacao}</p>
+              </div>
+            </div>
+          )}
+
+          {resultado && (
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Relato do atendimento
+              </p>
+              <p className="whitespace-pre-wrap text-xs text-foreground">{resultado.relato}</p>
+            </div>
+          )}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fechar
+
+        <DialogFooter className="shrink-0">
+          {resultado ? (
+            <Button type="button" variant="outline" onClick={handleCopiar} className="gap-1.5">
+              <Copy className="h-3.5 w-3.5" aria-hidden /> Copiar relato
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancelar
+            </Button>
+          )}
+          <Button type="button" disabled={gerando || !!resultado || !narrativa.trim()} onClick={handleGerar}>
+            {gerando && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+            Gerar relato
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza que deseja fechar?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Ao fechar, o atendimento livre narrado (e o relato gerado, se houver) será perdido.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              setConfirmClose(false);
+              onOpenChange(false);
+            }}
+          >
+            Fechar sem salvar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
