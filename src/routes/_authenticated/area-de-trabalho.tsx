@@ -27,6 +27,7 @@ import {
   Search,
   Sparkles,
   Star,
+  Filter,
 } from "lucide-react";
 
 import {
@@ -66,6 +67,7 @@ import {
   isConcurrentChangeError,
   listarBiblioteca,
   listarAutoresBiblioteca,
+  alternarFavoritoBiblioteca,
   listarWorkspaceCompleto,
   obterCotaDetalhe,
   obterAtendimentoDetalhe,
@@ -91,6 +93,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -933,6 +936,11 @@ function ColumnsBoard({
   // Atendimento IA — caixa de entrada (nome/contexto/upload) e caixa de
   // execução ephemeral (nada disso é persistido em nenhuma tabela).
   const [atendimentoIaDialogOpen, setAtendimentoIaDialogOpen] = useState(false);
+  // Ajuste doc — reformulação das modalidades: "Atendimento IA" abre um
+  // seletor entre Livre, Guiado e Dinâmico (o antigo "Atendimento IA").
+  const [modalidadePickerOpen, setModalidadePickerOpen] = useState(false);
+  const [atendimentoLivreOpen, setAtendimentoLivreOpen] = useState(false);
+  const [atendimentoGuiadoOpen, setAtendimentoGuiadoOpen] = useState(false);
   const [atendimentoIaResultado, setAtendimentoIaResultado] = useState<AtendimentoIaResultado | null>(null);
   const [atendimentoIaSheetOpen, setAtendimentoIaSheetOpen] = useState(false);
 
@@ -1021,14 +1029,15 @@ function ColumnsBoard({
             )}
           </div>
 
-          {/* Ajuste doc — "Atendimento IA": disponível para todos os usuários,
-              não só Defensores Públicos, e sempre antes de "Criar atendimento"
-              e "Criar cota". */}
+          {/* Ajuste doc — "Atendimento IA" é o gênero das 3 modalidades
+              (Livre/Guiado/Dinâmico); disponível para todos os usuários,
+              não só Defensores Públicos, e sempre antes de "Criar
+              atendimento" e "Criar cota". */}
           <Button
             type="button"
             size="sm"
             className="h-8 shrink-0 gap-1.5"
-            onClick={() => setAtendimentoIaDialogOpen(true)}
+            onClick={() => setModalidadePickerOpen(true)}
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             Atendimento IA
@@ -1334,6 +1343,29 @@ function ColumnsBoard({
           }
         }}
       />
+
+      <AtendimentoModalidadePicker
+        open={modalidadePickerOpen}
+        onOpenChange={setModalidadePickerOpen}
+        onEscolher={(modo) => {
+          setModalidadePickerOpen(false);
+          if (modo === "livre") setAtendimentoLivreOpen(true);
+          else if (modo === "guiado") setAtendimentoGuiadoOpen(true);
+          else setAtendimentoIaDialogOpen(true);
+        }}
+      />
+
+      <AtendimentoGuiadoDialog
+        open={atendimentoGuiadoOpen}
+        onOpenChange={setAtendimentoGuiadoOpen}
+        panelItemIds={workspace.cards.filter((c) => c.kind === "atendimento").map((c) => c.itemId)}
+        onEscolher={(itemId) => {
+          setAtendimentoGuiadoOpen(false);
+          setAtendimentoDetailId(itemId);
+        }}
+      />
+
+      <AtendimentoLivreDialog open={atendimentoLivreOpen} onOpenChange={setAtendimentoLivreOpen} />
 
       <AtendimentoIaDialog
         open={atendimentoIaDialogOpen}
@@ -3012,6 +3044,304 @@ function ColumnPanelPickerDialog({
           >
             {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             {verbo}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Ícones das modalidades de Atendimento — Ajuste doc (reformulação das
+// modalidades). Livre = balão sem preenchimento; Guiado = balão
+// preenchido; Dinâmico = balão preenchido + estrelinhas ao redor (junção
+// visual do ícone do Guiado com o do antigo "Atendimento IA").
+// -----------------------------------------------------------------------------
+function AtendimentoLivreIcon({ className }: { className?: string }) {
+  return <MessageSquare className={className} aria-hidden />;
+}
+
+function AtendimentoGuiadoIcon({ className }: { className?: string }) {
+  return <MessageSquare className={className} fill="currentColor" aria-hidden />;
+}
+
+function AtendimentoDinamicoIcon({ className }: { className?: string }) {
+  return (
+    <span className={cn("relative inline-flex", className)}>
+      <MessageSquare className="h-full w-full" fill="currentColor" aria-hidden />
+      <Sparkles className="absolute -right-1 -top-1 h-[55%] w-[55%] text-institutional" aria-hidden />
+    </span>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// AtendimentoModalidadePicker — Ajuste doc: ao clicar em "Atendimento
+// IA" na área de trabalho, escolher entre as 3 modalidades.
+// -----------------------------------------------------------------------------
+function AtendimentoModalidadePicker({
+  open,
+  onOpenChange,
+  onEscolher,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onEscolher: (modo: "livre" | "guiado" | "dinamico") => void;
+}) {
+  const opcoes: {
+    modo: "livre" | "guiado" | "dinamico";
+    titulo: string;
+    descricao: string;
+    Icon: (props: { className?: string }) => JSX.Element;
+  }[] = [
+    {
+      modo: "livre",
+      titulo: "Atendimento livre",
+      descricao:
+        "Narre livremente, sem se preocupar com organização ou gramática. A IA organiza um relato claro ao final.",
+      Icon: AtendimentoLivreIcon,
+    },
+    {
+      modo: "guiado",
+      titulo: "Atendimento guiado",
+      descricao: "Escolha um formulário já criado pelos Defensores Públicos para conduzir o atendimento.",
+      Icon: AtendimentoGuiadoIcon,
+    },
+    {
+      modo: "dinamico",
+      titulo: "Atendimento dinâmico",
+      descricao: "A IA formula um formulário na hora, a partir do contexto e de documentos de referência.",
+      Icon: AtendimentoDinamicoIcon,
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Atendimento IA</DialogTitle>
+          <DialogDescription>Escolha a modalidade de atendimento.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2">
+          {opcoes.map(({ modo, titulo, descricao, Icon }) => (
+            <button
+              key={modo}
+              type="button"
+              onClick={() => onEscolher(modo)}
+              className="flex items-start gap-3 rounded-md border border-border p-3 text-left transition hover:border-institutional hover:bg-institutional/[0.04]"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-sidebar-accent text-muted-foreground">
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{titulo}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{descricao}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// AtendimentoGuiadoDialog — Ajuste doc: escolher um Atendimento (modelo
+// criado por Defensor Público) para conduzir o atendimento guiado. Busca
+// com filtros de categoria, favoritos e "só neste painel". Reaproveita o
+// sistema de favoritos da Biblioteca como "acesso rápido" (favoritar um
+// atendimento aqui é o mecanismo de fixá-lo para uso futuro rápido).
+// -----------------------------------------------------------------------------
+function AtendimentoGuiadoDialog({
+  open,
+  onOpenChange,
+  panelItemIds,
+  onEscolher,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  /** Ajuste doc — "atendimentos que constam em cards de painéis
+   *  específicos da sua área de trabalho": simplificado para o painel
+   *  ATUALMENTE aberto (evita precisar buscar cards de todos os painéis
+   *  do usuário de uma vez). */
+  panelItemIds: string[];
+  onEscolher: (itemId: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [categoriaId, setCategoriaId] = useState("todas");
+  const [somenteFavoritos, setSomenteFavoritos] = useState(false);
+  const [somenteNestePainel, setSomenteNestePainel] = useState(false);
+  const qc = useQueryClient();
+
+  const categoriasQuery = useQuery({
+    queryKey: ["biblioteca-categorias"],
+    queryFn: () => listarCategoriasBiblioteca(),
+    enabled: open,
+  });
+
+  const bibQuery = useQuery({
+    queryKey: ["atendimento-guiado-picker", query, categoriaId, somenteFavoritos],
+    queryFn: () =>
+      listarBiblioteca({
+        kind: "atendimento",
+        query: query.trim() || undefined,
+        categoria_id: categoriaId === "todas" ? undefined : categoriaId,
+        favoritos_apenas: somenteFavoritos,
+        order_by: "recentes",
+        limit: 30,
+      }),
+    enabled: open,
+  });
+
+  const favoritosQuery = useQuery({
+    queryKey: ["atendimento-guiado-favoritos"],
+    queryFn: () => listarBiblioteca({ kind: "atendimento", favoritos_apenas: true, limit: 8 }),
+    enabled: open && !query.trim() && !somenteFavoritos,
+  });
+
+  const toggleFavorito = useMutation({
+    mutationFn: (itemId: string) => alternarFavoritoBiblioteca(itemId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["atendimento-guiado-picker"] });
+      qc.invalidateQueries({ queryKey: ["atendimento-guiado-favoritos"] });
+    },
+  });
+
+  const panelSet = new Set(panelItemIds);
+  const itens = (bibQuery.data ?? []).filter((i) => !somenteNestePainel || panelSet.has(i.id));
+  const acessoRapido = favoritosQuery.data ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Atendimento guiado</DialogTitle>
+          <DialogDescription>Escolha um formulário de atendimento já criado.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          {acessoRapido.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Acesso rápido (favoritos)
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {acessoRapido.map((i) => (
+                  <button
+                    key={i.id}
+                    type="button"
+                    onClick={() => onEscolher(i.id)}
+                    className="flex items-center gap-1.5 rounded-full border border-institutional/30 bg-institutional/[0.06] px-2.5 py-1 text-[11px] text-institutional hover:bg-institutional/[0.12]"
+                  >
+                    <Star className="h-3 w-3 fill-current" aria-hidden />
+                    {i.titulo}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar atendimento…" autoFocus />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Select value={categoriaId} onValueChange={setCategoriaId}>
+              <SelectTrigger className="h-7 w-[150px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas categorias</SelectItem>
+                {(categoriasQuery.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant={somenteFavoritos ? "default" : "outline"}
+              size="sm"
+              className="h-7 gap-1 text-[11px]"
+              onClick={() => setSomenteFavoritos((v) => !v)}
+            >
+              <Star className={somenteFavoritos ? "h-3 w-3 fill-current" : "h-3 w-3"} aria-hidden />
+              Favoritos
+            </Button>
+            <Button
+              type="button"
+              variant={somenteNestePainel ? "default" : "outline"}
+              size="sm"
+              className="h-7 gap-1 text-[11px]"
+              onClick={() => setSomenteNestePainel((v) => !v)}
+            >
+              <Filter className="h-3 w-3" aria-hidden />
+              Neste painel
+            </Button>
+          </div>
+          <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
+            {itens.length === 0 ? (
+              <p className="p-4 text-center text-xs text-muted-foreground">
+                Nenhum atendimento encontrado.
+              </p>
+            ) : (
+              itens.map((i) => (
+                <div
+                  key={i.id}
+                  className="flex items-start gap-2 rounded p-2 text-left text-xs hover:bg-muted"
+                >
+                  <button type="button" className="flex min-w-0 flex-1 items-start gap-2" onClick={() => onEscolher(i.id)}>
+                    <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{i.titulo}</p>
+                      <p className="truncate text-[10px] text-muted-foreground">
+                        {i.categorias.length > 0 ? i.categorias.map((c) => c.nome).join(", ") : "Sem categoria"} ·{" "}
+                        {i.owner_nome}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:text-institutional"
+                    aria-label={i.is_favorited ? "Remover dos favoritos" : "Favoritar (acesso rápido)"}
+                    title={i.is_favorited ? "Remover dos favoritos" : "Favoritar (acesso rápido)"}
+                    onClick={() => toggleFavorito.mutate(i.id)}
+                  >
+                    <Star className={i.is_favorited ? "h-3.5 w-3.5 fill-current text-institutional" : "h-3.5 w-3.5"} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// AtendimentoLivreDialog — Ajuste doc: narrativa livre → relato por IA
+// (com possível Orientação de esclarecimento acima do relato).
+// PENDENTE: esta é uma versão inicial/placeholder; a geração do relato
+// por IA (edge function dedicada) ainda será implementada numa próxima
+// etapa, dado o tamanho já grande deste bloco.
+// -----------------------------------------------------------------------------
+function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Atendimento livre</DialogTitle>
+          <DialogDescription>
+            Narre livremente o atendimento, sem se preocupar com organização, grafia ou gramática.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          Esta modalidade ainda está sendo implementada e chegará em breve.
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Fechar
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -438,7 +438,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
           <div className="mt-2 shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1 font-semibold text-institutional">
-              <Sparkles className="h-3 w-3" aria-hidden /> Gerado pelo AtendimentoIA
+              <Sparkles className="h-3 w-3" aria-hidden /> Gerado pelo Atendimento dinâmico
             </span>
           </div>
 

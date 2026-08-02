@@ -269,7 +269,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
       // Ajuste doc (AJUSTE 13) — aplica a preferência de respostas
       // opcionais/obrigatórias (padrão: opcionais) já na geração.
       const campos = camposBrutos.map((c) => ({ ...c, required: prefs.respostasObrigatorias }));
-      toast.success("Formulário gerado pelo Atendimento IA");
+      toast.success("Formulário gerado pelo Atendimento dinâmico");
       onGenerated({ personName: personName.trim(), context: context.trim(), campos, files });
       setPersonName("");
       setContext("");
@@ -288,7 +288,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-institutional" />
-            Atendimento IA
+            Atendimento dinâmico
           </DialogTitle>
           {!gerando && (
             <DialogDescription>
