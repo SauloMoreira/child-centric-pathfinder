@@ -59,7 +59,7 @@ interface AtendimentoIaDialogProps {
     personName: string;
     context: string;
     campos: AtendimentoFormField[];
-    file: File;
+    files: File[];
   }) => void;
 }
 
@@ -103,7 +103,7 @@ function mensagemErroAtendimentoIA(e: unknown): string {
 export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: AtendimentoIaDialogProps) {
   const [personName, setPersonName] = useState("");
   const [context, setContext] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [gerando, setGerando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,7 +169,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
     if (gerando) return;
     setPersonName("");
     setContext("");
-    setFile(null);
+    setFiles([]);
     setContextoSelecionadoId(NOVO_CONTEXTO);
     setSalvarAberto(false);
     setNomeParaSalvar("");
@@ -226,29 +226,35 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
     }
   };
 
-  const handleFileChange = (f: File | null) => {
-    if (!f) {
-      setFile(null);
-      return;
-    }
-    if (f.type !== "application/pdf") {
+  // Ajuste doc (AJUSTE 26) — agora é possível selecionar mais de um
+  // documento; o limite de tamanho passa a valer para a SOMA de todos.
+  const handleFilesAdd = (novos: FileList | null) => {
+    if (!novos || novos.length === 0) return;
+    const lista = Array.from(novos);
+    if (lista.some((f) => f.type !== "application/pdf")) {
       toast.error("Só é possível anexar arquivos em PDF.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    if (f.size > ATENDIMENTO_IA_MAX_FILE_BYTES) {
-      toast.error(`O arquivo excede o limite de ${formatarMB(ATENDIMENTO_IA_MAX_FILE_BYTES)}MB.`);
+    const totalAtual = files.reduce((acc, f) => acc + f.size, 0);
+    const totalNovo = totalAtual + lista.reduce((acc, f) => acc + f.size, 0);
+    if (totalNovo > ATENDIMENTO_IA_MAX_FILE_BYTES) {
+      toast.error(`O total dos arquivos excede o limite de ${formatarMB(ATENDIMENTO_IA_MAX_FILE_BYTES)}MB.`);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    setFile(f);
+    setFiles((prev) => [...prev, ...lista]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+  const handleRemoveFile = (index: number) => setFiles((prev) => prev.filter((_, i) => i !== index));
 
-  const podeGerar = personName.trim() && context.trim() && file && !gerando;
+  // Ajuste doc (AJUSTE 26) — o(s) documento(s) deixaram de ser
+  // obrigatórios: o formulário pode ser gerado só com o contexto.
+  const podeGerar = personName.trim() && context.trim() && !gerando;
 
   const handleGerar = async () => {
-    if (!file || !personName.trim() || !context.trim()) {
-      toast.error("Preencha o nome, o contexto e anexe um documento em PDF.");
+    if (!personName.trim() || !context.trim()) {
+      toast.error("Preencha o nome e o contexto.");
       return;
     }
     setGerando(true);
@@ -256,7 +262,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
       const camposBrutos = await gerarAtendimentoComIA({
         personName: personName.trim(),
         context: context.trim(),
-        file,
+        files,
         campoTipo: prefs.campoTipo,
         gerarSugestoes: prefs.gerarSugestoes,
       });
@@ -264,10 +270,10 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
       // opcionais/obrigatórias (padrão: opcionais) já na geração.
       const campos = camposBrutos.map((c) => ({ ...c, required: prefs.respostasObrigatorias }));
       toast.success("Formulário gerado pelo Atendimento IA");
-      onGenerated({ personName: personName.trim(), context: context.trim(), campos, file });
+      onGenerated({ personName: personName.trim(), context: context.trim(), campos, files });
       setPersonName("");
       setContext("");
-      setFile(null);
+      setFiles([]);
       onOpenChange(false);
     } catch (e) {
       toast.error(mensagemErroAtendimentoIA(e));
@@ -286,8 +292,8 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
           </DialogTitle>
           {!gerando && (
             <DialogDescription>
-              Anexe um documento (peça processual, ofício, decisão judicial, etc) para que, a partir
-              do contexto indicado, seja elaborado o atendimento.
+              Indique o contexto e, caso queira, selecione documentos referenciais (peça
+              processual, ofício, decisão judicial, etc) para que seja elaborado o atendimento.
             </DialogDescription>
           )}
         </DialogHeader>
@@ -521,37 +527,44 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="atendimento-ia-arquivo">Documento</Label>
-              {file ? (
-                <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs">
-                  <FileUp className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                  <span className="shrink-0 text-muted-foreground">{formatarMB(file.size)}MB</span>
-                  <button
-                    type="button"
-                    className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
-                    aria-label="Remover arquivo"
-                    onClick={() => handleFileChange(null)}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+              <Label htmlFor="atendimento-ia-arquivo">Documentos (opcional)</Label>
+              {files.length > 0 && (
+                <div className="space-y-1.5">
+                  {files.map((f, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs"
+                    >
+                      <FileUp className="h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                      <span className="shrink-0 text-muted-foreground">{formatarMB(f.size)}MB</span>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
+                        aria-label="Remover arquivo"
+                        onClick={() => handleRemoveFile(i)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <label
-                  htmlFor="atendimento-ia-arquivo"
-                  className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-surface px-3 py-4 text-xs text-muted-foreground hover:border-institutional/50 hover:text-foreground"
-                >
-                  <FileUp className="h-3.5 w-3.5" aria-hidden />
-                  Selecionar arquivo PDF (até {formatarMB(ATENDIMENTO_IA_MAX_FILE_BYTES)} MB)
-                </label>
               )}
+              <label
+                htmlFor="atendimento-ia-arquivo"
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-surface px-3 py-4 text-xs text-muted-foreground hover:border-institutional/50 hover:text-foreground"
+              >
+                <FileUp className="h-3.5 w-3.5" aria-hidden />
+                Selecionar arquivo(s) PDF (até {formatarMB(ATENDIMENTO_IA_MAX_FILE_BYTES)} MB)
+              </label>
               <input
                 ref={fileInputRef}
                 id="atendimento-ia-arquivo"
                 type="file"
                 accept="application/pdf"
+                multiple
                 className="sr-only"
-                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                onChange={(e) => handleFilesAdd(e.target.files)}
               />
             </div>
           </div>

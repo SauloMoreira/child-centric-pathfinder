@@ -74,8 +74,9 @@ export type AtendimentoIaResultado = {
   context: string;
   campos: AtendimentoFormField[];
   /** Ajuste doc — mantido em memória (nunca persistido) só para permitir
-   *  "Alterar contexto e reformular" sem pedir novo upload. */
-  file: File;
+   *  "Alterar contexto e reformular" sem pedir novo upload. Ajuste doc
+   *  (AJUSTE 26) — agora é uma lista (mais de um documento, ou nenhum). */
+  files: File[];
 };
 
 interface AtendimentoIaSheetProps {
@@ -183,7 +184,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       const novosCampos = await gerarAtendimentoComIA({
         personName: data.personName,
         context: novoContexto.trim(),
-        file: data.file,
+        files: data.files,
       });
       setCampos(novosCampos.map((c) => ({ ...c, required: false, requiredIf: null })));
       setValues({});
@@ -216,7 +217,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       const resultado = await gerarMaisPerguntasAtendimentoIA({
         personName: data.personName,
         context: contextoAtual,
-        file: data.file,
+        files: data.files,
         perguntasExistentes: perguntasAtuais,
       });
       if (resultado.campos.length > 0) {
@@ -253,7 +254,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       const texto = await gerarJustificativaAtendimentoIA({
         personName: data.personName,
         context: contextoAtual,
-        file: data.file,
+        files: data.files,
         pergunta: campo.label,
       });
       setJustificativas((prev) => ({ ...prev, [fieldId]: { texto, minimizada: false } }));

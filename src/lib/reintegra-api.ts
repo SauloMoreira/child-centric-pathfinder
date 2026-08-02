@@ -421,34 +421,46 @@ function arquivoParaBase64(file: File): Promise<string> {
   });
 }
 
+/** Ajuste doc (AJUSTE 26) — converte vários arquivos para o formato que a
+ *  Edge Function espera. Nunca são salvos em nenhum bucket/tabela —
+ *  trafegam só na chamada, convertidos para base64 no navegador. */
+async function arquivosParaBase64(
+  files: File[],
+): Promise<{ base64: string; mimeType: string }[]> {
+  return Promise.all(
+    files.map(async (file) => ({ base64: await arquivoParaBase64(file), mimeType: file.type })),
+  );
+}
+
 /**
- * Atendimento IA — a partir de um documento (PDF), do nome completo da
- * pessoa a ser atendida e de um contexto em texto livre, gera as perguntas
- * de um formulário de atendimento via Edge Function `atendimento-ia-gerar`.
- * O arquivo nunca é salvo em nenhum bucket/tabela — trafega só nessa
- * chamada, convertido para base64 no navegador.
+ * Atendimento IA — a partir de zero, um ou mais documentos (PDF), do nome
+ * da pessoa a ser atendida e de um contexto em texto livre, gera as
+ * perguntas de um formulário de atendimento via Edge Function
+ * `atendimento-ia-gerar`. Os arquivos nunca são salvos em nenhum
+ * bucket/tabela — trafegam só nessa chamada, convertidos para base64 no
+ * navegador. Ajuste doc (AJUSTE 26) — documento(s) agora são opcionais.
  */
 export async function gerarAtendimentoComIA(params: {
   personName: string;
   context: string;
-  file: File;
+  files: File[];
   /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
   campoTipo?: "curto" | "ambos";
   gerarSugestoes?: boolean;
 }): Promise<AtendimentoFormField[]> {
-  if (params.file.type !== "application/pdf") {
+  if (params.files.some((f) => f.type !== "application/pdf")) {
     throw new Error("INVALID_FILE_TYPE");
   }
-  if (params.file.size > ATENDIMENTO_IA_MAX_FILE_BYTES) {
+  const totalBytes = params.files.reduce((acc, f) => acc + f.size, 0);
+  if (totalBytes > ATENDIMENTO_IA_MAX_FILE_BYTES) {
     throw new Error("FILE_TOO_LARGE");
   }
-  const fileBase64 = await arquivoParaBase64(params.file);
+  const files = await arquivosParaBase64(params.files);
   const { data, error } = await supabase.functions.invoke("atendimento-ia-gerar", {
     body: {
       personName: params.personName,
       context: params.context,
-      fileBase64,
-      fileMimeType: params.file.type,
+      files,
       campoTipo: params.campoTipo ?? "curto",
       gerarSugestoes: params.gerarSugestoes ?? true,
     },
@@ -473,16 +485,15 @@ export async function gerarAtendimentoComIA(params: {
 export async function gerarJustificativaAtendimentoIA(params: {
   personName: string;
   context: string;
-  file: File;
+  files: File[];
   pergunta: string;
 }): Promise<string> {
-  const fileBase64 = await arquivoParaBase64(params.file);
+  const files = await arquivosParaBase64(params.files);
   const { data, error } = await supabase.functions.invoke("atendimento-ia-justificar", {
     body: {
       personName: params.personName,
       context: params.context,
-      fileBase64,
-      fileMimeType: params.file.type,
+      files,
       pergunta: params.pergunta,
     },
   });
@@ -501,25 +512,25 @@ export async function gerarJustificativaAtendimentoIA(params: {
   return justificativa;
 }
 
-/** Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": reprocessa o mesmo
- *  arquivo pedindo perguntas NOVAS e não duplicadas, até o limite da
- *  quantidade já existente. Se o conteúdo estiver esgotado, retorna sem
- *  campos e com uma justificativa (para ser exibida como Orientação). */
+/** Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": reprocessa o(s)
+ *  mesmo(s) arquivo(s) pedindo perguntas NOVAS e não duplicadas, até o
+ *  limite da quantidade já existente. Se o conteúdo estiver esgotado,
+ *  retorna sem campos e com uma justificativa (para ser exibida como
+ *  Orientação). */
 export async function gerarMaisPerguntasAtendimentoIA(params: {
   personName: string;
   context: string;
-  file: File;
+  files: File[];
   perguntasExistentes: string[];
   campoTipo?: "curto" | "ambos";
   gerarSugestoes?: boolean;
 }): Promise<{ campos: AtendimentoFormField[]; esgotado: boolean; justificativa: string | null }> {
-  const fileBase64 = await arquivoParaBase64(params.file);
+  const files = await arquivosParaBase64(params.files);
   const { data, error } = await supabase.functions.invoke("atendimento-ia-gerar", {
     body: {
       personName: params.personName,
       context: params.context,
-      fileBase64,
-      fileMimeType: params.file.type,
+      files,
       campoTipo: params.campoTipo ?? "curto",
       gerarSugestoes: params.gerarSugestoes ?? true,
       perguntasExistentes: params.perguntasExistentes,

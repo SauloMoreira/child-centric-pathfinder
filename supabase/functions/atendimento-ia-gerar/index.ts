@@ -65,7 +65,12 @@ type CampoGerado = {
 type Payload = {
   personName: string;
   context: string;
-  fileBase64: string;
+  /** Ajuste doc (AJUSTE 26) — agora opcional (o formulário pode ser
+   *  gerado só com contexto) e em lista (mais de um documento). Mantidos
+   *  fileBase64/fileMimeType (singular) só por compatibilidade com
+   *  chamadas antigas eventualmente em cache no navegador do usuário. */
+  files?: { base64: string; mimeType: string }[];
+  fileBase64?: string;
   fileMimeType?: string;
   /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
   campoTipo?: "curto" | "ambos";
@@ -79,7 +84,7 @@ type Payload = {
 
 const SYSTEM_PROMPT = `Você ajuda Defensores Públicos e suas equipes a montar formulários de atendimento ao público na Defensoria Pública do Estado do Rio Grande do Sul.
 
-A partir de um documento anexado (peça processual, minuta, ofício, e-mail etc.), do nome da pessoa que será atendida e de um contexto informado pelo usuário, elabore uma lista de perguntas relevantes e pertinentes para orientar o atendimento presencial dessa pessoa.
+A partir de um ou mais documentos de referência anexados (peça processual, minuta, ofício, e-mail etc. — pode não haver nenhum, trabalhando só com o contexto), do nome da pessoa que será atendida e de um contexto informado pelo usuário, elabore uma lista de perguntas relevantes e pertinentes para orientar o atendimento presencial dessa pessoa.
 
 Regras estritas:
 - Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem crases.
@@ -87,9 +92,9 @@ Regras estritas:
 - Todas as perguntas devem ser do tipo "text_short" (respostas curtas: nomes, datas, valores, números) ou "text_long" (relatos ou explicações mais longas). Não existe mais tipo de múltipla escolha neste formulário.
 - "sugestoesResposta": sempre que possível, proponha respostas prováveis/possíveis para a pergunta — inclusive para perguntas de texto longo, não só as de escolha praticamente única. São sugestões de PREENCHIMENTO RÁPIDO por um clique, não uma escolha obrigatória; a pessoa que preenche pode ignorá-las ou editar livremente depois. Sempre que houver alguma probabilidade razoável de resposta, tente sugerir pelo menos 3 opções distintas e plausíveis. Só omita ou deixe null quando a resposta for genuinamente imprevisível/única (ex.: nomes próprios, datas específicas, valores exatos, números de processo).
 - Sempre que alguma pergunta mencionar o nome da pessoa atendida ou de terceiros, escreva o nome em LETRAS MAIÚSCULAS dentro do texto da pergunta.
-- Gere entre 5 e 20 perguntas, cobrindo os pontos realmente relevantes ao caso descrito no documento e no contexto. Não gere perguntas genéricas demais nem redundantes.
+- Gere entre 5 e 20 perguntas, cobrindo os pontos realmente relevantes ao caso descrito no(s) documento(s) (quando houver) e no contexto. Não gere perguntas genéricas demais nem redundantes.
 - As perguntas devem ser dirigidas à pessoa atendida (quem responde é a equipe, com base no que a pessoa relatar), em português do Brasil, claras e objetivas.
-- Não inclua perguntas sobre dados que já constam obviamente do documento anexado, a menos que seja importante confirmá-los com a pessoa atendida.`;
+- Não inclua perguntas sobre dados que já constam obviamente do(s) documento(s) anexado(s), a menos que seja importante confirmá-los com a pessoa atendida.`;
 
 // Ajuste doc (AJUSTE 13) — "Configurações opcionais": ajusta o prompt do
 // sistema conforme as preferências do usuário (tipo de campo e geração
@@ -133,7 +138,7 @@ function montarPromptUsuario(
     );
   } else {
     linhas.push(
-      "Analise o documento anexado e formule as perguntas do formulário de atendimento conforme as regras do sistema.",
+      "Analise o(s) documento(s) anexado(s), se houver, e o contexto informado, e formule as perguntas do formulário de atendimento conforme as regras do sistema.",
     );
   }
   return linhas.join("\n");
@@ -196,8 +201,16 @@ Deno.serve(async (req) => {
 
   const personName = (payload.personName ?? "").trim();
   const context = (payload.context ?? "").trim();
-  const fileBase64 = payload.fileBase64 ?? "";
-  const fileMimeType = payload.fileMimeType || "application/pdf";
+  // Ajuste doc (AJUSTE 26) — normaliza para uma lista, aceitando tanto o
+  // novo formato (files[]) quanto o antigo (fileBase64 singular).
+  const files: { base64: string; mimeType: string }[] = Array.isArray(payload.files)
+    ? payload.files.filter(
+        (f): f is { base64: string; mimeType: string } =>
+          !!f && typeof f.base64 === "string" && f.base64.length > 0,
+      )
+    : payload.fileBase64
+      ? [{ base64: payload.fileBase64, mimeType: payload.fileMimeType || "application/pdf" }]
+      : [];
   const campoTipo: "curto" | "ambos" = payload.campoTipo === "ambos" ? "ambos" : "curto";
   const gerarSugestoes = payload.gerarSugestoes !== false;
   const perguntasExistentes = Array.isArray(payload.perguntasExistentes)
@@ -208,15 +221,17 @@ Deno.serve(async (req) => {
     ? Math.max(1, Math.min(perguntasExistentes.length, Number(payload.maxNovas) || perguntasExistentes.length))
     : undefined;
 
-  if (!personName || !context || !fileBase64) {
+  // Ajuste doc (AJUSTE 26) — o documento deixou de ser obrigatório: o
+  // formulário pode ser gerado só com o contexto.
+  if (!personName || !context) {
     return json({ error: "INVALID_PAYLOAD" }, 400);
   }
-  if (fileMimeType !== "application/pdf") {
+  if (files.some((f) => f.mimeType !== "application/pdf")) {
     return json({ error: "INVALID_FILE_TYPE" }, 400);
   }
-  // Tamanho aproximado do arquivo original a partir do comprimento base64.
-  const approxBytes = Math.floor((fileBase64.length * 3) / 4);
-  if (approxBytes > MAX_FILE_BYTES) {
+  // Tamanho aproximado (soma de todos os arquivos) a partir do comprimento base64.
+  const approxBytesTotal = files.reduce((acc, f) => acc + Math.floor((f.base64.length * 3) / 4), 0);
+  if (approxBytesTotal > MAX_FILE_BYTES) {
     return json({ error: "FILE_TOO_LARGE" }, 400);
   }
 
@@ -237,10 +252,13 @@ Deno.serve(async (req) => {
             role: "user",
             content: [
               { type: "text", text: montarPromptUsuario(personName, context, perguntasExistentes, maxNovas) },
-              {
-                type: "image_url",
-                image_url: { url: `data:${fileMimeType};base64,${fileBase64}` },
-              },
+              // Ajuste doc (AJUSTE 26) — um bloco image_url por documento
+              // anexado; se nenhum documento foi anexado, a IA trabalha
+              // só com o contexto informado.
+              ...files.map((f) => ({
+                type: "image_url" as const,
+                image_url: { url: `data:${f.mimeType};base64,${f.base64}` },
+              })),
             ],
           },
         ],

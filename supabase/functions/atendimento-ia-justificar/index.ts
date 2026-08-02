@@ -35,7 +35,8 @@ function json(body: unknown, status = 200) {
 type Payload = {
   personName: string;
   context: string;
-  fileBase64: string;
+  files?: { base64: string; mimeType: string }[];
+  fileBase64?: string;
   fileMimeType?: string;
   /** Rótulo da pergunta a justificar. */
   pergunta: string;
@@ -43,12 +44,12 @@ type Payload = {
 
 const SYSTEM_PROMPT = `Você ajuda Defensores Públicos e suas equipes a entender formulários de atendimento elaborados por você mesma (uma IA) na Defensoria Pública do Estado do Rio Grande do Sul.
 
-Você já formulou perguntas para um formulário de atendimento a partir de um documento anexado e de um contexto informado pelo usuário. Agora, o usuário quer entender por que UMA pergunta específica foi feita.
+Você já formulou perguntas para um formulário de atendimento a partir de um ou mais documentos de referência (pode não haver nenhum) e de um contexto informado pelo usuário. Agora, o usuário quer entender por que UMA pergunta específica foi feita.
 
 Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem crases, no formato exato: {"justificativa": "..."}.
 
 O texto de "justificativa" deve ser curto e direto (no máximo 4-5 frases), reunindo em prosa corrida:
-- o fundamento da pergunta, mencionando trechos ou referências do documento anexado sempre que possível;
+- o fundamento da pergunta, mencionando trechos ou referências do(s) documento(s) de referência sempre que possível, quando houver algum;
 - a relevância/pertinência da pergunta, indicando o grau de importância dela considerando o contexto informado pelo usuário;
 - o propósito da pergunta — para que ela serve, o que se busca descobrir com a resposta.
 
@@ -60,7 +61,7 @@ function montarPromptUsuario(personName: string, context: string, pergunta: stri
     `Contexto informado pelo usuário: ${context}`,
     `Pergunta a justificar: "${pergunta}"`,
     "",
-    "Analise o documento anexado e explique por que essa pergunta específica foi formulada.",
+    "Analise o(s) documento(s) de referência, se houver, e explique por que essa pergunta específica foi formulada.",
   ].join("\n");
 }
 
@@ -93,17 +94,23 @@ Deno.serve(async (req) => {
   const personName = (payload.personName ?? "").trim();
   const context = (payload.context ?? "").trim();
   const pergunta = (payload.pergunta ?? "").trim();
-  const fileBase64 = payload.fileBase64 ?? "";
-  const fileMimeType = payload.fileMimeType || "application/pdf";
+  const files: { base64: string; mimeType: string }[] = Array.isArray(payload.files)
+    ? payload.files.filter(
+        (f): f is { base64: string; mimeType: string } =>
+          !!f && typeof f.base64 === "string" && f.base64.length > 0,
+      )
+    : payload.fileBase64
+      ? [{ base64: payload.fileBase64, mimeType: payload.fileMimeType || "application/pdf" }]
+      : [];
 
-  if (!personName || !context || !pergunta || !fileBase64) {
+  if (!personName || !context || !pergunta) {
     return json({ error: "INVALID_PAYLOAD" }, 400);
   }
-  if (fileMimeType !== "application/pdf") {
+  if (files.some((f) => f.mimeType !== "application/pdf")) {
     return json({ error: "INVALID_FILE_TYPE" }, 400);
   }
-  const approxBytes = Math.floor((fileBase64.length * 3) / 4);
-  if (approxBytes > MAX_FILE_BYTES) {
+  const approxBytesTotal = files.reduce((acc, f) => acc + Math.floor((f.base64.length * 3) / 4), 0);
+  if (approxBytesTotal > MAX_FILE_BYTES) {
     return json({ error: "FILE_TOO_LARGE" }, 400);
   }
 
@@ -124,10 +131,10 @@ Deno.serve(async (req) => {
             role: "user",
             content: [
               { type: "text", text: montarPromptUsuario(personName, context, pergunta) },
-              {
-                type: "image_url",
-                image_url: { url: `data:${fileMimeType};base64,${fileBase64}` },
-              },
+              ...files.map((f) => ({
+                type: "image_url" as const,
+                image_url: { url: `data:${f.mimeType};base64,${f.base64}` },
+              })),
             ],
           },
         ],
