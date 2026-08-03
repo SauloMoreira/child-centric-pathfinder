@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, type ReactNode } from "react";
-import { Bold, Highlighter, Italic, PencilLine, RectangleHorizontal, RemoveFormatting, Strikethrough, Underline } from "lucide-react";
+import { Bold, Highlighter, Italic, PencilLine, RemoveFormatting, Strikethrough, Underline } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +72,6 @@ type RichTextTool =
   | "underline"
   | "strike"
   | "case"
-  | "box"
   | "highlight"
   | "editable"
   | "clear";
@@ -105,7 +104,7 @@ export function RichTextEditor({
   placeholder = "Escreva o texto da cota…",
   minHeight = "220px",
   className,
-  tools = ["bold", "italic", "underline", "strike", "case", "box", "highlight", "editable", "clear"],
+  tools = ["bold", "italic", "underline", "strike", "case", "highlight", "editable", "clear"],
   trailingToolbar,
 }: RichTextEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -162,8 +161,11 @@ export function RichTextEditor({
     emit();
   };
 
-  // Ajuste doc (AJUSTE 19) — envolve a seleção numa tag nova (usado para
-  // "circular caixa" e "cor de destaque/grifo").
+  // Ajuste doc (AJUSTE 19, com toggle do AJUSTE 17) — envolve a seleção
+  // numa tag nova (usado para "cor de destaque/grifo" e "campo
+  // editável"). Se a seleção já estiver dentro de um elemento com essa
+  // MESMA classe, desfaz (desgrifa / remove a marcação de editável) em
+  // vez de aninhar de novo.
   const wrapSelection = (tagName: string, className: string) => {
     const el = ref.current;
     if (!el) return;
@@ -172,6 +174,25 @@ export function RichTextEditor({
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
     const range = sel.getRangeAt(0);
     if (!el.contains(range.commonAncestorContainer)) return;
+
+    // Toggle: a seleção já está dentro de um span/mark com essa classe?
+    const startEl =
+      range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+        ? (range.commonAncestorContainer as Element)
+        : range.commonAncestorContainer.parentElement;
+    const existing = startEl?.closest(`.${className}`);
+    if (existing && el.contains(existing)) {
+      // Desfaz: substitui o elemento pelo próprio conteúdo (texto puro).
+      const parent = existing.parentNode;
+      if (parent) {
+        while (existing.firstChild) parent.insertBefore(existing.firstChild, existing);
+        parent.removeChild(existing);
+      }
+      sel.removeAllRanges();
+      emit();
+      return;
+    }
+
     const wrapper = document.createElement(tagName);
     wrapper.className = className;
     wrapper.appendChild(range.extractContents());
@@ -327,21 +348,21 @@ export function RichTextEditor({
             </Button>
           </>
         )}
-        {(tools.includes("box") || tools.includes("highlight") || tools.includes("clear")) && (
+        {(tools.includes("highlight") || tools.includes("editable") || tools.includes("clear")) && (
           <div className="mx-0.5 h-4 w-px bg-border" aria-hidden />
         )}
-        {tools.includes("box") && (
+        {tools.includes("editable") && (
           <Button
             type="button"
             variant="ghost"
             size="icon"
             className="h-7 w-7"
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => wrapSelection("span", "cota-boxed")}
-            aria-label="Circular caixa"
-            title="Colocar seleção numa caixa (contorno)"
+            onClick={() => wrapSelection("span", "cota-editable")}
+            aria-label="Tornar seleção um trecho editável"
+            title="Tornar seleção um trecho editável (clique novamente na seleção já editável para desfazer)"
           >
-            <RectangleHorizontal className="h-3.5 w-3.5" />
+            <PencilLine className="h-3.5 w-3.5" />
           </Button>
         )}
         {tools.includes("highlight") && (
@@ -353,23 +374,9 @@ export function RichTextEditor({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => wrapSelection("mark", "cota-highlight")}
             aria-label="Cor de destaque/grifo"
-            title="Destacar/grifar seleção"
+            title="Destacar/grifar seleção (clique novamente na seleção já grifada para desgrifar)"
           >
             <Highlighter className="h-3.5 w-3.5" />
-          </Button>
-        )}
-        {tools.includes("editable") && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => wrapSelection("span", "cota-editable")}
-            aria-label="Criar campo editável"
-            title="Tornar seleção um trecho editável por quem visualizar a cota"
-          >
-            <PencilLine className="h-3.5 w-3.5" />
           </Button>
         )}
         {tools.includes("clear") && (

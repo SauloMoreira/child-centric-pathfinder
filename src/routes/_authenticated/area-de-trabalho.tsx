@@ -1052,34 +1052,38 @@ function ColumnsBoard({
             Atendimento IA
           </Button>
           {access.accessMode === "owner" && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 shrink-0 gap-1.5"
-              onClick={() => {
-                setAtendimentoFormTarget({ mode: "create" });
-                setAtendimentoFormOpen(true);
-              }}
-            >
-              <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-              Criar atendimento
-            </Button>
-          )}
-          {access.accessMode === "owner" && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 shrink-0 gap-1.5"
-              onClick={() => {
-                setCotaFormTarget({ mode: "create" });
-                setCotaFormOpen(true);
-              }}
-            >
-              <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-              Criar cota
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 shrink-0 p-0"
+                  aria-label="Criar atendimento ou cota"
+                  title="Criar atendimento ou cota"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setAtendimentoFormTarget({ mode: "create" });
+                    setAtendimentoFormOpen(true);
+                  }}
+                >
+                  <MessageSquare className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar atendimento
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setCotaFormTarget({ mode: "create" });
+                    setCotaFormOpen(true);
+                  }}
+                >
+                  <StickyNote className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar cota
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
