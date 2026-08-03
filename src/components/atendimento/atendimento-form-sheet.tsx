@@ -879,7 +879,7 @@ export function FieldEditor({
             <RichTextEditor
               html={campo.label}
               onChange={(v) => onChange({ label: v.html })}
-              tools={["bold", "underline"]}
+              tools={["bold", "italic", "underline", "strike"]}
               placeholder="Texto de orientação para quem preenche o formulário…"
               minHeight="52px"
               className="bg-surface text-xs"
@@ -888,18 +888,18 @@ export function FieldEditor({
                   value={campo.nivelImportancia ?? "media"}
                   onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
                 >
-                  <SelectTrigger className="h-6 w-[135px] text-[11px]">
+                  <SelectTrigger className="h-6 w-[155px] text-[11px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="media">Importância: Média</SelectItem>
-                    <SelectItem value="alta">Importância: Alta</SelectItem>
+                    <SelectItem value="media">Relevância: Média</SelectItem>
+                    <SelectItem value="alta">Relevância: Alta</SelectItem>
                   </SelectContent>
                 </Select>
               }
             />
             <p className="text-[10px] text-muted-foreground">
-              Aparece em destaque no formulário. Não entra no resumo por IA nem nos PDFs gerados.
+              Aparece em destaque no modelo do atendimento.
             </p>
             {/* Ajuste doc — a Orientação também pode ser condicionada,
                 tal como já funciona para o Checklist. */}
@@ -943,12 +943,12 @@ export function FieldEditor({
                 value={campo.nivelImportancia ?? "media"}
                 onValueChange={(v) => onChange({ nivelImportancia: v as "media" | "alta" })}
               >
-                <SelectTrigger className="h-6 w-[135px] shrink-0 text-[11px]">
+                <SelectTrigger className="h-6 w-[155px] shrink-0 text-[11px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="media">Importância: Média</SelectItem>
-                  <SelectItem value="alta">Importância: Alta</SelectItem>
+                  <SelectItem value="media">Relevância: Média</SelectItem>
+                  <SelectItem value="alta">Relevância: Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

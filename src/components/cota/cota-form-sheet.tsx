@@ -315,7 +315,7 @@ export function CotaFormSheet({
               <RichTextEditor
                 html={orientacao}
                 onChange={(v) => setOrientacao(v.html)}
-                tools={["bold", "underline"]}
+                tools={["bold", "italic", "underline", "strike"]}
                 placeholder="Ex.: Indique a quantia necessária de acordo com os orçamentos apresentados pelo(a) assistido(a)."
                 minHeight="60px"
                 className="bg-background text-xs"
@@ -324,12 +324,12 @@ export function CotaFormSheet({
                     value={orientacaoNivel}
                     onValueChange={(v) => setOrientacaoNivel(v as "media" | "alta")}
                   >
-                    <SelectTrigger className="h-6 w-[135px] text-[11px]">
+                    <SelectTrigger className="h-6 w-[155px] text-[11px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="media">Importância: Média</SelectItem>
-                      <SelectItem value="alta">Importância: Alta</SelectItem>
+                      <SelectItem value="media">Relevância: Média</SelectItem>
+                      <SelectItem value="alta">Relevância: Alta</SelectItem>
                     </SelectContent>
                   </Select>
                 }
