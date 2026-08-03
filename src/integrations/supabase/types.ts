@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      atendimento_ia_preferencias: {
+        Row: {
+          campo_tipo: string
+          exibir_justificativa: boolean
+          gerar_sugestoes: boolean
+          respostas_obrigatorias: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campo_tipo?: string
+          exibir_justificativa?: boolean
+          gerar_sugestoes?: boolean
+          respostas_obrigatorias?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campo_tipo?: string
+          exibir_justificativa?: boolean
+          gerar_sugestoes?: boolean
+          respostas_obrigatorias?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comarcas: {
         Row: {
           created_at: string
@@ -250,6 +277,7 @@ export type Database = {
           id: string
           is_published: boolean
           item_id: string
+          links: Json
           orientacao: string | null
           orientacao_nivel: string
           published_at: string | null
@@ -265,6 +293,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           item_id: string
+          links?: Json
           orientacao?: string | null
           orientacao_nivel?: string
           published_at?: string | null
@@ -280,6 +309,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           item_id?: string
+          links?: Json
           orientacao?: string | null
           orientacao_nivel?: string
           published_at?: string | null
@@ -860,6 +890,7 @@ export type Database = {
           p_expected_version: number
           p_idempotency_key: string
           p_item_id: string
+          p_links?: Json
           p_orientacao?: string
           p_orientacao_nivel?: string
           p_titulo: string
@@ -975,6 +1006,7 @@ export type Database = {
           p_body_json: Json
           p_body_text: string
           p_category_ids?: string[]
+          p_links?: Json
           p_orientacao?: string
           p_orientacao_nivel?: string
           p_titulo: string
@@ -1258,6 +1290,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["content_visibility"]
         }[]
       }
+      obter_preferencias_atendimento_ia: { Args: never; Returns: Json }
       promover_admin_tecnico: {
         Args: { p_justificativa: string; p_target_user_id: string }
         Returns: Json
@@ -1360,6 +1393,15 @@ export type Database = {
       salvar_contexto_atendimento_ia: {
         Args: { p_nome: string; p_texto: string }
         Returns: string
+      }
+      salvar_preferencias_atendimento_ia: {
+        Args: {
+          p_campo_tipo: string
+          p_exibir_justificativa: boolean
+          p_gerar_sugestoes: boolean
+          p_respostas_obrigatorias: boolean
+        }
+        Returns: undefined
       }
       selecionar_contexto_defensor: {
         Args: { p_defensor_user_id: string; p_idempotency_key: string }
