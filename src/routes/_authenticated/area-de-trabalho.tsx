@@ -1083,6 +1083,84 @@ function ColumnsBoard({
           )}
         </div>
 
+        {/* Ajuste doc (AJUSTE 12) — a barra lateral com os botões de
+            gestão de colunas deixou de usar position:sticky (que o
+            usuário via como um "menu flutuante"). Agora ela é um irmão
+            de verdade, FORA do contêiner de rolagem horizontal — a
+            rolagem passa a abranger só as colunas, começando depois
+            dela. */}
+        <div className="flex min-h-0 flex-1">
+          {(access.canManageColumns || orderedColumns.length > 0) && (
+            <div className="z-10 flex shrink-0 flex-col items-center justify-start gap-1 bg-background pb-4 pl-2 pr-2 pt-1 lg:pl-3">
+              {access.canManageColumns && (
+                <button
+                  type="button"
+                  className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                  aria-label="Criar coluna"
+                  title="Criar coluna"
+                  onClick={() => {
+                    setCreatorOpen(true);
+                    // rola para o fim para o input ficar visível
+                    requestAnimationFrame(() => {
+                      const el = boardScrollRef.current;
+                      if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                    });
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+              )}
+              {orderedColumns.length > 0 && (
+                <button
+                  type="button"
+                  className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                  aria-label="Compactar todas as colunas"
+                  title="Compactar todas as colunas"
+                  onClick={collapseAllColumns}
+                >
+                  <ChevronsLeft className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {orderedColumns.length > 0 && (
+                <button
+                  type="button"
+                  className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                  aria-label="Expandir todas as colunas"
+                  title="Expandir todas as colunas"
+                  onClick={expandAllColumns}
+                >
+                  <ChevronsRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {orderedColumns.length > 0 && (
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground",
+                    !colunasAlturaNatural && "bg-institutional/[0.08] text-institutional",
+                  )}
+                  aria-label={
+                    colunasAlturaNatural
+                      ? "Ajustar colunas à altura da tela"
+                      : "Permitir colunas maiores que a tela"
+                  }
+                  title={
+                    colunasAlturaNatural
+                      ? "Ajustar colunas à altura da tela"
+                      : "Permitir colunas maiores que a tela"
+                  }
+                  onClick={() => setColunasAlturaNatural((v) => !v)}
+                >
+                  {colunasAlturaNatural ? (
+                    <FoldVertical className="h-3.5 w-3.5" />
+                  ) : (
+                    <UnfoldVertical className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Espelho da barra de rolagem horizontal, acima das colunas — ajuda
             quando a barra de baixo sai da área visível da tela. */}
         {boardOverflows && (
@@ -1117,76 +1195,6 @@ function ColumnsBoard({
                 colunasAlturaNatural ? "h-auto items-start" : "h-full",
               )}
             >
-              {(access.canManageColumns || orderedColumns.length > 0) && (
-                <div className="sticky left-0 z-10 -mr-2.5 flex shrink-0 flex-col items-center justify-start gap-1 rounded-md bg-background/95 pt-1 backdrop-blur-sm">
-                  {access.canManageColumns && (
-                    <button
-                      type="button"
-                      className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                      aria-label="Criar coluna"
-                      title="Criar coluna"
-                      onClick={() => {
-                        setCreatorOpen(true);
-                        // rola para o fim para o input ficar visível
-                        requestAnimationFrame(() => {
-                          const el = boardScrollRef.current;
-                          if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
-                        });
-                      }}
-                    >
-                      <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    </button>
-                  )}
-                  {orderedColumns.length > 0 && (
-                    <button
-                      type="button"
-                      className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                      aria-label="Compactar todas as colunas"
-                      title="Compactar todas as colunas"
-                      onClick={collapseAllColumns}
-                    >
-                      <ChevronsLeft className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  {orderedColumns.length > 0 && (
-                    <button
-                      type="button"
-                      className="rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                      aria-label="Expandir todas as colunas"
-                      title="Expandir todas as colunas"
-                      onClick={expandAllColumns}
-                    >
-                      <ChevronsRight className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  {orderedColumns.length > 0 && (
-                    <button
-                      type="button"
-                      className={cn(
-                        "rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground",
-                        !colunasAlturaNatural && "bg-institutional/[0.08] text-institutional",
-                      )}
-                      aria-label={
-                        colunasAlturaNatural
-                          ? "Ajustar colunas à altura da tela"
-                          : "Permitir colunas maiores que a tela"
-                      }
-                      title={
-                        colunasAlturaNatural
-                          ? "Ajustar colunas à altura da tela"
-                          : "Permitir colunas maiores que a tela"
-                      }
-                      onClick={() => setColunasAlturaNatural((v) => !v)}
-                    >
-                      {colunasAlturaNatural ? (
-                        <FoldVertical className="h-3.5 w-3.5" />
-                      ) : (
-                        <UnfoldVertical className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              )}
               {orderedColumns.map((c, idx) => (
                 <SortableColumn
                   key={c.id}
@@ -1239,6 +1247,8 @@ function ColumnsBoard({
               )}
             </div>
           </SortableContext>
+        </div>
+          </div>
         </div>
 
         <DragOverlay dropAnimation={null}>
@@ -1621,7 +1631,10 @@ function SortableColumn(props: {
         // classe, para que a largura mínima seja mesmo a do título rotacionado.
         // Ajuste doc — um pouco mais de largura/altura e respiro para além do
         // texto, tornando a coluna compactada visualmente mais agradável.
-        className="relative flex h-full min-h-0 w-9 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface"
+        className={cn(
+          "relative flex w-9 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface",
+          alturaNatural ? "h-auto min-h-[16rem]" : "h-full min-h-0",
+        )}
       >
         <span
           aria-hidden
