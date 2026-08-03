@@ -60,6 +60,9 @@ type CampoGerado = {
   label: string;
   required: boolean;
   sugestoesResposta: string[] | null;
+  /** Ajuste doc (AJUSTE 6) — justificativa gerada JUNTO com a pergunta
+   *  (fundamento, relevância e propósito), não mais sob demanda. */
+  justificativa: string | null;
 };
 
 type Payload = {
@@ -88,9 +91,10 @@ A partir de um ou mais documentos de referência anexados (peça processual, min
 
 Regras estritas:
 - Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem crases.
-- Formato exato: {"campos": [{"label": "...", "type": "text_short" | "text_long", "required": true | false, "sugestoesResposta": ["...", "..."] }]}.
+- Formato exato: {"campos": [{"label": "...", "type": "text_short" | "text_long", "required": true | false, "sugestoesResposta": ["...", "..."], "justificativa": "..." }]}.
 - Todas as perguntas devem ser do tipo "text_short" (respostas curtas: nomes, datas, valores, números) ou "text_long" (relatos ou explicações mais longas). Não existe mais tipo de múltipla escolha neste formulário.
 - "sugestoesResposta": sempre que possível, proponha respostas prováveis/possíveis para a pergunta — inclusive para perguntas de texto longo, não só as de escolha praticamente única. São sugestões de PREENCHIMENTO RÁPIDO por um clique, não uma escolha obrigatória; a pessoa que preenche pode ignorá-las ou editar livremente depois. Sempre que houver alguma probabilidade razoável de resposta, tente sugerir pelo menos 3 opções distintas e plausíveis. Só omita ou deixe null quando a resposta for genuinamente imprevisível/única (ex.: nomes próprios, datas específicas, valores exatos, números de processo).
+- "justificativa": para CADA pergunta, escreva uma explicação curta e direta (no máximo 4-5 frases) reunindo em prosa corrida: o fundamento da pergunta (mencionando trechos ou referências do(s) documento(s) de referência sempre que possível, quando houver algum), a relevância/pertinência da pergunta considerando o contexto informado, e o propósito — para que ela serve, o que se busca descobrir com a resposta. Sempre em português do Brasil, tom técnico mas acessível, dirigido à própria equipe/Defensor Público (não à pessoa atendida). Nunca deixe null — toda pergunta tem uma justificativa.
 - Sempre que alguma pergunta mencionar o nome da pessoa atendida ou de terceiros, escreva o nome em LETRAS MAIÚSCULAS dentro do texto da pergunta.
 - Gere entre 5 e 20 perguntas, cobrindo os pontos realmente relevantes ao caso descrito no(s) documento(s) (quando houver) e no contexto. Não gere perguntas genéricas demais nem redundantes.
 - As perguntas devem ser dirigidas à pessoa atendida (quem responde é a equipe, com base no que a pessoa relatar), em português do Brasil, claras e objetivas.
@@ -115,7 +119,7 @@ function montarSystemPrompt(
     prompt += `\n- Preferência do usuário: NÃO gere "sugestoesResposta" para nenhuma pergunta — deixe sempre null.`;
   }
   if (modoMaisPerguntas) {
-    prompt += `\n- Modo "gerar mais perguntas": o usuário já respondeu/recebeu um conjunto de perguntas (listadas a seguir no prompt do usuário). Gere APENAS perguntas NOVAS, relevantes e pertinentes, que não dupliquem nem sejam próximas demais das já existentes. Gere o máximo de perguntas adicionais realmente pertinentes, mas NUNCA mais do que o limite indicado no prompt do usuário. Se o conteúdo de referência e o contexto já estiverem esgotados — ou seja, não houver nenhuma pergunta nova genuinamente relevante a acrescentar — retorne "campos": [] e preencha "esgotado": true com uma "justificativa" curta (1-3 frases) explicando por que não há mais perguntas pertinentes a fazer. Caso ainda haja perguntas pertinentes a acrescentar, retorne "esgotado": false e "justificativa": null. Formato de resposta neste modo: {"campos": [...], "esgotado": true|false, "justificativa": "..." | null}.`;
+    prompt += `\n- Modo "gerar mais perguntas": o usuário já respondeu/recebeu um conjunto de perguntas (listadas a seguir no prompt do usuário). Gere APENAS perguntas NOVAS, relevantes e pertinentes, que não dupliquem nem sejam próximas demais das já existentes. Gere o máximo de perguntas adicionais realmente pertinentes, mas NUNCA mais do que o limite indicado no prompt do usuário. Cada pergunta nova em "campos" continua precisando da sua própria "justificativa" (mesma regra já explicada). Se o conteúdo de referência e o contexto já estiverem esgotados — ou seja, não houver nenhuma pergunta nova genuinamente relevante a acrescentar — retorne "campos": [] e preencha "esgotado": true com uma "justificativa" de nível superior, curta (1-3 frases), explicando por que não há mais perguntas pertinentes a fazer (esse é um campo DIFERENTE da justificativa de cada pergunta — fica no nível raiz do JSON, não dentro de "campos"). Caso ainda haja perguntas pertinentes a acrescentar, retorne "esgotado": false e a "justificativa" de nível superior como null. Formato de resposta neste modo: {"campos": [{"label": "...", "type": "...", "required": ..., "sugestoesResposta": [...], "justificativa": "..."}], "esgotado": true|false, "justificativa": "..." | null}.`;
   }
   return prompt;
 }
@@ -172,12 +176,17 @@ function normalizarCampo(
     .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
     .map((o) => o.trim().slice(0, 200))
     .slice(0, MAX_SUGESTOES_POR_CAMPO);
+  // Ajuste doc (AJUSTE 6) — justificativa gerada junto, na mesma
+  // resposta da IA (não mais sob demanda por pergunta).
+  const justificativa =
+    typeof r.justificativa === "string" && r.justificativa.trim() ? r.justificativa.trim().slice(0, 800) : null;
   return {
     id: crypto.randomUUID(),
     type,
     label,
     required,
     sugestoesResposta: sugestoesResposta.length > 0 ? sugestoesResposta : null,
+    justificativa,
   };
 }
 

@@ -60,6 +60,7 @@ interface AtendimentoIaDialogProps {
     context: string;
     campos: AtendimentoFormField[];
     files: File[];
+    exibirJustificativaPadrao: boolean;
   }) => void;
 }
 
@@ -272,7 +273,13 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
       // opcionais/obrigatórias (padrão: opcionais) já na geração.
       const campos = camposBrutos.map((c) => ({ ...c, required: prefs.respostasObrigatorias }));
       toast.success("Formulário gerado pelo Atendimento dinâmico");
-      onGenerated({ personName: personName.trim(), context: context.trim(), campos, files });
+      onGenerated({
+        personName: personName.trim(),
+        context: context.trim(),
+        campos,
+        files,
+        exibirJustificativaPadrao: prefs.exibirJustificativa,
+      });
       setPersonName("");
       setContext("");
       setFiles([]);

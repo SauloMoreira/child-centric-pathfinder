@@ -293,6 +293,11 @@ export type AtendimentoFormField = {
    *  IA para campos de texto curto/longo, exibidas como botões de
    *  preenchimento rápido (não são opções de escolha obrigatória). */
   sugestoesResposta?: string[] | null;
+  /** Ajuste doc (AJUSTE 6) — justificativa da IA (fundamento, relevância
+   *  e propósito), gerada JUNTO com a pergunta no Atendimento Dinâmico —
+   *  não mais sob demanda por clique. Nunca persistida (só existe
+   *  durante a sessão do Atendimento IA, como o resto dos seus dados). */
+  justificativa?: string | null;
 };
 
 export type AtendimentoDetalhe = {

@@ -665,8 +665,8 @@ export function InsertFieldHere({
             <button
               type="button"
               className="flex h-4 w-4 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground opacity-0 shadow-sm transition-opacity hover:border-institutional hover:text-institutional focus-visible:opacity-100 group-hover/insert:opacity-100"
-              aria-label="Inserir campo aqui"
-              title="Inserir campo aqui"
+              aria-label="Inserir pergunta"
+              title="Inserir pergunta"
             >
               <Plus className="h-2.5 w-2.5" aria-hidden />
             </button>

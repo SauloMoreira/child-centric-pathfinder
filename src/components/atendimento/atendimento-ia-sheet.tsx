@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Pencil,
   Printer,
+  RefreshCw,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -62,7 +63,6 @@ import {
 } from "@/components/atendimento/print";
 import {
   gerarAtendimentoComIA,
-  gerarJustificativaAtendimentoIA,
   gerarMaisPerguntasAtendimentoIA,
   gerarResumoAtendimentoIA,
 } from "@/lib/reintegra-api";
@@ -77,6 +77,11 @@ export type AtendimentoIaResultado = {
    *  "Alterar contexto e reformular" sem pedir novo upload. Ajuste doc
    *  (AJUSTE 26) — agora é uma lista (mais de um documento, ou nenhum). */
   files: File[];
+  /** Ajuste doc (AJUSTE 4/6) — preferência "Justificativa das
+   *  perguntas": quando true, as orientações já vêm visíveis ao abrir o
+   *  formulário (dado que já são geradas em lote, junto com as
+   *  perguntas). */
+  exibirJustificativaPadrao: boolean;
 };
 
 interface AtendimentoIaSheetProps {
@@ -114,13 +119,11 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   // novas ou esgotamento com justificativa).
   const [maisPerguntasUsado, setMaisPerguntasUsado] = useState(false);
   const [gerandoMaisPerguntas, setGerandoMaisPerguntas] = useState(false);
-  // Ajuste doc (AJUSTE 14) — justificativa da IA por pergunta (nunca
-  // persistida, só em memória durante a sessão, como o resto do
-  // Atendimento IA).
-  const [justificativas, setJustificativas] = useState<
-    Record<string, { texto: string; minimizada: boolean }>
-  >({});
-  const [gerandoJustificativaPara, setGerandoJustificativaPara] = useState<string | null>(null);
+  // Ajuste doc (AJUSTE 6) — as justificativas já vêm prontas em
+  // field.justificativa (geradas em lote, junto com o formulário); aqui
+  // só controlamos visibilidade/minimização, nunca persistidas.
+  const [justificativasVisiveis, setJustificativasVisiveis] = useState<Record<string, boolean>>({});
+  const [justificativasMinimizadas, setJustificativasMinimizadas] = useState<Record<string, boolean>>({});
   const [novoContexto, setNovoContexto] = useState("");
   const [reformulando, setReformulando] = useState(false);
   const [contextoAtual, setContextoAtual] = useState("");
@@ -137,7 +140,19 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     setResumoDesatualizado(false);
     setContextoAtual(data.context);
     setMaisPerguntasUsado(false);
-    setJustificativas({});
+    // Ajuste doc (AJUSTE 6) — se a preferência "Justificativa das
+    // perguntas" estava ativa, todas já nascem visíveis (dado que já
+    // vêm geradas em lote, junto com o formulário).
+    if (data.exibirJustificativaPadrao) {
+      const todasVisiveis: Record<string, boolean> = {};
+      data.campos.forEach((c) => {
+        if (c.justificativa) todasVisiveis[c.id] = true;
+      });
+      setJustificativasVisiveis(todasVisiveis);
+    } else {
+      setJustificativasVisiveis({});
+    }
+    setJustificativasMinimizadas({});
   }, [open, data]);
 
   // Garante valor inicial para qualquer campo novo (gerado pela IA ou
@@ -192,7 +207,8 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
       setResumoDesatualizado(false);
       setContextoAtual(novoContexto.trim());
       setMaisPerguntasUsado(false);
-      setJustificativas({});
+      setJustificativasVisiveis({});
+      setJustificativasMinimizadas({});
       setReformularAberto(false);
       toast.success("Atendimento reformulado com o novo contexto");
     } catch (e) {
@@ -225,6 +241,15 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
           ...prev,
           ...resultado.campos.map((c) => ({ ...c, required: false, requiredIf: null })),
         ]);
+        if (data.exibirJustificativaPadrao) {
+          setJustificativasVisiveis((prev) => {
+            const next = { ...prev };
+            resultado.campos.forEach((c) => {
+              if (c.justificativa) next[c.id] = true;
+            });
+            return next;
+          });
+        }
         toast.success(`${resultado.campos.length} nova(s) pergunta(s) adicionada(s)`);
       } else if (resultado.justificativa) {
         const orientacao = novaOrientacao();
@@ -245,30 +270,15 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   // Ajuste doc (AJUSTE 14) — pede à IA a justificativa (fundamento,
   // relevância e propósito) de uma pergunta específica. Não editável nem
   // excluível pelo usuário; só minimizável.
-  const handleGerarJustificativa = async (fieldId: string) => {
-    if (!data || gerandoJustificativaPara) return;
-    const campo = campos.find((c) => c.id === fieldId);
-    if (!campo) return;
-    setGerandoJustificativaPara(fieldId);
-    try {
-      const texto = await gerarJustificativaAtendimentoIA({
-        personName: data.personName,
-        context: contextoAtual,
-        files: data.files,
-        pergunta: campo.label,
-      });
-      setJustificativas((prev) => ({ ...prev, [fieldId]: { texto, minimizada: false } }));
-    } catch (e) {
-      toast.error(mensagemErroResumoIA(e));
-    } finally {
-      setGerandoJustificativaPara(null);
-    }
+  // Ajuste doc (AJUSTE 6) — a justificativa já vem pronta em
+  // field.justificativa (gerada em lote); estes handlers só alternam
+  // visibilidade/minimização, nunca chamam a IA de novo.
+  const handleToggleJustificativaVisivel = (fieldId: string) => {
+    setJustificativasVisiveis((prev) => ({ ...prev, [fieldId]: !prev[fieldId] }));
   };
 
   const handleToggleJustificativaMinimizada = (fieldId: string) => {
-    setJustificativas((prev) =>
-      prev[fieldId] ? { ...prev, [fieldId]: { ...prev[fieldId], minimizada: !prev[fieldId].minimizada } } : prev,
-    );
+    setJustificativasMinimizadas((prev) => ({ ...prev, [fieldId]: !prev[fieldId] }));
   };
 
   // Ajuste doc — mesma inserção rápida entre campos do builder normal.
@@ -438,7 +448,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
 
           <div className="mt-2 shrink-0 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1 font-semibold text-institutional">
-              <Sparkles className="h-3 w-3" aria-hidden /> Gerado pelo Atendimento dinâmico
+              <Sparkles className="h-3 w-3" aria-hidden /> Gerado pelo Atendimento IA
             </span>
           </div>
 
@@ -482,7 +492,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                   setReformularAberto(true);
                 }}
               >
-                <Sparkles className="h-3.5 w-3.5" /> Alterar contexto e reformular
+                <RefreshCw className="h-3.5 w-3.5" /> Alterar contexto e reformular
               </Button>
             )}
             {!editando && (
@@ -561,8 +571,9 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     onRenameField={(fieldId, novoLabel) =>
                       setCampos((prev) => prev.map((c) => (c.id === fieldId ? { ...c, label: novoLabel } : c)))
                     }
-                    onRequestJustification={handleGerarJustificativa}
-                    justificativas={justificativas}
+                    justificativasVisiveis={justificativasVisiveis}
+                    onToggleJustificativaVisivel={handleToggleJustificativaVisivel}
+                    justificativasMinimizadas={justificativasMinimizadas}
                     onToggleJustificativaMinimizada={handleToggleJustificativaMinimizada}
                     onReorderFields={(activeId, overId) =>
                       setCampos((prev) => {

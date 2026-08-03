@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   GripVertical,
@@ -78,13 +79,17 @@ interface FormRendererProps {
    *  campo compacto por padrão, com botão de expandir/comprimir no hover.
    *  Não afeta o Atendimento normal (prop não passada lá). */
   respostaCompacta?: boolean;
-  /** Ajuste doc — Atendimento IA: botão discreto no hover do rótulo para
-   *  renomear a pergunta rapidamente, sem entrar em "Editar". */
+  /** Ajuste doc — Atendimento IA: botão na pilha de ícones à esquerda da
+   *  caixa da pergunta para renomear o rótulo rapidamente, sem entrar em
+   *  "Editar". */
   onRenameField?: (fieldId: string, novoLabel: string) => void;
-  /** Ajuste doc (AJUSTE 14) — botão de pedir orientação/justificativa da
-   *  IA sobre a pergunta ANTERIOR, entre uma pergunta e outra. */
-  onRequestJustification?: (fieldId: string) => void;
-  justificativas?: Record<string, { texto: string; minimizada: boolean }>;
+  /** Ajuste doc (AJUSTE 6) — as justificativas já vêm prontas em
+   *  field.justificativa (geradas em lote, junto com o formulário) — o
+   *  botão na pilha de ícones só alterna VISIBILIDADE, nunca gera nada
+   *  sob demanda. */
+  justificativasVisiveis?: Record<string, boolean>;
+  onToggleJustificativaVisivel?: (fieldId: string) => void;
+  justificativasMinimizadas?: Record<string, boolean>;
   onToggleJustificativaMinimizada?: (fieldId: string) => void;
   /** Ajuste doc (AJUSTE 14) — arrastar a caixa da pergunta (só pelo
    *  ícone dedicado) para trocar de posição durante o preenchimento. */
@@ -115,8 +120,9 @@ export function FormRenderer({
   onInsertFieldAt,
   respostaCompacta,
   onRenameField,
-  onRequestJustification,
-  justificativas,
+  justificativasVisiveis,
+  onToggleJustificativaVisivel,
+  justificativasMinimizadas,
   onToggleJustificativaMinimizada,
   onReorderFields,
 }: FormRendererProps) {
@@ -129,6 +135,18 @@ export function FormRenderer({
   useEffect(() => {
     setEtapaAtual(0);
   }, [fields]);
+
+  // Ajuste doc (AJUSTE 6) — o ícone de editar rótulo passou a viver na
+  // pilha de ícones à esquerda da caixa (junto com orientação e
+  // excluir), fora do texto do rótulo em si — precisa ser controlado
+  // daqui (fora do CampoRenderizado) para poder ficar nessa pilha.
+  const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
+  const [rotuloTemp, setRotuloTemp] = useState("");
+  const confirmarRenomeacao = (field: AtendimentoFormField) => {
+    const novo = rotuloTemp.trim();
+    if (novo && onRenameField) onRenameField(field.id, novo);
+    setRenomeandoId(null);
+  };
 
   // Ajuste doc (AJUSTE 14) — arrastar caixas de pergunta durante o
   // preenchimento (só quando onReorderFields é fornecido).
@@ -186,7 +204,6 @@ export function FormRenderer({
                 onChange={onChange}
                 disabled={disabled}
                 respostaCompacta={respostaCompacta}
-                onRenameField={onRenameField}
               />
             ),
           )}
@@ -247,38 +264,36 @@ export function FormRenderer({
               onChange={onChange}
               disabled={disabled}
               respostaCompacta={respostaCompacta}
-              onRenameField={onRenameField}
+              renomeando={renomeandoId === field.id || (!!respostaCompacta && !field.label.trim())}
+              rotuloTemp={renomeandoId === field.id ? rotuloTemp : field.label}
+              onRotuloTempChange={setRotuloTemp}
+              onConfirmarRenomeacao={() => confirmarRenomeacao(field)}
+              onCancelarRenomeacao={() => {
+                setRotuloTemp(field.label);
+                setRenomeandoId(null);
+              }}
             />
           );
 
-        // Ajuste doc — Atendimento IA: excluir pergunta com hover, botão
-        // posicionado entre o limite da caixa e a borda interna do
-        // formulário. Só perguntas de fato (não seção/orientação/checklist,
-        // que têm suas próprias ferramentas de gestão na edição).
+        // Ajuste doc (AJUSTE 6) — pilha de ícones à esquerda da caixa
+        // (editar rótulo, pedir/ocultar orientação, excluir), alça de
+        // arrastar sempre no canto superior direito. Só perguntas de
+        // fato (não seção/orientação/checklist, que têm suas próprias
+        // ferramentas de gestão na edição).
         const podeExcluirAqui =
           onRemoveField && field.type !== "section" && field.type !== "orientation" && field.type !== "checklist";
         const indiceReal = fields.findIndex((f) => f.id === field.id);
+        const podeTerOrientacao = respostaCompacta && podeJustificar(field) && !!field.justificativa;
+        const justificativaVisivel = !!justificativasVisiveis?.[field.id];
+        const justificativaMinimizada = !!justificativasMinimizadas?.[field.id];
 
         return (
           <div key={field.id}>
             {onInsertFieldAt && i > 0 && (
-              <div className="group/insertrow relative -my-1.5 flex h-4 items-center justify-center gap-1">
-                {onRequestJustification && fields[indiceReal - 1] && podeJustificar(fields[indiceReal - 1]) && (
-                  <button
-                    type="button"
-                    className="flex h-4 w-4 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground opacity-0 shadow-sm transition-opacity hover:border-warning hover:text-warning focus-visible:opacity-100 group-hover/insertrow:opacity-100"
-                    aria-label="Pedir orientação sobre a pergunta anterior"
-                    title="Pedir orientação sobre a pergunta anterior"
-                    onClick={() => onRequestJustification(fields[indiceReal - 1].id)}
-                  >
-                    <Info className="h-2.5 w-2.5" aria-hidden />
-                  </button>
-                )}
-                <InsertFieldHere
-                  onInsert={(novo) => onInsertFieldAt(indiceReal, novo)}
-                  opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
-                />
-              </div>
+              <InsertFieldHere
+                onInsert={(novo) => onInsertFieldAt(indiceReal, novo)}
+                opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+              />
             )}
             <DraggableFieldBox
               id={field.id}
@@ -287,24 +302,55 @@ export function FormRenderer({
                 "group/campo relative",
                 respostaCompacta &&
                   field.type !== "section" &&
-                  "rounded-md border border-border bg-surface/60 p-2.5",
+                  "rounded-md border border-border bg-surface/60 p-2.5 pl-7 pr-7",
               )}
             >
               {({ attributes, listeners }) => (
                 <>
-                  {respostaCompacta && onReorderFields && field.type !== "section" && (
-                    <button
-                      type="button"
-                      className="absolute left-1 top-6 cursor-grab touch-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/campo:opacity-100 active:cursor-grabbing"
-                      aria-label="Arrastar para reposicionar"
-                      title="Arrastar para reposicionar"
-                      {...attributes}
-                      {...listeners}
-                    >
-                      <GripVertical className="h-3.5 w-3.5" />
-                    </button>
+                  {respostaCompacta && field.type !== "section" && (
+                    <div className="absolute left-1 top-0.5 flex flex-col items-center gap-0.5">
+                      <button
+                        type="button"
+                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/campo:opacity-100"
+                        aria-label="Editar rótulo da pergunta"
+                        title="Editar rótulo da pergunta"
+                        onClick={() => {
+                          setRotuloTemp(field.label);
+                          setRenomeandoId(field.id);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      {podeTerOrientacao && onToggleJustificativaVisivel && (
+                        <button
+                          type="button"
+                          className={cn(
+                            "rounded p-1 transition-opacity hover:text-warning group-hover/campo:opacity-100",
+                            justificativaVisivel
+                              ? "text-warning opacity-100"
+                              : "text-muted-foreground opacity-0",
+                          )}
+                          aria-label={justificativaVisivel ? "Ocultar orientação" : "Exibir orientação"}
+                          title={justificativaVisivel ? "Ocultar orientação" : "Exibir orientação"}
+                          onClick={() => onToggleJustificativaVisivel(field.id)}
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {podeExcluirAqui && (
+                        <button
+                          type="button"
+                          className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
+                          aria-label="Excluir pergunta"
+                          title="Excluir pergunta"
+                          onClick={() => onRemoveField(field.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   )}
-                  {podeExcluirAqui && (
+                  {!respostaCompacta && podeExcluirAqui && (
                     <button
                       type="button"
                       className="absolute left-1 top-0.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/campo:opacity-100"
@@ -315,37 +361,56 @@ export function FormRenderer({
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
+                  {respostaCompacta && onReorderFields && field.type !== "section" && (
+                    <button
+                      type="button"
+                      className="absolute right-1 top-0.5 cursor-grab touch-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/campo:opacity-100 active:cursor-grabbing"
+                      aria-label="Arrastar para reposicionar"
+                      title="Arrastar para reposicionar"
+                      {...attributes}
+                      {...listeners}
+                    >
+                      <GripVertical className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   {conteudo}
-                  {justificativas?.[field.id] && (
+                  {podeTerOrientacao && justificativaVisivel && (
                     <div className="mt-2 rounded-md border border-warning/30 bg-warning/[0.08] p-2">
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                          <Info className="h-3 w-3" aria-hidden /> Orientação da IA
+                          <Info className="h-3 w-3" aria-hidden /> Orientação
                         </p>
-                        {onToggleJustificativaMinimizada && (
-                          <button
-                            type="button"
-                            className="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                            aria-label={
-                              justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"
-                            }
-                            title={
-                              justificativas[field.id].minimizada ? "Expandir orientação" : "Minimizar orientação"
-                            }
-                            onClick={() => onToggleJustificativaMinimizada(field.id)}
-                          >
-                            {justificativas[field.id].minimizada ? (
-                              <Maximize2 className="h-3 w-3" />
-                            ) : (
-                              <Minimize2 className="h-3 w-3" />
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-0.5">
+                          {onToggleJustificativaMinimizada && (
+                            <button
+                              type="button"
+                              className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                              aria-label={justificativaMinimizada ? "Expandir orientação" : "Minimizar orientação"}
+                              title={justificativaMinimizada ? "Expandir orientação" : "Minimizar orientação"}
+                              onClick={() => onToggleJustificativaMinimizada(field.id)}
+                            >
+                              {justificativaMinimizada ? (
+                                <Maximize2 className="h-3 w-3" />
+                              ) : (
+                                <Minimize2 className="h-3 w-3" />
+                              )}
+                            </button>
+                          )}
+                          {onToggleJustificativaVisivel && (
+                            <button
+                              type="button"
+                              className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                              aria-label="Ocultar orientação"
+                              title="Ocultar orientação"
+                              onClick={() => onToggleJustificativaVisivel(field.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {!justificativas[field.id].minimizada && (
-                        <p className="whitespace-pre-wrap text-[11px] text-foreground">
-                          {justificativas[field.id].texto}
-                        </p>
+                      {!justificativaMinimizada && (
+                        <p className="whitespace-pre-wrap text-[11px] text-foreground">{field.justificativa}</p>
                       )}
                     </div>
                   )}
@@ -522,7 +587,11 @@ function CampoRenderizado({
   onChange,
   disabled,
   respostaCompacta,
-  onRenameField,
+  renomeando,
+  rotuloTemp,
+  onRotuloTempChange,
+  onConfirmarRenomeacao,
+  onCancelarRenomeacao,
 }: {
   field: AtendimentoFormField;
   value: CampoValor | undefined;
@@ -531,13 +600,15 @@ function CampoRenderizado({
   onChange: (fieldId: string, value: CampoValor) => void;
   disabled?: boolean;
   respostaCompacta?: boolean;
-  /** Ajuste doc — Atendimento IA: botão discreto no hover para editar o
-   *  rótulo da pergunta rapidamente, sem precisar entrar em "Editar". */
-  onRenameField?: (fieldId: string, novoLabel: string) => void;
+  /** Ajuste doc (AJUSTE 6) — o botão de editar rótulo migrou para a
+   *  pilha de ícones à esquerda da caixa (fora deste componente); aqui
+   *  só é recebido o estado já controlado por fora. */
+  renomeando?: boolean;
+  rotuloTemp?: string;
+  onRotuloTempChange?: (v: string) => void;
+  onConfirmarRenomeacao?: () => void;
+  onCancelarRenomeacao?: () => void;
 }) {
-  const [renomeando, setRenomeando] = useState(false);
-  const [rotuloTemp, setRotuloTemp] = useState(field.label);
-
   // Fase 7 — campo calculado: nunca editável, computado ao vivo a partir
   // dos campos que ele referencia. Não passa por FieldInput.
   if (field.type === "calculated") {
@@ -552,12 +623,6 @@ function CampoRenderizado({
     );
   }
 
-  const confirmarRenomeacao = () => {
-    const novo = rotuloTemp.trim();
-    if (novo && onRenameField) onRenameField(field.id, novo);
-    setRenomeando(false);
-  };
-
   return (
     <div className="space-y-1.5">
       {renomeando ? (
@@ -565,39 +630,33 @@ function CampoRenderizado({
           <Input
             autoFocus
             value={rotuloTemp}
-            onChange={(e) => setRotuloTemp(e.target.value)}
+            onChange={(e) => onRotuloTempChange?.(e.target.value)}
+            placeholder="Rótulo da pergunta…"
             onKeyDown={(e) => {
-              if (e.key === "Enter") confirmarRenomeacao();
-              if (e.key === "Escape") {
-                setRotuloTemp(field.label);
-                setRenomeando(false);
-              }
+              if (e.key === "Enter") onConfirmarRenomeacao?.();
+              if (e.key === "Escape") onCancelarRenomeacao?.();
             }}
-            onBlur={confirmarRenomeacao}
+            onBlur={() => onConfirmarRenomeacao?.()}
             className="h-6 bg-surface text-xs"
           />
+          {/* Ajuste doc (AJUSTE 6) — botão discreto de confirmar, além do
+              Enter/blur. */}
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-institutional hover:bg-institutional/10"
+            aria-label="Confirmar rótulo"
+            title="Confirmar rótulo"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onConfirmarRenomeacao?.()}
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
         </div>
       ) : (
-        <div className="group/rotulo flex items-center gap-1">
-          <Label htmlFor={`campo-${field.id}`} className="text-xs">
-            {field.label || "(sem rótulo)"}
-            {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
-          </Label>
-          {onRenameField && (
-            <button
-              type="button"
-              className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/rotulo:opacity-100"
-              aria-label="Editar rótulo da pergunta"
-              title="Editar rótulo da pergunta"
-              onClick={() => {
-                setRotuloTemp(field.label);
-                setRenomeando(true);
-              }}
-            >
-              <Pencil className="h-3 w-3" aria-hidden />
-            </button>
-          )}
-        </div>
+        <Label htmlFor={`campo-${field.id}`} className="text-xs">
+          {field.label || "(sem rótulo)"}
+          {campoObrigatorioEfetivo(field, values) && <span className="ml-0.5 text-destructive">*</span>}
+        </Label>
       )}
       <FieldInput
         field={field}
