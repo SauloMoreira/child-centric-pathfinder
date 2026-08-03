@@ -73,7 +73,7 @@ type Payload = {
   fileBase64?: string;
   fileMimeType?: string;
   /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
-  campoTipo?: "curto" | "ambos";
+  campoTipo?: "curto" | "longo" | "ambos";
   gerarSugestoes?: boolean;
   /** Ajuste doc (AJUSTE 15) — "Gerar mais perguntas": rótulos das
    *  perguntas já existentes (para não duplicar) e o teto de novas
@@ -101,13 +101,15 @@ Regras estritas:
 // de sugestões de resposta). Ajuste doc (AJUSTE 15) — modo "gerar mais
 // perguntas".
 function montarSystemPrompt(
-  campoTipo: "curto" | "ambos",
+  campoTipo: "curto" | "longo" | "ambos",
   gerarSugestoes: boolean,
   modoMaisPerguntas: boolean,
 ): string {
   let prompt = SYSTEM_PROMPT;
   if (campoTipo === "curto") {
     prompt += `\n- Preferência do usuário: use SOMENTE o tipo "text_short" para todas as perguntas, mesmo para relatos mais longos (nunca "text_long").`;
+  } else if (campoTipo === "longo") {
+    prompt += `\n- Preferência do usuário: use SOMENTE o tipo "text_long" para todas as perguntas (nunca "text_short").`;
   }
   if (!gerarSugestoes) {
     prompt += `\n- Preferência do usuário: NÃO gere "sugestoesResposta" para nenhuma pergunta — deixe sempre null.`;
@@ -146,7 +148,7 @@ function montarPromptUsuario(
 
 function normalizarCampo(
   raw: unknown,
-  campoTipo: "curto" | "ambos",
+  campoTipo: "curto" | "longo" | "ambos",
   gerarSugestoes: boolean,
 ): CampoGerado | null {
   if (!raw || typeof raw !== "object") return null;
@@ -157,7 +159,13 @@ function normalizarCampo(
   // Reforço da preferência do usuário (o prompt já instrui a IA, isso é
   // só uma rede de segurança caso ela não obedeça 100%).
   const type: CampoGeradoTipo =
-    campoTipo === "curto" ? "text_short" : tipoRaw === "text_long" ? "text_long" : "text_short";
+    campoTipo === "curto"
+      ? "text_short"
+      : campoTipo === "longo"
+        ? "text_long"
+        : tipoRaw === "text_long"
+          ? "text_long"
+          : "text_short";
   const required = r.required === true;
   const rawSugestoes = gerarSugestoes && Array.isArray(r.sugestoesResposta) ? r.sugestoesResposta : [];
   const sugestoesResposta = rawSugestoes
@@ -211,7 +219,8 @@ Deno.serve(async (req) => {
     : payload.fileBase64
       ? [{ base64: payload.fileBase64, mimeType: payload.fileMimeType || "application/pdf" }]
       : [];
-  const campoTipo: "curto" | "ambos" = payload.campoTipo === "ambos" ? "ambos" : "curto";
+  const campoTipo: "curto" | "longo" | "ambos" =
+    payload.campoTipo === "curto" || payload.campoTipo === "longo" ? payload.campoTipo : "ambos";
   const gerarSugestoes = payload.gerarSugestoes !== false;
   const perguntasExistentes = Array.isArray(payload.perguntasExistentes)
     ? payload.perguntasExistentes.filter((p): p is string => typeof p === "string" && p.trim().length > 0)

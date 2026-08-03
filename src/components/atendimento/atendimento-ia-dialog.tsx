@@ -125,7 +125,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
   // usuário para se manterem em usos futuros.
   const [configOpen, setConfigOpen] = useState(false);
   const [prefs, setPrefs] = useState<AtendimentoIaPreferencias>({
-    campoTipo: "curto",
+    campoTipo: "ambos",
     respostasObrigatorias: false,
     gerarSugestoes: true,
     exibirJustificativa: false,
@@ -152,7 +152,9 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
     setContextosCarregando(true);
     try {
       const lista = await listarContextosAtendimentoIA();
-      setContextos(lista);
+      // Ajuste doc (AJUSTE 5) — contextos salvos em ordem alfabética.
+      const ordenada = [...lista].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      setContextos(ordenada);
     } catch {
       toast.error("Não foi possível carregar os contextos salvos.");
     } finally {
@@ -472,24 +474,25 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                 <div className="space-y-2.5 rounded-md border border-border bg-muted/30 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="cfg-campo-tipo" className="text-[11px] font-normal">
-                      Campos de resposta em texto curto ou longo
+                      Tamanho do campo de resposta:
                     </Label>
                     <Select
                       value={prefs.campoTipo}
-                      onValueChange={(v) => atualizarPrefs({ campoTipo: v as "curto" | "ambos" })}
+                      onValueChange={(v) => atualizarPrefs({ campoTipo: v as "curto" | "longo" | "ambos" })}
                     >
                       <SelectTrigger id="cfg-campo-tipo" className="h-7 w-[220px] text-[11px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="curto">Sempre texto curto (compacto)</SelectItem>
-                        <SelectItem value="ambos">Curto ou longo, conforme a pergunta</SelectItem>
+                        <SelectItem value="curto">Sempre curto</SelectItem>
+                        <SelectItem value="longo">Sempre longo</SelectItem>
+                        <SelectItem value="ambos">Curto ou longo, conforme pergunta</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="cfg-obrigatorias" className="text-[11px] font-normal">
-                      Respostas opcionais ou obrigatórias
+                      Obrigatoriedade da resposta:
                     </Label>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] text-muted-foreground">
@@ -504,7 +507,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="cfg-sugestoes" className="text-[11px] font-normal">
-                      Gerar respostas sugeridas
+                      Sugestões de resposta:
                     </Label>
                     <Switch
                       id="cfg-sugestoes"
@@ -514,7 +517,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="cfg-justificativa" className="text-[11px] font-normal">
-                      Exibir justificativa das perguntas
+                      Justificativa das perguntas:
                     </Label>
                     <Switch
                       id="cfg-justificativa"

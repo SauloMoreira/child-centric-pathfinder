@@ -472,7 +472,7 @@ export async function gerarAtendimentoComIA(params: {
   context: string;
   files: File[];
   /** Ajuste doc (AJUSTE 13) — preferências opcionais do usuário. */
-  campoTipo?: "curto" | "ambos";
+  campoTipo?: "curto" | "longo" | "ambos";
   gerarSugestoes?: boolean;
 }): Promise<AtendimentoFormField[]> {
   if (params.files.some((f) => f.type !== "application/pdf")) {
@@ -488,7 +488,7 @@ export async function gerarAtendimentoComIA(params: {
       personName: params.personName,
       context: params.context,
       files,
-      campoTipo: params.campoTipo ?? "curto",
+      campoTipo: params.campoTipo ?? "ambos",
       gerarSugestoes: params.gerarSugestoes ?? true,
     },
   });
@@ -549,7 +549,7 @@ export async function gerarMaisPerguntasAtendimentoIA(params: {
   context: string;
   files: File[];
   perguntasExistentes: string[];
-  campoTipo?: "curto" | "ambos";
+  campoTipo?: "curto" | "longo" | "ambos";
   gerarSugestoes?: boolean;
 }): Promise<{ campos: AtendimentoFormField[]; esgotado: boolean; justificativa: string | null }> {
   const files = await arquivosParaBase64(params.files);
@@ -558,7 +558,7 @@ export async function gerarMaisPerguntasAtendimentoIA(params: {
       personName: params.personName,
       context: params.context,
       files,
-      campoTipo: params.campoTipo ?? "curto",
+      campoTipo: params.campoTipo ?? "ambos",
       gerarSugestoes: params.gerarSugestoes ?? true,
       perguntasExistentes: params.perguntasExistentes,
       maxNovas: params.perguntasExistentes.length,
@@ -586,7 +586,7 @@ export async function gerarMaisPerguntasAtendimentoIA(params: {
 /** Ajuste doc — "Configurações opcionais" do Atendimento IA, persistidas
  *  por usuário. */
 export type AtendimentoIaPreferencias = {
-  campoTipo: "curto" | "ambos";
+  campoTipo: "curto" | "longo" | "ambos";
   respostasObrigatorias: boolean;
   gerarSugestoes: boolean;
   exibirJustificativa: boolean;
