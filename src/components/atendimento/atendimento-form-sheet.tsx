@@ -1376,11 +1376,12 @@ function CalcEditor({
   index: number;
   onChange: (patch: Partial<AtendimentoFormField>) => void;
 }) {
-  const calc: AtendimentoCalc = campo.calc ?? { kind: "sum", fieldIds: [], outputCurrency: false };
-  const elegiveis = camposElegiveisParaCalculo(campos, index, calc.kind);
-  const selecionados = calc.fieldIds
-    .map((id) => elegiveis.find((c) => c.id === id))
-    .filter((c): c is AtendimentoFormField => !!c);
+  // Ajuste doc — a funcionalidade de "campo calculado" passou a ser só
+  // "soma de números": a subtração foi excluída (novos campos só podem
+  // ser soma) e, por isso, a ordem dos campos selecionados deixou de
+  // importar — sem necessidade de arrastar para reordenar.
+  const calc: AtendimentoCalc = campo.calc?.kind === "sum" ? campo.calc : { kind: "sum", fieldIds: [], outputCurrency: false };
+  const elegiveis = camposElegiveisParaCalculo(campos, index, "sum");
 
   const toggleField = (fieldId: string) => {
     const next = calc.fieldIds.includes(fieldId)
@@ -1388,36 +1389,18 @@ function CalcEditor({
       : [...calc.fieldIds, fieldId];
     onChange({ calc: { ...calc, fieldIds: next } });
   };
-  // Ajuste doc (AJUSTE 3) — arrastar os campos já selecionados para
-  // reposicioná-los, deixando explícita a ordem usada no cálculo.
-  const moveSelected = (from: number, to: number) =>
-    onChange({ calc: { ...calc, fieldIds: arrayMove(calc.fieldIds, from, to) } });
 
   return (
     <div className="space-y-2 rounded-md bg-muted/30 p-2">
-      <div className="flex items-center gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tipo de cálculo</p>
-        <Select
-          value={calc.kind}
-          onValueChange={(v) => onChange({ calc: { kind: v as "sum" | "subtract", fieldIds: [] } })}
-        >
-          <SelectTrigger className="h-7 w-[170px] text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="sum">Soma</SelectItem>
-            <SelectItem value="subtract">Subtração</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Soma de números</p>
       {elegiveis.length === 0 ? (
         <p className="text-[10px] text-muted-foreground">
-          Adicione um campo Número ou Valor (R$) antes deste para {calc.kind === "sum" ? "somar" : "subtrair"}.
+          Adicione um campo Número ou Valor (R$) antes deste para somar.
         </p>
       ) : (
         <div className="space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Campos disponíveis
+            Campos a somar
           </p>
           {elegiveis.map((c) => (
             <label key={c.id} className="flex items-center gap-2 text-xs">
@@ -1425,47 +1408,6 @@ function CalcEditor({
               {c.label || "(sem rótulo)"}
             </label>
           ))}
-        </div>
-      )}
-      {selecionados.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Ordem de uso no cálculo
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            {calc.kind === "subtract"
-              ? "Arraste para reordenar: o primeiro da lista é o valor inicial, os demais são subtraídos dele, nesta ordem."
-              : "Arraste para reordenar (não afeta o resultado da soma)."}
-          </p>
-          <div className="space-y-1">
-            {selecionados.map((c, i) => (
-              <div
-                key={c.id}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const from = Number(e.dataTransfer.getData("text/plain"));
-                  if (!Number.isNaN(from) && from !== i) moveSelected(from, i);
-                }}
-                className="flex items-center gap-1.5 rounded border border-border bg-surface px-2 py-1 text-xs"
-              >
-                <GripVertical
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
-                  className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
-                  aria-hidden
-                />
-                <span className="min-w-0 flex-1 truncate">
-                  {calc.kind === "subtract" && (
-                    <span className="mr-1 font-mono text-[10px] text-muted-foreground">
-                      {i === 0 ? "valor inicial" : "− "}
-                    </span>
-                  )}
-                  {c.label || "(sem rótulo)"}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
       <div className="flex items-center gap-2">

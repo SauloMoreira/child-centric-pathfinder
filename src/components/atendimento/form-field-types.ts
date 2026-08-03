@@ -72,7 +72,7 @@ export const FIELD_TYPE_META: Record<AtendimentoFieldType, { label: string; hasO
   matrix: { label: "Matriz (linhas x colunas)", hasOptions: false },
   table_fillable: { label: "Tabela preenchível", hasOptions: false },
   repeat_group: { label: "Grupo repetível", hasOptions: false },
-  calculated: { label: "Campo calculado", hasOptions: false },
+  calculated: { label: "Soma de números", hasOptions: false },
   section: { label: "Seção", hasOptions: false },
   orientation: { label: "Orientação", hasOptions: false },
   checklist: { label: "Checklist", hasOptions: false },

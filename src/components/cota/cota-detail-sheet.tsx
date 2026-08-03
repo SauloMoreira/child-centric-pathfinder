@@ -1,6 +1,26 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Info, Link as LinkIcon, Loader2, Pencil, Sparkles, Star, StickyNote, Trash2, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Copy,
+  FileSymlink,
+  Info,
+  Link as LinkIcon,
+  Loader2,
+  Pencil,
+  Settings2,
+  Star,
+  StickyNote,
+  Trash2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { alternarFavoritoBiblioteca, obterFavoritoBiblioteca } from "@/lib/reintegra-api";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
@@ -265,24 +285,35 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                   <Copy className="h-3.5 w-3.5" /> Copiar texto
                 </Button>
                 {detalhe.data.canEdit && (
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
-                      <Pencil className="h-3.5 w-3.5" /> Editar
-                    </Button>
-                    {onInspire && (
-                      <Button variant="outline" size="sm" className="gap-1.5" onClick={onInspire}>
-                        <Sparkles className="h-3.5 w-3.5" /> Criar a nova partir desta
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        aria-label="Opções da cota"
+                      >
+                        <Settings2 className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 text-destructive hover:text-destructive"
-                      onClick={() => setConfirmDelete(true)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> Excluir
-                    </Button>
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={onEdit}>
+                        <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
+                      </DropdownMenuItem>
+                      {onInspire && (
+                        <DropdownMenuItem onClick={onInspire}>
+                          <FileSymlink className="mr-2 h-3.5 w-3.5" /> Criar nova a partir desta
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setConfirmDelete(true)}
+                      >
+                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </SheetFooter>
             </>

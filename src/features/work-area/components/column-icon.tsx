@@ -28,6 +28,22 @@ import {
   LifeBuoy,
   Puzzle,
   Handshake,
+  FileSignature,
+  UsersRound,
+  Siren,
+  Lock,
+  Award,
+  Stethoscope,
+  Pill,
+  School,
+  Baby,
+  Receipt,
+  PiggyBank,
+  ShoppingCart,
+  Banknote,
+  Leaf,
+  Shirt,
+  HandHelping,
   type LucideIcon,
 } from "lucide-react";
 
@@ -65,6 +81,26 @@ export const COLUMN_ICON_ORDER = [
   "life-buoy",
   "puzzle",
   "handshake",
+  // Ajuste doc — novos ícones temáticos (Direito Cível, Família, Direito
+  // Criminal, Prisão/Cadeia, Militar, Saúde, Remédio, Educação, Infância,
+  // Tributário, Previdenciário, Consumidor, Dinheiro, Meio Ambiente/
+  // Natureza, Gravata, Assistência Social).
+  "file-signature",
+  "users-round",
+  "siren",
+  "lock",
+  "award",
+  "stethoscope",
+  "pill",
+  "school",
+  "baby",
+  "receipt",
+  "piggy-bank",
+  "shopping-cart",
+  "banknote",
+  "leaf",
+  "shirt",
+  "hand-helping",
 ] as const;
 
 export type ColumnIconName = (typeof COLUMN_ICON_ORDER)[number];
@@ -98,6 +134,22 @@ const MAP: Record<ColumnIconName, LucideIcon> = {
   "life-buoy": LifeBuoy,
   puzzle: Puzzle,
   handshake: Handshake,
+  "file-signature": FileSignature,
+  "users-round": UsersRound,
+  siren: Siren,
+  lock: Lock,
+  award: Award,
+  stethoscope: Stethoscope,
+  pill: Pill,
+  school: School,
+  baby: Baby,
+  receipt: Receipt,
+  "piggy-bank": PiggyBank,
+  "shopping-cart": ShoppingCart,
+  banknote: Banknote,
+  leaf: Leaf,
+  shirt: Shirt,
+  "hand-helping": HandHelping,
 };
 
 /** Quantidade mínima de opções sempre disponíveis, mesmo sem nenhuma

@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Loader2, MessageSquare, Pencil, Printer, Sparkles, Star, Trash2 } from "lucide-react";
+import { Copy, FileSymlink, Loader2, MessageSquare, Pencil, Printer, Settings2, Star, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -418,24 +425,35 @@ export function AtendimentoDetailSheet({
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {detalhe.data.canEdit && (
-                      <>
-                        <Button variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
-                          <Pencil className="h-3.5 w-3.5" /> Editar modelo
-                        </Button>
-                        {onInspire && (
-                          <Button variant="outline" size="sm" className="gap-1.5" onClick={onInspire}>
-                            <Sparkles className="h-3.5 w-3.5" /> Criar novo a partir deste
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            aria-label="Opções do atendimento"
+                          >
+                            <Settings2 className="h-4 w-4" />
                           </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5 text-destructive hover:text-destructive"
-                          onClick={() => setConfirmDelete(true)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> Excluir modelo
-                        </Button>
-                      </>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={onEdit}>
+                            <Pencil className="mr-2 h-3.5 w-3.5" /> Editar modelo
+                          </DropdownMenuItem>
+                          {onInspire && (
+                            <DropdownMenuItem onClick={onInspire}>
+                              <FileSymlink className="mr-2 h-3.5 w-3.5" /> Criar novo a partir deste
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setConfirmDelete(true)}
+                          >
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir modelo
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </DialogFooter>

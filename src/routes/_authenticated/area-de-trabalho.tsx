@@ -7,6 +7,7 @@ import {
   Trash2,
   Eraser,
   FileText,
+  FileSymlink,
   StickyNote,
   MessageSquare,
   MoreVertical,
@@ -2094,6 +2095,7 @@ function EditColumnSheet(props: {
                   <ColumnIcon
                     name={icone}
                     className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    style={{ color: "var(--col-accent-strong)" }}
                   />
                   <div className="min-w-0 flex-1">
                     <h4
@@ -2339,7 +2341,7 @@ function SortableCard(props: {
                       onInspireCota();
                     }}
                   >
-                    <Sparkles className="mr-2 h-4 w-4" /> Criar nova a partir desta
+                    <FileSymlink className="mr-2 h-4 w-4" /> Criar nova a partir desta
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
@@ -2422,7 +2424,7 @@ function SortableCard(props: {
                     onInspireAtendimento();
                   }}
                 >
-                  <Sparkles className="mr-2 h-4 w-4" /> Criar novo a partir deste.
+                  <FileSymlink className="mr-2 h-4 w-4" /> Criar novo a partir deste
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
