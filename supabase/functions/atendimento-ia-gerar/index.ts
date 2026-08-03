@@ -97,7 +97,8 @@ Regras estritas:
 - "justificativa": para CADA pergunta, escreva uma explicação curta e direta (no máximo 4-5 frases) reunindo em prosa corrida: o fundamento da pergunta (mencionando trechos ou referências do(s) documento(s) de referência sempre que possível, quando houver algum), a relevância/pertinência da pergunta considerando o contexto informado, e o propósito — para que ela serve, o que se busca descobrir com a resposta. Sempre em português do Brasil, tom técnico mas acessível, dirigido à própria equipe/Defensor Público (não à pessoa atendida). Nunca deixe null — toda pergunta tem uma justificativa.
 - Sempre que alguma pergunta mencionar o nome da pessoa atendida ou de terceiros, escreva o nome em LETRAS MAIÚSCULAS dentro do texto da pergunta.
 - Gere entre 5 e 20 perguntas, cobrindo os pontos realmente relevantes ao caso descrito no(s) documento(s) (quando houver) e no contexto. Não gere perguntas genéricas demais nem redundantes.
-- As perguntas devem ser dirigidas à pessoa atendida (quem responde é a equipe, com base no que a pessoa relatar), em português do Brasil, claras e objetivas.
+- As perguntas devem ser escritas em fala DIRETA, como se estivessem sendo feitas diretamente à pessoa atendida (ex.: "Você já tentou resolver isso diretamente com a outra parte?"), para que o usuário (equipe/Defensor Público) possa apenas ler ou reproduzir a pergunta durante o atendimento, sem precisar adaptá-la. Sempre em português do Brasil, claras e objetivas.
+- Quando for necessário se referir à pessoa atendida dentro de uma pergunta, use apenas o PRIMEIRO NOME dela (não o nome completo).
 - Não inclua perguntas sobre dados que já constam obviamente do(s) documento(s) anexado(s), a menos que seja importante confirmá-los com a pessoa atendida.`;
 
 // Ajuste doc (AJUSTE 13) — "Configurações opcionais": ajusta o prompt do

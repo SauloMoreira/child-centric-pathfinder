@@ -476,16 +476,22 @@ function ColumnsBoard({
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
   // Ajuste doc — ao clicar fora do motor de busca, ele fecha sozinho.
+  // Ajuste doc (AJUSTE 23) — usa "click" em vez de "pointerdown": o
+  // pointerdown dispara ANTES do clique ser concluído, então limpar a
+  // busca nesse momento fazia a lista de cards mudar/realinhar no meio
+  // do clique, fazendo o clique "errar" o card e ele não abrir. Com
+  // "click", a ordem de bolha garante que o onClick do próprio card já
+  // foi processado antes deste listener rodar.
   useEffect(() => {
     if (!searchOpen) return;
-    const handlePointerDown = (e: PointerEvent) => {
+    const handleOutsideClick = (e: MouseEvent) => {
       if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
         setSearchQuery("");
       }
     };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
   }, [searchOpen]);
 
   // Compactar/expandir colunas (Ajuste doc) — estado só de exibição, local

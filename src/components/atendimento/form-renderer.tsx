@@ -239,7 +239,7 @@ export function FormRenderer({
       {onInsertFieldAt && visiveis.length > 0 && (
         <InsertFieldHere
           onInsert={(novo) => onInsertFieldAt(0, novo)}
-          opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+          opcoes={respostaCompacta ? ["pergunta"] : undefined}
         />
       )}
       {visiveis.map((field, i) => {
@@ -292,7 +292,7 @@ export function FormRenderer({
             {onInsertFieldAt && i > 0 && (
               <InsertFieldHere
                 onInsert={(novo) => onInsertFieldAt(indiceReal, novo)}
-                opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+                opcoes={respostaCompacta ? ["pergunta"] : undefined}
               />
             )}
             <DraggableFieldBox
@@ -423,7 +423,7 @@ export function FormRenderer({
       {onInsertFieldAt && visiveis.length > 0 && (
         <InsertFieldHere
           onInsert={(novo) => onInsertFieldAt(fields.length, novo)}
-          opcoes={respostaCompacta ? ["pergunta", "checklist"] : undefined}
+          opcoes={respostaCompacta ? ["pergunta"] : undefined}
         />
       )}
     </div>

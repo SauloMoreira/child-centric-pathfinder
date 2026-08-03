@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Copy,
-  ListChecks,
   Loader2,
   MessageSquare,
   Pencil,
@@ -47,10 +46,8 @@ import {
   hasRespostaPreenchida,
   isChoiceField,
   montarRespostasParaResumo,
-  montarTextoExpandido,
   novoCampo,
   novaOrientacao,
-  novoChecklist,
   obrigatoriosFaltando,
   removerReferenciaDaCondicao,
   valorInicial,
@@ -187,7 +184,6 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
   };
 
   const addCampo = () => setCampos((prev) => [...prev, novoCampo()]);
-  const addChecklist = () => setCampos((prev) => [...prev, novoChecklist()]);
 
   // Ajuste doc — "Alterar contexto e reformular": reprocessa o mesmo
   // arquivo original com um novo contexto, substituindo as perguntas e
@@ -389,16 +385,6 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
     }
   };
 
-  const handleCopiarTextoExpandido = async () => {
-    const texto = montarTextoExpandido(campos, values);
-    try {
-      await navigator.clipboard.writeText(texto);
-      toast.success("Texto copiado — gerado localmente, nenhuma resposta trafegou pela rede");
-    } catch {
-      toast.error("Não foi possível copiar o texto");
-    }
-  };
-
   const handleCopiarResumo = async () => {
     if (!resumo) return;
     try {
@@ -518,9 +504,6 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addCampo}>
                       <MessageSquare className="h-3.5 w-3.5" aria-hidden /> Adicionar pergunta
                     </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addChecklist}>
-                      <ListChecks className="h-3.5 w-3.5" aria-hidden /> Adicionar checklist
-                    </Button>
                   </div>
                   {campos.length === 0 ? (
                     <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
@@ -539,7 +522,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                               {index > 0 && (
                                 <InsertFieldHere
                                   onInsert={(novo) => insertCampoAt(index, novo)}
-                                  opcoes={["pergunta", "checklist"]}
+                                  opcoes={["pergunta"]}
                                 />
                               )}
                               <FieldEditor
@@ -650,11 +633,6 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                   {gerandoResumo && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                   {resumo ? (resumoDesatualizado ? "Atualizar relato" : "Concluído") : "Gerar relato"}
                 </Button>
-                {hasRespostaPreenchida(values) && (
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopiarTextoExpandido}>
-                    <Copy className="h-3.5 w-3.5" /> Copiar
-                  </Button>
-                )}
                 {resumo && (
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={handleImprimirPreenchido}>
                     <Printer className="h-3.5 w-3.5" /> Imprimir
