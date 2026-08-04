@@ -177,8 +177,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
     />
   );
 
+  // Ajuste (altura exata da tela / sem rolagem indesejada da página) —
+  // o shell usa altura FIXA (h-dvh + overflow-hidden), não apenas
+  // min-height: com min-height, o container podia crescer além do
+  // viewport e a página inteira passava a rolar em vez de só o
+  // conteúdo interno (ex.: as colunas da Área de Trabalho).
   return (
-    <div className="flex min-h-dvh bg-canvas">
+    <div className="flex h-dvh overflow-hidden bg-canvas">
       {/* Sidebar desktop */}
       <DesktopSidebar>
         <SidebarHeader collapsed={collapsed} />
@@ -204,7 +209,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-12 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden lg:px-8">
           <Button
             variant="ghost"
@@ -227,7 +232,12 @@ function AppShellInner({ children }: { children: ReactNode }) {
             </span>
           </div>
         )}
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        {/* min-h-0 impede que este item cresça com o conteúdo (o
+            padrão do flexbox é min-height: auto); overflow-y-auto faz a
+            página rolar aqui dentro quando necessário, nunca no body —
+            páginas como a Área de Trabalho, que já controlam sua própria
+            rolagem interna, ocupam h-full e nunca acionam este scroll. */}
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
     </div>
   );

@@ -293,10 +293,14 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
 
   return (
-    <div
-      className="flex min-h-[100dvh] flex-col bg-canvas"
-      style={{ ["--work-area-header-total" as string]: "12.5rem" }}
-    >
+    // Ajuste (altura exata da tela / sem rolagem indesejada na página) —
+    // h-full some dentro do <main> do AppShell, que agora tem altura FIXA
+    // (h-dvh) em vez de só min-height; min-h-0 é necessário para que este
+    // flex item não force o pai a crescer com o conteúdo (senão a rolagem
+    // volta a ser da página inteira, em vez de só do quadro/colunas — o
+    // resto da cadeia flex abaixo, incluindo o board e as colunas, já
+    // usa h-full/flex-1/min-h-0 corretamente).
+    <div className="flex h-full min-h-0 flex-col bg-canvas">
       {/* Cabeçalho institucional */}
       <header className="border-b border-border bg-surface px-4 py-4 lg:px-8 lg:py-5">
         <div className="min-w-0">
