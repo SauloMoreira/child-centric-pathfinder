@@ -297,7 +297,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-institutional" />
-            Atendimento dinâmico
+            Atendimento Dinâmico
           </DialogTitle>
           {!gerando && (
             <DialogDescription>

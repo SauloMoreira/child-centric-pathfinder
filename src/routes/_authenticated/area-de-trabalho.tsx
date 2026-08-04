@@ -1054,7 +1054,7 @@ function ColumnsBoard({
             className="h-8 shrink-0 gap-1.5"
             onClick={() => setModalidadePickerOpen(true)}
           >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" aria-hidden />
             Atendimento IA
           </Button>
           {access.accessMode === "owner" && (
@@ -3173,21 +3173,20 @@ function AtendimentoModalidadePicker({
   }[] = [
     {
       modo: "livre",
-      titulo: "Atendimento livre",
-      descricao:
-        "Narre livremente, sem se preocupar com organização ou gramática. A IA organiza um relato claro ao final.",
+      titulo: "Atendimento Livre",
+      descricao: "Narre livremente o teor do atendimento, enquanto dialoga com a pessoa assistida.",
       Icon: AtendimentoLivreIcon,
     },
     {
       modo: "guiado",
-      titulo: "Atendimento guiado",
-      descricao: "Escolha um formulário já criado pelos Defensores Públicos para conduzir o atendimento.",
+      titulo: "Atendimento Guiado",
+      descricao: "Selecione um modelo de atendimento para preenchimento.",
       Icon: AtendimentoGuiadoIcon,
     },
     {
       modo: "dinamico",
-      titulo: "Atendimento dinâmico",
-      descricao: "A IA formula um formulário na hora, a partir do contexto e de documentos de referência.",
+      titulo: "Atendimento Dinâmico",
+      descricao: "Indique contexto e documentos para elaboração dinâmica do atendimento.",
       Icon: AtendimentoDinamicoIcon,
     },
   ];
@@ -3196,7 +3195,10 @@ function AtendimentoModalidadePicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Atendimento IA</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 shrink-0 animate-pulse text-institutional" aria-hidden />
+            Atendimento IA
+          </DialogTitle>
           <DialogDescription>Escolha a modalidade de atendimento.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
@@ -3207,7 +3209,7 @@ function AtendimentoModalidadePicker({
               onClick={() => onEscolher(modo)}
               className="flex items-start gap-3 rounded-md border border-border p-3 text-left transition hover:border-institutional hover:bg-institutional/[0.04]"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-sidebar-accent text-muted-foreground">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-sidebar-accent text-sidebar-accent-foreground">
                 <Icon className="h-4 w-4" />
               </div>
               <div className="min-w-0">
@@ -3292,7 +3294,7 @@ function AtendimentoGuiadoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Atendimento guiado</DialogTitle>
+          <DialogTitle>Atendimento Guiado</DialogTitle>
           <DialogDescription>Escolha um formulário de atendimento já criado.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -3465,7 +3467,7 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AtendimentoLivreIcon className="h-4 w-4 text-institutional" />
-            Atendimento livre
+            Atendimento Livre
           </DialogTitle>
           <DialogDescription>
             Narre livremente o atendimento, sem se preocupar com organização, grafia ou gramática.
