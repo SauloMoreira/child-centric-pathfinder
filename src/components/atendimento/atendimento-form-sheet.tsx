@@ -296,6 +296,9 @@ export function AtendimentoFormSheet({
               type === "table_fillable" ? (f.tableColumns?.length ? f.tableColumns : ["Coluna 1"]) : null,
             repeatFields: type === "repeat_group" ? (f.repeatFields ?? []) : null,
             calc: type === "calculated" ? (f.calc ?? { kind: "sum", fieldIds: [], outputCurrency: false }) : null,
+            // Ajuste doc (AJUSTE 22) — respostas sugeridas so fazem sentido
+            // em Texto curto/longo; some ao trocar para outro tipo.
+            sugestoesResposta: type === "text_short" || type === "text_long" ? f.sugestoesResposta : null,
           };
         }
         // Se o campo deixou de ser de escolha, condições que dependiam
@@ -386,6 +389,10 @@ export function AtendimentoFormSheet({
             : null,
         checklistItems:
           f.type === "checklist" ? (f.checklistItems ?? []).map((i) => i.trim()).filter(Boolean) : null,
+        sugestoesResposta:
+          f.type === "text_short" || f.type === "text_long"
+            ? (f.sugestoesResposta ?? []).map((s) => s.trim()).filter(Boolean)
+            : null,
         visibleIf: validarCondicaoParaSubmissao(f.visibleIf, anteriores),
         requiredIf:
           f.type === "section" || f.type === "orientation" || f.type === "checklist"
@@ -781,6 +788,21 @@ export function FieldEditor({
     onChange({ checklistItems: checklistItems.filter((_, ci) => ci !== i) });
   const moveChecklistItem = (from: number, to: number) =>
     onChange({ checklistItems: arrayMove(checklistItems, from, to) });
+
+  // Ajuste doc (AJUSTE 22) — respostas sugeridas cadastradas manualmente
+  // pelo Defensor Público em perguntas de Texto curto/longo (mesma
+  // estrutura, sugestoesResposta, já usada pelo Atendimento IA para as
+  // sugestões geradas automaticamente — aqui só ganha uma UI de edição).
+  const sugestoesResposta = campo.sugestoesResposta ?? [];
+  const setSugestaoResposta = (i: number, value: string) => {
+    const next = [...sugestoesResposta];
+    next[i] = value;
+    onChange({ sugestoesResposta: next });
+  };
+  const addSugestaoResposta = () =>
+    onChange({ sugestoesResposta: [...sugestoesResposta, ""] });
+  const removeSugestaoResposta = (i: number) =>
+    onChange({ sugestoesResposta: sugestoesResposta.filter((_, si) => si !== i) });
 
   const moveButtons = (
     <div className="flex shrink-0 flex-col items-center gap-0.5">
@@ -1271,6 +1293,45 @@ export function FieldEditor({
                   Permitir opção "Outro" (texto livre)
                 </Label>
               </div>
+            </div>
+          )}
+
+          {(campo.type === "text_short" || campo.type === "text_long") && (
+            <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Respostas sugeridas
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Aparecem como botões de preenchimento rápido para quem preenche o atendimento; não são
+                opções obrigatórias, apenas um atalho.
+              </p>
+              {sugestoesResposta.map((s, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Input
+                    value={s}
+                    onChange={(e) => setSugestaoResposta(i, e.target.value)}
+                    placeholder="Texto da sugestão"
+                    className="h-7 bg-surface text-xs"
+                  />
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+                    aria-label="Remover sugestão"
+                    onClick={() => removeSugestaoResposta(i)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 text-[11px]"
+                onClick={addSugestaoResposta}
+              >
+                <Plus className="h-3 w-3" aria-hidden /> Adicionar sugestão
+              </Button>
             </div>
           )}
 
