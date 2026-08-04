@@ -1643,7 +1643,15 @@ function SortableColumn(props: {
         // texto, tornando a coluna compactada visualmente mais agradável.
         className={cn(
           "relative flex w-9 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface",
-          alturaNatural ? "h-auto min-h-[16rem]" : "h-full min-h-0",
+          // Ajuste doc — o título não pode mais determinar o tamanho da
+          // coluna compactada: teto de altura igual ao padrão do quadro
+          // "Criar coluna" (16rem), sem piso mínimo — uma coluna com
+          // título curto fica só do tamanho do conteúdo (ícone + título),
+          // uma com título longo trunca (ellipsis) em vez de esticar além
+          // do teto. Vale só no modo de altura natural; no modo "altura
+          // da tela" a coluna compactada continua h-full, como as demais
+          // (inalterado).
+          alturaNatural ? "h-auto max-h-[16rem]" : "h-full min-h-0",
         )}
       >
         <span
@@ -1662,7 +1670,7 @@ function SortableColumn(props: {
           <ChevronsRight className="h-3.5 w-3.5" />
         </button>
         <div
-          className="flex flex-1 min-h-0 flex-col items-center gap-1.5 overflow-hidden py-2.5"
+          className="flex min-h-0 flex-1 flex-col items-center gap-1.5 overflow-hidden py-2.5"
           title={column.nome}
         >
           {column.icone && (
@@ -1672,8 +1680,12 @@ function SortableColumn(props: {
               style={{ color: "var(--col-accent-strong)" }}
             />
           )}
+          {/* Ajuste doc — min-h-0 + flex-1 dão ao título rotacionado um
+              teto de altura concreto para truncar (ellipsis), no mesmo
+              espírito do min-w-0 + flex-1 já usado no título horizontal
+              do cabeçalho expandido logo abaixo. */}
           <span
-            className="truncate text-xs font-semibold"
+            className="min-h-0 flex-1 truncate text-xs font-semibold"
             style={{
               color: "var(--col-accent-strong)",
               writingMode: "vertical-rl",
