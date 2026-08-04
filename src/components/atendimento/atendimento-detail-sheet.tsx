@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FormRenderer } from "@/components/atendimento/form-renderer";
+import { FavoritoEstatisticasTooltip } from "@/components/biblioteca/favorito-estatisticas-tooltip";
 import {
   campoVisivel,
   hasRespostaPreenchida,
@@ -277,22 +278,24 @@ export function AtendimentoDetailSheet({
                 <DialogTitle className="flex items-start gap-2 pr-6 text-base">
                   <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
                   <span className="min-w-0 flex-1 break-words">{detalhe.data.titulo}</span>
-                  <button
-                    type="button"
-                    onClick={() => favoritar.mutate()}
-                    disabled={favoritar.isPending || !itemId}
-                    aria-label={favoritoQuery.data?.is_favorited ? "Desfavoritar" : "Favoritar"}
-                    className={cn(
-                      "flex shrink-0 items-center gap-1 rounded p-1 text-xs font-normal transition hover:bg-muted",
-                      favoritoQuery.data?.is_favorited ? "text-warning" : "text-muted-foreground",
-                    )}
-                  >
-                    <Star
-                      className={cn("h-3.5 w-3.5", favoritoQuery.data?.is_favorited && "fill-current")}
-                      aria-hidden
-                    />
-                    {favoritoQuery.data?.favorite_count ?? 0}
-                  </button>
+                  <FavoritoEstatisticasTooltip itemId={itemId} kind="atendimento">
+                    <button
+                      type="button"
+                      onClick={() => favoritar.mutate()}
+                      disabled={favoritar.isPending || !itemId}
+                      aria-label={favoritoQuery.data?.is_favorited ? "Desfavoritar" : "Favoritar"}
+                      className={cn(
+                        "flex shrink-0 items-center gap-1 rounded p-1 text-xs font-normal transition hover:bg-muted",
+                        favoritoQuery.data?.is_favorited ? "text-warning" : "text-muted-foreground",
+                      )}
+                    >
+                      <Star
+                        className={cn("h-3.5 w-3.5", favoritoQuery.data?.is_favorited && "fill-current")}
+                        aria-hidden
+                      />
+                      {favoritoQuery.data?.favorite_count ?? 0}
+                    </button>
+                  </FavoritoEstatisticasTooltip>
                 </DialogTitle>
               </DialogHeader>
 

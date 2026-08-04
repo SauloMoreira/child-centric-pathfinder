@@ -240,6 +240,7 @@ export function CotaFormSheet({
           orientacao: orientacao.trim(),
           orientacaoNivel,
           links: links.filter((l) => l.titulo.trim() && l.url.trim()),
+          origemItemId: target?.mode === "inspire" ? target.detalhe.id : undefined,
         },
         {
           onSuccess: (result) => {

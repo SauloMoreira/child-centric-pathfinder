@@ -50,6 +50,7 @@ import { cotaKeys } from "@/features/cota/hooks";
 import { AtendimentoFormSheet } from "@/components/atendimento/atendimento-form-sheet";
 import { AtendimentoDetailSheet } from "@/components/atendimento/atendimento-detail-sheet";
 import { atendimentoKeys } from "@/features/atendimento/hooks";
+import { FavoritoEstatisticasTooltip } from "@/components/biblioteca/favorito-estatisticas-tooltip";
 import {
   MoveToPanelDialog,
   type MoveToPanelTarget,
@@ -401,18 +402,20 @@ function BibliotecaCard({
         </button>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onFavoritar}
-            aria-label={item.is_favorited ? "Desfavoritar" : "Favoritar"}
-            className={cn(
-              "flex items-center gap-1 rounded p-1 text-xs transition hover:bg-muted",
-              item.is_favorited ? "text-warning" : "text-muted-foreground",
-            )}
-          >
-            <Star className={cn("h-3.5 w-3.5", item.is_favorited && "fill-current")} aria-hidden />
-            {item.favorite_count}
-          </button>
+          <FavoritoEstatisticasTooltip itemId={item.id} kind={item.kind}>
+            <button
+              type="button"
+              onClick={onFavoritar}
+              aria-label={item.is_favorited ? "Desfavoritar" : "Favoritar"}
+              className={cn(
+                "flex items-center gap-1 rounded p-1 text-xs transition hover:bg-muted",
+                item.is_favorited ? "text-warning" : "text-muted-foreground",
+              )}
+            >
+              <Star className={cn("h-3.5 w-3.5", item.is_favorited && "fill-current")} aria-hidden />
+              {item.favorite_count}
+            </button>
+          </FavoritoEstatisticasTooltip>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

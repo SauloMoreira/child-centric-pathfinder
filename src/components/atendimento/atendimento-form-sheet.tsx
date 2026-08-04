@@ -420,6 +420,7 @@ export function AtendimentoFormSheet({
           descricao: descricao.trim(),
           formSchema: schema,
           categoryIds: categoriaIds,
+          origemItemId: target?.mode === "inspire" ? target.detalhe.id : undefined,
         },
         {
           onSuccess: (result) => {

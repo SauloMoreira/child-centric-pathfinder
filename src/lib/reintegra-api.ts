@@ -89,6 +89,9 @@ export async function criarCota(params: {
   orientacao?: string;
   orientacaoNivel?: "media" | "alta";
   links?: CotaLink[];
+  /** Ajuste doc (AJUSTE 10/21) — id da Cota usada como referência em
+   *  "Inspirar nova cota", para contabilizar "criados a partir desta". */
+  origemItemId?: string;
 }): Promise<{ item_id: string; version_id: string }> {
   const { data, error } = await supabase.rpc("criar_cota", {
     p_titulo: params.titulo,
@@ -98,6 +101,7 @@ export async function criarCota(params: {
     p_orientacao: params.orientacao ?? null,
     p_orientacao_nivel: params.orientacaoNivel ?? "media",
     p_links: (params.links ?? []) as never,
+    p_origem_item_id: params.origemItemId ?? null,
   } as never);
   if (error) throw error;
   return data as { item_id: string; version_id: string };
@@ -318,12 +322,17 @@ export async function criarAtendimento(params: {
   descricao?: string;
   formSchema: AtendimentoFormField[];
   categoryIds?: string[];
+  /** Ajuste doc (AJUSTE 9/21) — id do Atendimento usado como referência
+   *  em "Inspirar novo atendimento", para contabilizar "criados a partir
+   *  deste". */
+  origemItemId?: string;
 }): Promise<{ item_id: string; version_id: string }> {
   const { data, error } = await supabase.rpc("criar_atendimento", {
     p_titulo: params.titulo,
     p_descricao: params.descricao ?? null,
     p_form_schema: params.formSchema as never,
     p_category_ids: (params.categoryIds ?? null) as never,
+    p_origem_item_id: params.origemItemId ?? null,
   } as never);
   if (error) throw error;
   return data as { item_id: string; version_id: string };
@@ -719,6 +728,22 @@ export async function obterFavoritoBiblioteca(
   } as never);
   if (error) throw error;
   return data as { is_favorited: boolean; favorite_count: number };
+}
+
+/** Ajuste doc (AJUSTE 21) — estatísticas de um Atendimento/Cota exibidas na
+ *  caixinha flutuante ao passar o mouse no ícone de favoritar: total de
+ *  acessos, inserções em painéis (por qualquer usuário) e itens criados a
+ *  partir deste como referência ("Inspirar novo atendimento/nova cota"). */
+export async function obterEstatisticasBiblioteca(itemId: string): Promise<{
+  access_count: number;
+  panel_insert_count: number;
+  criados_a_partir_count: number;
+}> {
+  const { data, error } = await supabase.rpc("obter_estatisticas_biblioteca", {
+    p_item_id: itemId,
+  } as never);
+  if (error) throw error;
+  return data as { access_count: number; panel_insert_count: number; criados_a_partir_count: number };
 }
 
 export async function listarCategoriasBiblioteca(): Promise<BibliotecaCategoria[]> {
