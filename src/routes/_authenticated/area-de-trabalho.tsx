@@ -1714,7 +1714,15 @@ function SortableColumn(props: {
       data-col-color={colorToken}
       className={cn(
         "kanban-column relative flex flex-col overflow-hidden",
-        alturaNatural ? "h-auto min-h-[16rem]" : "h-full min-h-0",
+        // Ajuste doc — no modo de altura natural, a coluna deixa de ter
+        // piso mínimo de 16rem (o mesmo padrão do quadro "Criar coluna"):
+        // uma coluna com poucos cards fica só do tamanho do seu conteúdo
+        // natural, sem ser esticada para bater com o "Criar coluna" ao
+        // lado. Confirmado com o Saulo: vale só nesse modo — no modo
+        // "altura da tela" a coluna continua h-full, preenchendo a altura
+        // do quadro igual às demais (inalterado, mesma decisão já tomada
+        // para a coluna compactada).
+        alturaNatural ? "h-auto" : "h-full min-h-0",
       )}
     >
       {/* faixa lateral colorida */}
