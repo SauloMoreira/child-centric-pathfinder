@@ -955,22 +955,27 @@ export function FieldEditor({
             <div className="space-y-1.5 rounded-md bg-muted/30 p-2">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Itens</p>
               {checklistItems.map((item, i) => (
-                <div
-                  key={i}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const from = Number(e.dataTransfer.getData("text/plain"));
-                    if (!Number.isNaN(from) && from !== i) moveChecklistItem(from, i);
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <GripVertical
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
-                    className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
-                    aria-hidden
-                  />
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 flex-col items-center">
+                    <button
+                      type="button"
+                      className="rounded p-0.5 text-muted-foreground/50 hover:text-foreground disabled:opacity-30"
+                      aria-label="Mover item para cima"
+                      disabled={i === 0}
+                      onClick={() => moveChecklistItem(i, i - 1)}
+                    >
+                      <ArrowUp className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded p-0.5 text-muted-foreground/50 hover:text-foreground disabled:opacity-30"
+                      aria-label="Mover item para baixo"
+                      disabled={i === checklistItems.length - 1}
+                      onClick={() => moveChecklistItem(i, i + 1)}
+                    >
+                      <ArrowDown className="h-3 w-3" />
+                    </button>
+                  </div>
                   <Input
                     value={item}
                     onChange={(e) => setChecklistItem(i, e.target.value)}
@@ -1213,22 +1218,27 @@ export function FieldEditor({
                 Opções
               </p>
               {options.map((opt, i) => (
-                <div
-                  key={i}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const from = Number(e.dataTransfer.getData("text/plain"));
-                    if (!Number.isNaN(from) && from !== i) moveOption(from, i);
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <GripVertical
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
-                    className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50"
-                    aria-hidden
-                  />
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 flex-col items-center">
+                    <button
+                      type="button"
+                      className="rounded p-0.5 text-muted-foreground/50 hover:text-foreground disabled:opacity-30"
+                      aria-label="Mover opção para cima"
+                      disabled={i === 0}
+                      onClick={() => moveOption(i, i - 1)}
+                    >
+                      <ArrowUp className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded p-0.5 text-muted-foreground/50 hover:text-foreground disabled:opacity-30"
+                      aria-label="Mover opção para baixo"
+                      disabled={i === options.length - 1}
+                      onClick={() => moveOption(i, i + 1)}
+                    >
+                      <ArrowDown className="h-3 w-3" />
+                    </button>
+                  </div>
                   <Input
                     value={opt}
                     onChange={(e) => setOption(i, e.target.value)}
