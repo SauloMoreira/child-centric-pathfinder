@@ -1643,15 +1643,15 @@ function SortableColumn(props: {
         // texto, tornando a coluna compactada visualmente mais agradável.
         className={cn(
           "relative flex w-9 shrink-0 flex-col items-center overflow-hidden rounded-[var(--kanban-col-radius)] border border-border bg-surface",
-          // Ajuste doc — o título não pode mais determinar o tamanho da
-          // coluna compactada: teto de altura igual ao padrão do quadro
-          // "Criar coluna" (16rem), sem piso mínimo — uma coluna com
-          // título curto fica só do tamanho do conteúdo (ícone + título),
-          // uma com título longo trunca (ellipsis) em vez de esticar além
-          // do teto. Vale só no modo de altura natural; no modo "altura
+          // Ajuste doc — a coluna compactada é sempre do mesmo tamanho do
+          // quadro "Criar coluna" (16rem fixo, ao contrário da coluna
+          // expandida, que hoje hugga o conteúdo natural): o título não
+          // pode mais determinar o tamanho, mas continua truncando
+          // (ellipsis) quando não cabe, em vez de esticar a coluna além
+          // do padrão. Vale só no modo de altura natural; no modo "altura
           // da tela" a coluna compactada continua h-full, como as demais
           // (inalterado).
-          alturaNatural ? "h-auto max-h-[16rem]" : "h-full min-h-0",
+          alturaNatural ? "h-[16rem]" : "h-full min-h-0",
         )}
       >
         <span
