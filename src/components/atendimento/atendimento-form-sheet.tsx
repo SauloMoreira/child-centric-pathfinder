@@ -576,6 +576,7 @@ export function AtendimentoFormSheet({
               <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndCampos}>
                 <SortableContext items={campos.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                   <div>
+                    <InsertFieldHere onInsert={(novo) => insertCampoAt(0, novo)} />
                     {campos.map((campo, index) => (
                       <div key={campo.id} className="pb-3">
                         {index > 0 && (
@@ -593,6 +594,7 @@ export function AtendimentoFormSheet({
                         />
                       </div>
                     ))}
+                    <InsertFieldHere onInsert={(novo) => insertCampoAt(campos.length, novo)} />
                   </div>
                 </SortableContext>
               </DndContext>

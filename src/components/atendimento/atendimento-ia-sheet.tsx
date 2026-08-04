@@ -517,6 +517,10 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                     >
                       <SortableContext items={campos.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                         <div>
+                          <InsertFieldHere
+                            onInsert={(novo) => insertCampoAt(0, novo)}
+                            opcoes={["pergunta"]}
+                          />
                           {campos.map((campo, index) => (
                             <div key={campo.id} className="pb-3">
                               {index > 0 && (
@@ -537,6 +541,10 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
                               />
                             </div>
                           ))}
+                          <InsertFieldHere
+                            onInsert={(novo) => insertCampoAt(campos.length, novo)}
+                            opcoes={["pergunta"]}
+                          />
                         </div>
                       </SortableContext>
                     </DndContext>
