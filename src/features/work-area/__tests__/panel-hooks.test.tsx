@@ -123,14 +123,14 @@ describe("useCreatePanel", () => {
     expect(k1).not.toBe(k2);
   });
 
-  it("propaga erro do backend (PANEL_LIMIT_REACHED)", async () => {
-    createPanelMock.mockRejectedValue(new Error("PANEL_LIMIT_REACHED"));
+  it("propaga erro do backend (ex.: PANEL_NAME_ALREADY_EXISTS)", async () => {
+    createPanelMock.mockRejectedValue(new Error("PANEL_NAME_ALREADY_EXISTS"));
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useCreatePanel(SYN_DEFENDER_A), {
       wrapper,
     });
     await expect(result.current.mutateAsync({ name: "X", expectedCount: 8 })).rejects.toThrow(
-      /PANEL_LIMIT_REACHED/,
+      /PANEL_NAME_ALREADY_EXISTS/,
     );
   });
 

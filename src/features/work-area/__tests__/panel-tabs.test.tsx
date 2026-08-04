@@ -145,8 +145,8 @@ describe("PanelTabs — permissões", () => {
   });
 });
 
-describe("PanelTabs — limite de 8", () => {
-  it("com 8 painéis o botão de criação fica desabilitado", () => {
+describe("PanelTabs — sem limite de Painéis (AJUSTE 13)", () => {
+  it("com 8 painéis o botão de criação continua habilitado", () => {
     const panels = Array.from({ length: 8 }, (_, i) =>
       createPanelFixture({
         id: `00000000-1111-4000-8000-00000000000${i}`,
@@ -168,9 +168,35 @@ describe("PanelTabs — limite de 8", () => {
       />,
       { wrapper },
     );
-    const btn = screen.getByRole("button", { name: /novo painel/i });
-    expect(btn).toBeDisabled();
-    expect(btn).toHaveAttribute("title", expect.stringMatching(/limite de 8/i));
+    const btn = screen.getByRole("button", { name: /criar painel/i });
+    expect(btn).not.toBeDisabled();
+  });
+
+  it("com 12 painéis (acima do antigo limite de 8) o botão de criação continua habilitado", () => {
+    const panels = Array.from({ length: 12 }, (_, i) =>
+      createPanelFixture({
+        id: `00000000-1111-4000-8000-${String(i).padStart(12, "0")}`,
+        defenderUserId: SYN_DEFENDER_A,
+        position: i,
+        name: `P${i}`,
+      }),
+    );
+    render(
+      <PanelTabs
+        defenderUserId={SYN_DEFENDER_A}
+        panels={panels}
+        selectedId={panels[0].id}
+        onSelect={() => {}}
+        access={owner}
+        onCreate={() => {}}
+        onRename={() => {}}
+        onArchive={() => {}}
+      />,
+      { wrapper },
+    );
+    expect(screen.getAllByText(/^P\d+$/).length).toBe(12);
+    const btn = screen.getByRole("button", { name: /criar painel/i });
+    expect(btn).not.toBeDisabled();
   });
 });
 

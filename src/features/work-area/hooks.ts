@@ -22,7 +22,6 @@ import {
   type ArchivePanelInput,
 } from "./api";
 import type { PanelSummary, WorkArea, WorkspaceAccess } from "./types";
-import { PANEL_MAX } from "./types";
 import { panelErrorFromUnknown } from "./errors";
 
 function uuid(): string {
@@ -322,5 +321,3 @@ export function usePanelPermissions(access: WorkspaceAccess | undefined) {
 export function useHandlePanelError() {
   return useCallback((err: unknown) => panelErrorFromUnknown(err), []);
 }
-
-export const PANEL_LIMIT = PANEL_MAX;

@@ -8,7 +8,6 @@ import {
 import { PANEL_ERROR_CODES } from "../types";
 
 const CODES_ESPERADOS = [
-  "PANEL_LIMIT_REACHED",
   "PANEL_NAME_ALREADY_EXISTS",
   "PANEL_NOT_EMPTY",
   "LAST_PANEL_CANNOT_BE_DELETED",
@@ -43,7 +42,7 @@ describe("parsePanelErrorCode", () => {
   });
 
   it("aceita valores não-Error convertendo para string", () => {
-    expect(parsePanelErrorCode("PANEL_LIMIT_REACHED")).toBe("PANEL_LIMIT_REACHED");
+    expect(parsePanelErrorCode("PANEL_NOT_FOUND")).toBe("PANEL_NOT_FOUND");
     expect(parsePanelErrorCode(null)).toBe("UNKNOWN");
     expect(parsePanelErrorCode(undefined)).toBe("UNKNOWN");
   });
@@ -59,9 +58,9 @@ describe("panelErrorMessage", () => {
   });
 
   it("mensagens em português (sem vazar código bruto)", () => {
-    const msg = panelErrorMessage("PANEL_LIMIT_REACHED");
+    const msg = panelErrorMessage("PANEL_NOT_EMPTY");
     expect(msg).toMatch(/Painéis|Painel/);
-    expect(msg).not.toMatch(/PANEL_LIMIT_REACHED/);
+    expect(msg).not.toMatch(/PANEL_NOT_EMPTY/);
   });
 
   it("mensagens não expõem SQLSTATE nem nome de índice", () => {

@@ -1,7 +1,6 @@
 import type { PanelErrorCode } from "./types";
 
 const CODE_PATTERNS: Array<[PanelErrorCode, RegExp]> = [
-  ["PANEL_LIMIT_REACHED", /PANEL_LIMIT_REACHED/i],
   ["PANEL_NAME_ALREADY_EXISTS", /PANEL_NAME_ALREADY_EXISTS/i],
   ["PANEL_NOT_EMPTY", /PANEL_NOT_EMPTY/i],
   ["LAST_PANEL_CANNOT_BE_DELETED", /LAST_PANEL_CANNOT_BE_DELETED/i],
@@ -24,7 +23,6 @@ export function parsePanelErrorCode(err: unknown): PanelErrorCode {
 }
 
 const PT_MESSAGES: Record<PanelErrorCode, string> = {
-  PANEL_LIMIT_REACHED: "O limite máximo de 8 Painéis foi atingido.",
   PANEL_NAME_ALREADY_EXISTS: "Já existe um Painel com esse nome.",
   PANEL_NOT_EMPTY: "Este Painel possui Atendimentos ou Cotas. Remova os cards antes de excluí-lo.",
   LAST_PANEL_CANNOT_BE_DELETED: "A Área de Trabalho precisa possuir ao menos um Painel.",

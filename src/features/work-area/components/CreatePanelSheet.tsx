@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  PANEL_MAX,
   PANEL_NAME_MAX,
   createPanelSchema,
   panelErrorFromUnknown,
@@ -64,8 +63,6 @@ export function CreatePanelSheet({
     }
   });
 
-  const atLimit = currentCount >= PANEL_MAX;
-
   return (
     <Sheet
       open={open}
@@ -77,40 +74,32 @@ export function CreatePanelSheet({
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Novo Painel</SheetTitle>
-          <SheetDescription>
-            Painéis organizam colunas e cards de forma independente. Você pode ter até {PANEL_MAX}{" "}
-            Painéis ativos.
-          </SheetDescription>
+          {/* Ajuste doc (AJUSTE 13) — não há mais limite de Painéis. */}
+          <SheetDescription>Painéis organizam colunas e cards de forma independente.</SheetDescription>
         </SheetHeader>
 
-        {atLimit ? (
-          <div className="mt-6 rounded-md border border-border bg-muted/50 p-4 text-sm">
-            Limite de {PANEL_MAX} Painéis atingido. Arquive um Painel para criar outro.
+        <form onSubmit={submit} className="mt-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="panel-name">Nome</Label>
+            <Input
+              id="panel-name"
+              autoFocus
+              maxLength={PANEL_NAME_MAX}
+              placeholder="Ex: Prioridades"
+              {...register("name")}
+            />
+            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
-        ) : (
-          <form onSubmit={submit} className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="panel-name">Nome</Label>
-              <Input
-                id="panel-name"
-                autoFocus
-                maxLength={PANEL_NAME_MAX}
-                placeholder="Ex: Prioridades"
-                {...register("name")}
-              />
-              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-            </div>
 
-            <SheetFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={mut.isPending}>
-                {mut.isPending ? "Criando…" : "Criar Painel"}
-              </Button>
-            </SheetFooter>
-          </form>
-        )}
+          <SheetFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={mut.isPending}>
+              {mut.isPending ? "Criando…" : "Criar Painel"}
+            </Button>
+          </SheetFooter>
+        </form>
       </SheetContent>
     </Sheet>
   );

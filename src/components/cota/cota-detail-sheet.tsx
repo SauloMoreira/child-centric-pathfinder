@@ -200,11 +200,30 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                   )}
                 </div>
 
-                <div className="relative min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3">
+                <div className="relative min-h-0 flex-1 overflow-y-auto">
+                  {/* Ajuste doc (AJUSTE 15) — o limite da borda deve
+                      acompanhar só a altura natural do texto, em vez de
+                      esticar até o fim do espaço disponível (por isso o
+                      border/bg fica só neste wrapper interno, e o flex-1 +
+                      overflow-y-auto ficam no wrapper externo). */}
+                  <div
+                    style={{ fontSize: `${ZOOM_STEPS[zoomIndex]}em` }}
+                    className="rounded-md border border-border bg-muted/30 p-3"
+                  >
+                    <RichTextViewer
+                      ref={textoRef}
+                      html={(detalhe.data.bodyJson as { html?: string } | null)?.html ?? ""}
+                      interactive
+                    />
+                  </div>
+
+                  {/* Ajuste doc (AJUSTE 15) — a orientação (quando existente)
+                      fica fora dos limites da borda/caixa do texto, após o
+                      texto e antes dos links sugeridos. */}
                   {detalhe.data.orientacao && (
                     <div
                       className={cn(
-                        "mb-3 flex items-start gap-2 rounded-md border p-2.5",
+                        "mt-3 flex items-start gap-2 rounded-md border p-2.5",
                         detalhe.data.orientacaoNivel === "alta"
                           ? "border-critical/30 bg-critical/[0.1]"
                           : "border-warning/30 bg-warning/[0.1]",
@@ -223,17 +242,11 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                       />
                     </div>
                   )}
-                  <div style={{ fontSize: `${ZOOM_STEPS[zoomIndex]}em` }} className="pb-6">
-                    <RichTextViewer
-                      ref={textoRef}
-                      html={(detalhe.data.bodyJson as { html?: string } | null)?.html ?? ""}
-                      interactive
-                    />
-                  </div>
+
                   <div className="sticky bottom-0 left-0 flex justify-end gap-0.5 pt-1">
                     <button
                       type="button"
-                      className="rounded p-1 text-muted-foreground opacity-60 hover:bg-muted hover:text-foreground hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="rounded bg-surface/80 p-1 text-muted-foreground opacity-60 backdrop-blur-sm hover:bg-muted hover:text-foreground hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
                       aria-label="Diminuir texto"
                       title="Diminuir texto"
                       disabled={zoomIndex === 0}
@@ -243,7 +256,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                     </button>
                     <button
                       type="button"
-                      className="rounded p-1 text-muted-foreground opacity-60 hover:bg-muted hover:text-foreground hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="rounded bg-surface/80 p-1 text-muted-foreground opacity-60 backdrop-blur-sm hover:bg-muted hover:text-foreground hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
                       aria-label="Aumentar texto"
                       title="Aumentar texto"
                       disabled={zoomIndex === ZOOM_STEPS.length - 1}

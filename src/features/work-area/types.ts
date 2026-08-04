@@ -75,7 +75,6 @@ export type PanelCard = {
 
 // ---------- Erros de domínio ----------
 export const PANEL_ERROR_CODES = [
-  "PANEL_LIMIT_REACHED",
   "PANEL_NAME_ALREADY_EXISTS",
   "PANEL_NOT_EMPTY",
   "LAST_PANEL_CANNOT_BE_DELETED",
@@ -104,7 +103,7 @@ export type WorkAreaDragData =
   | { type: "card"; panelId: string; columnId: string; cardId: string };
 
 // ---------- Constantes de UI ----------
-export const PANEL_MAX = 8;
+// Ajuste doc (AJUSTE 13) — não há mais limite de Painéis por Defensor.
 export const PANEL_NAME_MIN = 1;
 export const PANEL_NAME_MAX = 60;
 

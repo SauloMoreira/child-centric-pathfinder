@@ -20,7 +20,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +29,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
-  PANEL_MAX,
   panelErrorFromUnknown,
   useReorderPanels,
   type PanelSummary,
@@ -94,64 +92,57 @@ export function PanelTabs({
     }
   };
 
+  // Ajuste doc (AJUSTE 13) — sem limite de Painéis e sem rolagem lateral:
+  // quando a linha não comporta mais abas, os novos Painéis passam a ser
+  // dispostos na linha de baixo (flex-wrap). O botão de criação vive
+  // dentro dessa mesma linha, como um "+" discreto ao final da lista.
   return (
-    <div className="flex items-center gap-2">
-      <div className="min-w-0 flex-1 overflow-x-auto">
-        {canManage ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-          >
-            <SortableContext items={items} strategy={horizontalListSortingStrategy}>
-              <div className="flex items-center gap-1">
-                {panels.map((p) => (
-                  <SortablePanelTab
-                    key={p.id}
-                    panel={p}
-                    selected={p.id === selectedId}
-                    canManage={canManage}
-                    onSelect={() => onSelect(p.id)}
-                    onRename={() => onRename(p)}
-                    onArchive={() => onArchive(p)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-            <DragOverlay>
-              {activePanel ? <PanelTabButton panel={activePanel} selected dragging /> : null}
-            </DragOverlay>
-          </DndContext>
-        ) : (
-          <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
+      {canManage ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+        >
+          <SortableContext items={items} strategy={horizontalListSortingStrategy}>
             {panels.map((p) => (
-              <PanelTabButton
+              <SortablePanelTab
                 key={p.id}
                 panel={p}
                 selected={p.id === selectedId}
-                onClick={() => onSelect(p.id)}
+                canManage={canManage}
+                onSelect={() => onSelect(p.id)}
+                onRename={() => onRename(p)}
+                onArchive={() => onArchive(p)}
               />
             ))}
-          </div>
-        )}
-      </div>
+          </SortableContext>
+          <DragOverlay>
+            {activePanel ? <PanelTabButton panel={activePanel} selected dragging /> : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
+        panels.map((p) => (
+          <PanelTabButton
+            key={p.id}
+            panel={p}
+            selected={p.id === selectedId}
+            onClick={() => onSelect(p.id)}
+          />
+        ))
+      )}
 
       {canManage && (
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
-          disabled={panels.length >= PANEL_MAX}
+        <button
+          type="button"
           onClick={onCreate}
-          title={
-            panels.length >= PANEL_MAX
-              ? `Limite de ${PANEL_MAX} Painéis atingido`
-              : "Criar novo Painel"
-          }
+          aria-label="Criar painel"
+          title="Criar painel"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <Plus className="h-3.5 w-3.5" /> Criar painel
-        </Button>
+          <Plus className="h-4 w-4" aria-hidden />
+        </button>
       )}
     </div>
   );
@@ -244,7 +235,7 @@ function PanelTabButton({
   return (
     <div
       className={cn(
-        "group relative flex shrink-0 items-center justify-center rounded-md px-2.5 py-1.5 text-xs transition-colors",
+        "group flex shrink-0 items-center rounded-md px-2.5 py-1.5 text-xs transition-colors",
         selected
           ? "bg-muted text-foreground"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -270,13 +261,18 @@ function PanelTabButton({
         </span>
       </button>
       {actions && (
-        // Ajuste doc — o botão de 3 pontinhos não deve dividir espaço com
-        // o ícone+texto (o que os descentralizava). Fica sobreposto,
-        // aparecendo só ao passar o mouse pelo botão do painel.
+        // Ajuste doc (AJUSTE 13) — o botão de 3 pontinhos deixa de ser um
+        // overlay absoluto sobreposto ao texto: agora ocupa espaço real
+        // (max-width animado, 0 → aberto), surgindo só no hover real do
+        // mouse sobre o botão do Painel — nunca por focus-within, que
+        // mantinha o botão "grudado" visível depois de usar o menu (o
+        // Radix mantém o foco no gatilho ao fechar). Ao abrir, empurra os
+        // demais botões de Painel para o lado, como pedido.
         <span
           className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 rounded bg-inherit opacity-0 transition-opacity",
-            "group-hover:opacity-100 focus-within:opacity-100",
+            "ml-0 max-w-0 shrink-0 overflow-hidden opacity-0",
+            "transition-[max-width,opacity,margin-left] duration-150 ease-out",
+            "group-hover:ml-1 group-hover:max-w-[1.75rem] group-hover:opacity-100",
           )}
         >
           {actions}
