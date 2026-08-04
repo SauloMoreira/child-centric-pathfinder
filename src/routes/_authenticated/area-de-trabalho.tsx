@@ -1670,7 +1670,7 @@ function SortableColumn(props: {
           <ChevronsRight className="h-3.5 w-3.5" />
         </button>
         <div
-          className="flex min-h-0 flex-1 flex-col items-center gap-1.5 overflow-hidden py-2.5"
+          className="flex min-h-0 flex-col items-center gap-1.5 overflow-hidden py-2.5"
           title={column.nome}
         >
           {column.icone && (
@@ -1680,12 +1680,20 @@ function SortableColumn(props: {
               style={{ color: "var(--col-accent-strong)" }}
             />
           )}
-          {/* Ajuste doc — min-h-0 + flex-1 dão ao título rotacionado um
-              teto de altura concreto para truncar (ellipsis), no mesmo
-              espírito do min-w-0 + flex-1 já usado no título horizontal
-              do cabeçalho expandido logo abaixo. */}
+          {/* Ajuste doc — min-h-0 permite ENCOLHER a partir do tamanho
+              natural do conteúdo quando o espaço disponível é menor
+              (ex.: título longo dentro do teto de max-h-[16rem] do
+              contêiner pai), ativando o text-overflow: ellipsis do
+              truncate. Importante: nada de flex-1 aqui — o pai é
+              h-auto (sem altura fixa), então flex-1 (que parte de
+              base zero e cresce só se houver espaço livre "de sobra")
+              colapsava o título inteiro a zero de altura, já que um
+              contêiner h-auto não tem espaço livre a distribuir. Sem
+              flex-1, o span usa o comportamento padrão do flexbox
+              (flex-shrink, a partir do tamanho do conteúdo) — exatamente
+              o que precisamos aqui. */}
           <span
-            className="min-h-0 flex-1 truncate text-xs font-semibold"
+            className="min-h-0 truncate text-xs font-semibold"
             style={{
               color: "var(--col-accent-strong)",
               writingMode: "vertical-rl",
