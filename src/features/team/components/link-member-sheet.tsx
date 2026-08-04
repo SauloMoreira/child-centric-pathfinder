@@ -96,7 +96,7 @@ export function LinkMemberSheet({ open, onOpenChange, defenderUserId }: Props) {
             />
           </div>
 
-          <div className="max-h-[380px] min-h-[80px] overflow-y-auto rounded-md border border-border">
+          <div className="kanban-scroll max-h-[380px] min-h-[80px] overflow-y-auto rounded-md border border-border">
             {debounced.trim().length < 2 && (
               <p className="p-4 text-xs text-muted-foreground">
                 Informe pelo menos 2 caracteres para iniciar a busca.

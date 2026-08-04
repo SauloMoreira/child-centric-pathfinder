@@ -256,7 +256,7 @@ export function CotaFormSheet({
   return (
     <>
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
+      <SheetContent side="right" className="kanban-scroll flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-sm">
             <Scale className="h-4 w-4 text-institutional" />
@@ -415,7 +415,7 @@ export function CotaFormSheet({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-72 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+                className="kanban-scroll max-h-72 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
                 onCloseAutoFocus={() => setBuscaCategoria("")}
               >
                 {categoriasSelecionaveis.length > 5 && (

@@ -978,7 +978,7 @@ function FieldInput({
       const colunas = field.options ?? [];
       const registro = (value as Record<string, string>) ?? {};
       return (
-        <div className="overflow-x-auto rounded-md border border-border">
+        <div className="kanban-scroll overflow-x-auto rounded-md border border-border">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/40">
@@ -1024,7 +1024,7 @@ function FieldInput({
       const removeLinha = (ri: number) => onChange(field.id, linhas.filter((_, i) => i !== ri));
       return (
         <div className="space-y-2">
-          <div className="overflow-x-auto rounded-md border border-border">
+          <div className="kanban-scroll overflow-x-auto rounded-md border border-border">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-border bg-muted/40">

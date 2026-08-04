@@ -237,7 +237,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
             página rolar aqui dentro quando necessário, nunca no body —
             páginas como a Área de Trabalho, que já controlam sua própria
             rolagem interna, ocupam h-full e nunca acionam este scroll. */}
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
+        <main className="kanban-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
     </div>
   );
@@ -322,7 +322,7 @@ function SidebarNav({
   return (
     <nav
       id="sidebar-nav"
-      className={cn("flex-1 overflow-y-auto", collapsed ? "space-y-2 p-2" : "space-y-4 p-3")}
+      className={cn("kanban-scroll flex-1 overflow-y-auto", collapsed ? "space-y-2 p-2" : "space-y-4 p-3")}
     >
       {groups.map((group, groupIdx) => {
         const visibleItems = group.items.filter((n) => n.visible);

@@ -152,7 +152,7 @@ export function DefenderContextSwitcher({ collapsed }: Props) {
                 </div>
               )}
             </div>
-            <div className="max-h-[340px] overflow-y-auto py-1">
+            <div className="kanban-scroll max-h-[340px] overflow-y-auto py-1">
               {items.length === 0 && (
                 <p className="p-4 text-xs text-muted-foreground">Nenhum resultado.</p>
               )}

@@ -496,7 +496,7 @@ export function AtendimentoIaSheet({ open, data, onOpenChange }: AtendimentoIaSh
           <div className="mt-2 flex min-h-0 flex-1 flex-col gap-3">
             <div
               ref={scrollRef}
-              className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 py-3 pl-7 pr-3"
+              className="kanban-scroll min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 py-3 pl-7 pr-3"
             >
               {editando ? (
                 <div className="space-y-3">

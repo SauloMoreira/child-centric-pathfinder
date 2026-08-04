@@ -110,7 +110,7 @@ export function RequestDefenderAccessSheet({ open, onOpenChange }: Props) {
                 autoFocus
               />
             </div>
-            <div className="max-h-[280px] min-h-[80px] overflow-y-auto rounded-md border border-border">
+            <div className="kanban-scroll max-h-[280px] min-h-[80px] overflow-y-auto rounded-md border border-border">
               {search.isLoading && (
                 <div className="flex items-center gap-2 p-4 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Carregando…

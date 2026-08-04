@@ -341,7 +341,7 @@ export function AtendimentoDetailSheet({
               <div className="mt-2 flex min-h-0 flex-1 flex-col gap-3">
                 <div
                   ref={scrollRef}
-                  className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3"
+                  className="kanban-scroll min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-3"
                 >
                   <FormRenderer fields={detalhe.data.formSchema} values={values} onChange={handleChange} />
 

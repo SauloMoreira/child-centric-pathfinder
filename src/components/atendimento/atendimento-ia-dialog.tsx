@@ -293,7 +293,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && resetAndClose()}>
-      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-lg flex-col gap-0 overflow-y-auto">
+      <DialogContent className="kanban-scroll flex max-h-[90vh] w-[95vw] max-w-lg flex-col gap-0 overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-institutional" />
@@ -372,7 +372,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
                           className="mb-1.5 h-7 bg-surface text-xs"
                         />
                       )}
-                      <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                      <div className="kanban-scroll max-h-56 space-y-0.5 overflow-y-auto">
                         {contextosCarregando ? (
                           <p className="px-2 py-1.5 text-[11px] text-muted-foreground">Carregando…</p>
                         ) : contextos.filter((c) =>

@@ -234,7 +234,7 @@ function UsuariosTecnico() {
 
       {q.data && (
         <div className="surface-panel overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="kanban-scroll overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-border bg-muted/30 text-xs uppercase tracking-[0.14em] text-muted-foreground">
                 <tr>

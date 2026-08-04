@@ -2023,7 +2023,7 @@ function EditColumnSheet(props: {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
+          <div className="kanban-scroll mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
             <div className="space-y-2">
               <Label htmlFor="edit-col-nome">Nome</Label>
               <Input
@@ -2737,7 +2737,7 @@ function AddCardDialog({
               Favoritos
             </Button>
           </div>
-          <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
+          <div className="kanban-scroll max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
             {itens.length === 0 ? (
               <p className="p-4 text-center text-xs text-muted-foreground">
                 Nenhum conteúdo encontrado.
@@ -2962,7 +2962,7 @@ export function MoveToPanelDialog({
                   Você não possui outros Painéis ativos.
                 </p>
               ) : (
-                <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-1">
+                <div className="kanban-scroll max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-1">
                   {availablePanels.map((p) => {
                     const selected = p.id === targetPanelId;
                     const Icon = panelIconComponent(p.icon);
@@ -3352,7 +3352,7 @@ function AtendimentoGuiadoDialog({
               Neste painel
             </Button>
           </div>
-          <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
+          <div className="kanban-scroll max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
             {itens.length === 0 ? (
               <p className="p-4 text-center text-xs text-muted-foreground">
                 Nenhum atendimento encontrado.
@@ -3473,7 +3473,7 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+        <div className="kanban-scroll min-h-0 flex-1 space-y-3 overflow-y-auto">
           <Textarea
             value={narrativa}
             onChange={(e) => setNarrativa(e.target.value)}

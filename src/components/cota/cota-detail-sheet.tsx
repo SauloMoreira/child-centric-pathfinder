@@ -200,7 +200,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                   )}
                 </div>
 
-                <div className="relative min-h-0 flex-1 overflow-y-auto">
+                <div className="kanban-scroll relative min-h-0 flex-1 overflow-y-auto">
                   {/* Ajuste doc (AJUSTE 15) — o limite da borda deve
                       acompanhar só a altura natural do texto, em vez de
                       esticar até o fim do espaço disponível (por isso o

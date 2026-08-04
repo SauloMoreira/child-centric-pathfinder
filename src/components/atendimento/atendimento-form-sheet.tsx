@@ -436,7 +436,7 @@ export function AtendimentoFormSheet({
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-3xl flex-col gap-0 overflow-y-auto">
+      <DialogContent className="kanban-scroll flex max-h-[90vh] w-[95vw] max-w-3xl flex-col gap-0 overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-institutional" />
@@ -497,7 +497,7 @@ export function AtendimentoFormSheet({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-72 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
+                className="kanban-scroll max-h-72 w-[--radix-dropdown-menu-trigger-width] overflow-y-auto"
                 onCloseAutoFocus={() => setBuscaCategoria("")}
               >
                 {categoriasSelecionaveis.length > 5 && (
