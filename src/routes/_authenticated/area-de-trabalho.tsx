@@ -30,6 +30,8 @@ import {
   Star,
   Filter,
   Info,
+  Infinity as InfinityIcon,
+  ListPlus,
 } from "lucide-react";
 
 import {
@@ -68,7 +70,6 @@ import {
   excluirColunaWorkspace,
   isConcurrentChangeError,
   listarBiblioteca,
-  listarAutoresBiblioteca,
   alternarFavoritoBiblioteca,
   gerarRelatoAtendimentoLivre,
   listarWorkspaceCompleto,
@@ -135,6 +136,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { cn, copyRichText } from "@/lib/utils";
 import { useWorkArea, useSelectedPanel, type PanelSummary } from "@/features/work-area";
@@ -1762,7 +1764,7 @@ function SortableColumn(props: {
                 <Pencil className="mr-2 h-4 w-4" /> Editar coluna
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setAddCardOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Inserir cota ou atendimento
+                <ListPlus className="mr-2 h-4 w-4" /> Inserir cota ou atendimento
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onDuplicateCol}>
@@ -2498,9 +2500,9 @@ function AddCardDialog({
   // Biblioteca. Padrão: só os meus itens mais recentes (já estabelecido);
   // a busca/filtros substituem esse padrão conforme usados.
   const [tipo, setTipo] = useState<ContentKind | "todos">("todos");
+  const [tipoFiltroOpen, setTipoFiltroOpen] = useState(false);
   const [categoriaId, setCategoriaId] = useState<string>("todas");
-  const [autoria, setAutoria] = useState<"todos" | "meus" | "outro">("meus");
-  const [autorEscolhido, setAutorEscolhido] = useState<string | null>(null);
+  const [autoria, setAutoria] = useState<"todos" | "meus">("meus");
   const [ranking, setRanking] = useState<"recentes" | "favoritos" | "utilizados">("recentes");
   const [somenteFavoritos, setSomenteFavoritos] = useState(false);
   // Ajuste doc — "Criar cota"/"Criar atendimento" a partir desta caixa,
@@ -2512,30 +2514,15 @@ function AddCardDialog({
     queryFn: () => listarCategoriasBiblioteca(),
     enabled: open,
   });
-  const autoresQuery = useQuery({
-    queryKey: ["biblioteca-autores"],
-    queryFn: () => listarAutoresBiblioteca(),
-    enabled: open && autoria === "outro",
-  });
 
   const bibQuery = useQuery({
-    queryKey: [
-      "biblioteca-picker",
-      query,
-      tipo,
-      categoriaId,
-      autoria,
-      autorEscolhido,
-      ranking,
-      somenteFavoritos,
-    ],
+    queryKey: ["biblioteca-picker", query, tipo, categoriaId, autoria, ranking, somenteFavoritos],
     queryFn: () =>
       listarBiblioteca({
         query: query.trim() || undefined,
         kind: tipo === "todos" ? undefined : tipo,
         categoria_id: categoriaId === "todas" ? undefined : categoriaId,
         apenas_meus: autoria === "meus",
-        owner_user_id: autoria === "outro" && autorEscolhido ? autorEscolhido : undefined,
         favoritos_apenas: somenteFavoritos,
         order_by: ranking,
         limit: 20,
@@ -2601,7 +2588,7 @@ function AddCardDialog({
           // (hover:bg-muted), em vez do tom esverdeado padrão do ghost.
           className="w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
-          <Plus className="h-4 w-4" /> Inserir cota ou atendimento
+          <ListPlus className="h-4 w-4" /> Inserir cota ou atendimento
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
@@ -2609,43 +2596,69 @@ function AddCardDialog({
           <DialogTitle>Inserir atendimento ou cota</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="flex-1 gap-1.5"
-              onClick={() => setCriarTipo("atendimento")}
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar atendimento
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="flex-1 gap-1.5"
-              onClick={() => setCriarTipo("cota")}
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar cota
-            </Button>
+          <div className="flex items-center gap-1.5">
+            {/* Ajuste doc (AJUSTE 16) — filtro atendimento/cota embutido no
+                próprio motor de busca via ícone (Infinity = "todos os
+                tipos"), sem Select dedicado à parte. */}
+            <Popover open={tipoFiltroOpen} onOpenChange={setTipoFiltroOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  aria-label="Filtrar por tipo"
+                  title={
+                    tipo === "todos"
+                      ? "Tipo: atendimentos e cotas"
+                      : tipo === "atendimento"
+                        ? "Tipo: somente atendimentos"
+                        : "Tipo: somente cotas"
+                  }
+                >
+                  {tipo === "todos" ? (
+                    <InfinityIcon className="h-4 w-4" aria-hidden />
+                  ) : tipo === "atendimento" ? (
+                    <FileText className="h-4 w-4" aria-hidden />
+                  ) : (
+                    <StickyNote className="h-4 w-4" aria-hidden />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-44 p-1">
+                {(
+                  [
+                    { value: "todos", label: "Atendimentos e cotas", Icon: InfinityIcon },
+                    { value: "atendimento", label: "Somente atendimentos", Icon: FileText },
+                    { value: "cota", label: "Somente cotas", Icon: StickyNote },
+                  ] as const
+                ).map(({ value, label, Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setTipo(value);
+                      setTipoFiltroOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted",
+                      tipo === value && "bg-muted font-medium",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> {label}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar na Biblioteca…"
+              autoFocus
+              className="flex-1"
+            />
           </div>
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar na Biblioteca…"
-            autoFocus
-          />
           <div className="flex flex-wrap items-center gap-1.5">
-            <Select value={tipo} onValueChange={(v) => setTipo(v as ContentKind | "todos")}>
-              <SelectTrigger className="h-7 w-[110px] text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="atendimento">Atendimentos</SelectItem>
-                <SelectItem value="cota">Cotas</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={categoriaId} onValueChange={setCategoriaId}>
               <SelectTrigger className="h-7 w-[130px] text-[11px]">
                 <SelectValue />
@@ -2659,36 +2672,18 @@ function AddCardDialog({
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={autoria}
-              onValueChange={(v) => {
-                setAutoria(v as "todos" | "meus" | "outro");
-                if (v !== "outro") setAutorEscolhido(null);
-              }}
-            >
-              <SelectTrigger className="h-7 w-[110px] text-[11px]">
+            {/* Ajuste doc (AJUSTE 16) — filtro de autoria simplificado:
+                "Todos os autores" / "Somente meus" (opção de usuário
+                específico removida). */}
+            <Select value={autoria} onValueChange={(v) => setAutoria(v as "todos" | "meus")}>
+              <SelectTrigger className="h-7 w-[130px] text-[11px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="todos">Todos os autores</SelectItem>
                 <SelectItem value="meus">Somente meus</SelectItem>
-                <SelectItem value="outro">(Usuário)…</SelectItem>
               </SelectContent>
             </Select>
-            {autoria === "outro" && (
-              <Select value={autorEscolhido ?? undefined} onValueChange={setAutorEscolhido}>
-                <SelectTrigger className="h-7 w-[130px] text-[11px]">
-                  <SelectValue placeholder="Usuário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(autoresQuery.data ?? []).map((a) => (
-                    <SelectItem key={a.user_id} value={a.user_id}>
-                      {a.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
             <Select value={ranking} onValueChange={(v) => setRanking(v as typeof ranking)}>
               <SelectTrigger className="h-7 w-[130px] text-[11px]">
                 <SelectValue />
@@ -2753,16 +2748,40 @@ function AddCardDialog({
             )}
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-          <Button
-            disabled={!selecionado || add.isPending}
-            onClick={() => selecionado && add.mutate(selecionado)}
-          >
-            Inserir
-          </Button>
+        <DialogFooter className="flex-row flex-wrap items-center gap-2 sm:justify-between">
+          {/* Ajuste doc (AJUSTE 16) — "Criar atendimento"/"Criar cota"
+              posicionados ao final, antes de "Cancelar" e "Inserir". */}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setCriarTipo("atendimento")}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar atendimento
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setCriarTipo("cota")}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar cota
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!selecionado || add.isPending}
+              onClick={() => selecionado && add.mutate(selecionado)}
+            >
+              Inserir
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
