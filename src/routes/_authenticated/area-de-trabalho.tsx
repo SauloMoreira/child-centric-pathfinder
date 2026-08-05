@@ -10,6 +10,7 @@ import {
   FileSymlink,
   MessageSquare,
   MoreVertical,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -31,6 +32,7 @@ import {
   Info,
   Infinity as InfinityIcon,
   ListPlus,
+  Users,
 } from "lucide-react";
 
 import {
@@ -129,6 +131,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -2626,15 +2629,20 @@ function AddCardDialog({
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const qc = useQueryClient();
 
-  // Ajuste doc (AJUSTE 18) — mesmos filtros do motor de busca da
-  // Biblioteca. Padrão: só os meus itens mais recentes (já estabelecido);
-  // a busca/filtros substituem esse padrão conforme usados.
+  // Ajuste doc (AJUSTE 18 / CAIXA "INSERIR A PARTIR DA MINHA COLEÇÃO") —
+  // mesmos filtros do motor de busca da Biblioteca, mas simplificados:
+  // sem ranking (Recentes/Mais favoritados/Mais utilizados — a ordem é
+  // sempre pela mais recente), autoria e favoritos combinados num único
+  // menu suspenso, categoria com busca interna. Padrão: só os meus itens
+  // mais recentes.
   const [tipo, setTipo] = useState<ContentKind | "todos">("todos");
   const [tipoFiltroOpen, setTipoFiltroOpen] = useState(false);
   const [categoriaId, setCategoriaId] = useState<string>("todas");
+  const [categoriaFiltroOpen, setCategoriaFiltroOpen] = useState(false);
+  const [buscaCategoria, setBuscaCategoria] = useState("");
   const [autoria, setAutoria] = useState<"todos" | "meus">("meus");
-  const [ranking, setRanking] = useState<"recentes" | "favoritos" | "utilizados">("recentes");
   const [somenteFavoritos, setSomenteFavoritos] = useState(false);
+  const [autoriaFiltroOpen, setAutoriaFiltroOpen] = useState(false);
   // Ajuste doc — "Criar cota"/"Criar atendimento" a partir desta caixa,
   // inserindo automaticamente na coluna ao concluir.
   const [criarTipo, setCriarTipo] = useState<"atendimento" | "cota" | null>(null);
@@ -2644,9 +2652,11 @@ function AddCardDialog({
     queryFn: () => listarCategoriasBiblioteca(),
     enabled: open,
   });
+  const categoriasPicker = categoriasQuery.data ?? [];
+  const categoriaSelecionada = categoriasPicker.find((c) => c.id === categoriaId);
 
   const bibQuery = useQuery({
-    queryKey: ["biblioteca-picker", query, tipo, categoriaId, autoria, ranking, somenteFavoritos],
+    queryKey: ["biblioteca-picker", query, tipo, categoriaId, autoria, somenteFavoritos],
     queryFn: () =>
       listarBiblioteca({
         query: query.trim() || undefined,
@@ -2654,7 +2664,9 @@ function AddCardDialog({
         categoria_ids: categoriaId === "todas" ? undefined : [categoriaId],
         apenas_meus: autoria === "meus",
         favoritos_apenas: somenteFavoritos,
-        order_by: ranking,
+        // Ajuste doc — ordem sempre pela mais recente (criação/edição ou
+        // favoritação); o seletor de ranking foi removido.
+        order_by: "recentes",
         limit: 20,
       }),
     enabled: open,
@@ -2721,15 +2733,17 @@ function AddCardDialog({
           <ListPlus className="h-4 w-4" /> Inserir cota ou atendimento
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Inserir atendimento ou cota</DialogTitle>
+          {/* Ajuste doc — "Inserir atendimento ou cota" renomeado para
+              "Inserir a partir da minha coleção". */}
+          <DialogTitle>Inserir a partir da minha coleção</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="flex items-center gap-1.5">
-            {/* Ajuste doc (AJUSTE 16) — filtro atendimento/cota embutido no
-                próprio motor de busca via ícone (Infinity = "todos os
-                tipos"), sem Select dedicado à parte. */}
+            {/* Ajuste doc — motor de busca no mesmo padrão da Biblioteca:
+                botão interno "Tudo" (infinito), "Atendimentos" (ícone do
+                card de Atendimento) e "Cotas". */}
             <Popover open={tipoFiltroOpen} onOpenChange={setTipoFiltroOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -2740,14 +2754,16 @@ function AddCardDialog({
                   aria-label="Filtrar por tipo"
                   title={
                     tipo === "todos"
-                      ? "Tipo: atendimentos e cotas"
+                      ? "Tipo: tudo"
                       : tipo === "atendimento"
-                        ? "Tipo: somente atendimentos"
-                        : "Tipo: somente cotas"
+                        ? "Tipo: atendimentos"
+                        : "Tipo: cotas"
                   }
                 >
                   {tipo === "todos" ? (
                     <InfinityIcon className="h-4 w-4" aria-hidden />
+                  ) : tipo === "atendimento" ? (
+                    <MessageSquare className="h-4 w-4" fill="currentColor" aria-hidden />
                   ) : (
                     <FileText className="h-4 w-4" aria-hidden />
                   )}
@@ -2756,11 +2772,11 @@ function AddCardDialog({
               <PopoverContent align="start" className="w-44 p-1">
                 {(
                   [
-                    { value: "todos", label: "Atendimentos e cotas", Icon: InfinityIcon },
-                    { value: "atendimento", label: "Somente atendimentos", Icon: FileText },
-                    { value: "cota", label: "Somente cotas", Icon: FileText },
+                    { value: "todos", label: "Tudo", Icon: InfinityIcon, fill: false },
+                    { value: "atendimento", label: "Atendimentos", Icon: MessageSquare, fill: true },
+                    { value: "cota", label: "Cotas", Icon: FileText, fill: false },
                   ] as const
-                ).map(({ value, label, Icon }) => (
+                ).map(({ value, label, Icon, fill }) => (
                   <button
                     key={value}
                     type="button"
@@ -2773,7 +2789,8 @@ function AddCardDialog({
                       tipo === value && "bg-muted font-medium",
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> {label}
+                    <Icon className="h-3.5 w-3.5 shrink-0" fill={fill ? "currentColor" : "none"} aria-hidden />{" "}
+                    {label}
                   </button>
                 ))}
               </PopoverContent>
@@ -2786,52 +2803,95 @@ function AddCardDialog({
               className="flex-1"
             />
           </div>
+          {/* Ajuste doc — filtro "Criados por mim/Favoritos" (num único
+              menu suspenso, padrão "Criados por mim") posicionado à
+              esquerda do filtro de Categoria(s); removidos o ranking
+              (Recentes/Mais favoritados/Mais utilizados). */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <Select value={categoriaId} onValueChange={setCategoriaId}>
-              <SelectTrigger className="h-7 w-[130px] text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas categorias</SelectItem>
-                {(categoriasQuery.data ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Ajuste doc (AJUSTE 16) — filtro de autoria simplificado:
-                "Todos os autores" / "Somente meus" (opção de usuário
-                específico removida). */}
-            <Select value={autoria} onValueChange={(v) => setAutoria(v as "todos" | "meus")}>
-              <SelectTrigger className="h-7 w-[130px] text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os autores</SelectItem>
-                <SelectItem value="meus">Somente meus</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={ranking} onValueChange={(v) => setRanking(v as typeof ranking)}>
-              <SelectTrigger className="h-7 w-[130px] text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recentes">Recentes</SelectItem>
-                <SelectItem value="favoritos">Mais favoritados</SelectItem>
-                <SelectItem value="utilizados">Mais utilizados</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant={somenteFavoritos ? "default" : "outline"}
-              size="sm"
-              className="h-7 gap-1 text-[11px]"
-              onClick={() => setSomenteFavoritos((v) => !v)}
+            <DropdownMenu open={autoriaFiltroOpen} onOpenChange={setAutoriaFiltroOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-normal">
+                  {autoria === "meus" ? (
+                    <User className="h-3.5 w-3.5" aria-hidden />
+                  ) : (
+                    <Users className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                  {autoria === "meus" ? "Criados por mim" : "Criados por todos"}
+                  {somenteFavoritos && (
+                    <Star className="h-3 w-3 fill-current text-warning" aria-hidden />
+                  )}
+                  <ChevronDown className="h-3 w-3 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem onSelect={() => setAutoria("meus")}>
+                  <User className="mr-2 h-3.5 w-3.5" aria-hidden /> Criados por mim
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setAutoria("todos")}>
+                  <Users className="mr-2 h-3.5 w-3.5" aria-hidden /> Criados por todos
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={somenteFavoritos}
+                  onCheckedChange={(v) => setSomenteFavoritos(!!v)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  Somente favoritos
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Ajuste doc — "Todas as categorias" fixa no topo do menu +
+                motor de busca interno. */}
+            <DropdownMenu
+              open={categoriaFiltroOpen}
+              onOpenChange={(v) => {
+                setCategoriaFiltroOpen(v);
+                if (!v) setBuscaCategoria("");
+              }}
             >
-              <Star className={somenteFavoritos ? "h-3 w-3 fill-current" : "h-3 w-3"} aria-hidden />
-              Favoritos
-            </Button>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-normal">
+                  {categoriaId === "todas" ? "Todas as categorias" : (categoriaSelecionada?.nome ?? "Categoria")}
+                  <ChevronDown className="h-3 w-3 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="kanban-scroll max-h-72 w-56 overflow-y-auto">
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setCategoriaId("todas");
+                    setCategoriaFiltroOpen(false);
+                  }}
+                >
+                  Todas as categorias
+                </DropdownMenuItem>
+                {categoriasPicker.length > 5 && (
+                  <div className="p-1.5">
+                    <Input
+                      autoFocus
+                      value={buscaCategoria}
+                      onChange={(e) => setBuscaCategoria(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder="Buscar categoria…"
+                      className="h-7 bg-background text-xs"
+                    />
+                  </div>
+                )}
+                {categoriasPicker
+                  .filter((c) => c.nome.toLowerCase().includes(buscaCategoria.trim().toLowerCase()))
+                  .map((c) => (
+                    <DropdownMenuItem
+                      key={c.id}
+                      onSelect={() => {
+                        setCategoriaId(c.id);
+                        setCategoriaFiltroOpen(false);
+                      }}
+                    >
+                      {c.nome}
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="kanban-scroll max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-1">
             {itens.length === 0 ? (
@@ -2840,7 +2900,11 @@ function AddCardDialog({
               </p>
             ) : (
               itens.map((i) => {
-                const Icon = FileText;
+                // Ajuste doc — ícone do item na lista igual ao do card
+                // correspondente na Área de Trabalho (balão para
+                // Atendimento, documento para Cota).
+                const isAtd = i.kind === "atendimento";
+                const Icon = isAtd ? MessageSquare : FileText;
                 const selected = selecionado === i.id;
                 const alreadyIn = existing.has(i.id);
                 return (
@@ -2855,7 +2919,14 @@ function AddCardDialog({
                       selected && "bg-muted",
                     )}
                   >
-                    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
+                    <Icon
+                      className={cn(
+                        "mt-0.5 h-3.5 w-3.5 shrink-0",
+                        isAtd ? "text-[var(--accent-green)]" : "text-institutional",
+                      )}
+                      fill={isAtd ? "currentColor" : "none"}
+                      aria-hidden
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{i.titulo}</p>
                       <p className="truncate text-[10px] text-muted-foreground">
@@ -2877,28 +2948,32 @@ function AddCardDialog({
           </div>
         </div>
         <DialogFooter className="flex-row flex-wrap items-center gap-2 sm:justify-between">
-          {/* Ajuste doc (AJUSTE 16) — "Criar atendimento"/"Criar cota"
-              posicionados ao final, antes de "Cancelar" e "Inserir". */}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setCriarTipo("atendimento")}
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar atendimento
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setCriarTipo("cota")}
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden /> Criar cota
-            </Button>
-          </div>
+          {/* Ajuste doc — "Criar atendimento"/"Criar cota" num único menu
+              suspenso a partir de um botão "+", no mesmo padrão do botão
+              equivalente da barra superior da Área de Trabalho, alinhado
+              ao canto inferior esquerdo. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0"
+                aria-label="Criar atendimento ou cota"
+                title="Criar atendimento ou cota"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => setCriarTipo("atendimento")}>
+                <MessageSquare className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar atendimento
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCriarTipo("cota")}>
+                <FileText className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar cota
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
@@ -3242,11 +3317,21 @@ function AtendimentoGuiadoIcon({ className }: { className?: string }) {
   return <MessageSquare className={className} fill="currentColor" aria-hidden />;
 }
 
+// Ajuste doc — as estrelinhas do ícone do Atendimento Dinâmico usavam
+// text-institutional (verde escuro), a mesma cor do fundo do badge onde o
+// ícone é exibido (bg-sidebar-accent) — ficavam praticamente invisíveis
+// fora do contorno do balão. Trocado para a cor de primeiro-plano do
+// próprio badge (sidebar-accent-foreground, quase branca), que já é a cor
+// usada pelo balão em si (via currentColor) — mantém a estrela sempre
+// legível sobre o fundo verde escuro, sem alterar a cor do fundo.
 function AtendimentoDinamicoIcon({ className }: { className?: string }) {
   return (
     <span className={cn("relative inline-flex shrink-0 items-center justify-center", className)}>
       <MessageSquare className="h-full w-full" fill="currentColor" aria-hidden />
-      <Sparkles className="absolute -right-1 -top-1 h-2.5 w-2.5 text-institutional" aria-hidden />
+      <Sparkles
+        className="absolute -right-1 -top-1 h-2.5 w-2.5 text-sidebar-accent-foreground"
+        aria-hidden
+      />
     </span>
   );
 }
