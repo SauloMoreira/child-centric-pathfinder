@@ -311,7 +311,7 @@ export function AtendimentoIaDialog({ open, onOpenChange, onGenerated }: Atendim
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center">
             <Loader2 className="h-6 w-6 animate-spin text-institutional" aria-hidden />
             <p className="max-w-xs text-sm text-muted-foreground">
-              Analisando documento e formulando perguntas para {primeiroNome(personName)}…
+              Preparando o atendimento para {primeiroNome(personName)}…
             </p>
           </div>
         ) : (

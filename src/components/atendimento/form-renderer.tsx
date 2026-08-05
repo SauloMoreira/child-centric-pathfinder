@@ -300,9 +300,14 @@ export function FormRenderer({
               enabled={!!(respostaCompacta && onReorderFields && field.type !== "section")}
               className={cn(
                 "group/campo relative",
-                respostaCompacta &&
-                  field.type !== "section" &&
-                  "rounded-md border border-border bg-surface/60 p-2.5 pl-7 pr-7",
+                // Ajuste doc (AJUSTE 29) — o Atendimento Dinâmico deixou de
+                // isolar cada pergunta em sua própria caixa com borda,
+                // retomando o estilo do Atendimento Guiado: todo o
+                // conteúdo do formulário flui dentro da mesma
+                // seção/borda (a caixa externa do sheet), sem bordas
+                // individuais por pergunta. O espaço lateral (pl-7/pr-7)
+                // é mantido para caber a pilha de ícones de ação.
+                respostaCompacta && field.type !== "section" && "py-1.5 pl-7 pr-7",
               )}
             >
               {({ attributes, listeners }) => (
@@ -736,7 +741,10 @@ function FieldInput({
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        {/* Ajuste doc (AJUSTE 29) — respostas sugeridas sempre alinhadas à
+            esquerda, explicitamente (evita qualquer herança de
+            centralização de containers pais). */}
+        <div className="flex flex-wrap justify-start gap-1.5">
           {sugestoes.map((s, i) => (
             <button
               key={i}

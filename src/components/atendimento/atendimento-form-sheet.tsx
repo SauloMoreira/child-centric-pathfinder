@@ -1483,7 +1483,6 @@ function CalcEditor({
 
   return (
     <div className="space-y-2 rounded-md bg-muted/30 p-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Soma de números</p>
       {elegiveis.length === 0 ? (
         <p className="text-[10px] text-muted-foreground">
           Adicione um campo Número ou Valor (R$) antes deste para somar.

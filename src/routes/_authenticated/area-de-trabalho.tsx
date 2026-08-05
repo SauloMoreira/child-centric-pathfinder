@@ -8,7 +8,7 @@ import {
   Eraser,
   FileText,
   FileSymlink,
-  StickyNote,
+  ScrollText,
   MessageSquare,
   MoreVertical,
   ChevronLeft,
@@ -510,6 +510,21 @@ function ColumnsBoard({
   // já existente). Ao clicar, alternam para altura natural (crescem com o
   // conteúdo e a rolagem vertical passa a ser da tela/board como um todo).
   const [colunasAlturaNatural, setColunasAlturaNatural] = useState(true);
+  // Ajuste doc — AJUSTE 26: permite ajustar a altura de uma coluna
+  // individualmente, independente do modo global acima. Colunas neste
+  // conjunto ficam sempre em "altura da tela" (h-full), mesmo que o board
+  // esteja em modo altura natural.
+  const [colunasAlturaTelaIndividual, setColunasAlturaTelaIndividual] = useState<Set<string>>(
+    new Set(),
+  );
+  const toggleColunaAlturaTelaIndividual = useCallback((columnId: string) => {
+    setColunasAlturaTelaIndividual((prev) => {
+      const next = new Set(prev);
+      if (next.has(columnId)) next.delete(columnId);
+      else next.add(columnId);
+      return next;
+    });
+  }, []);
   const toggleColumnCollapsed = useCallback((columnId: string) => {
     setCollapsedColumns((prev) => {
       const next = new Set(prev);
@@ -1086,7 +1101,7 @@ function ColumnsBoard({
                     setCotaFormOpen(true);
                   }}
                 >
-                  <StickyNote className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar cota
+                  <ScrollText className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar cota
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1152,12 +1167,12 @@ function ColumnsBoard({
                   aria-label={
                     colunasAlturaNatural
                       ? "Ajustar colunas à altura da tela"
-                      : "Permitir colunas maiores que a tela"
+                      : "Reajustar colunas à altura orgânica"
                   }
                   title={
                     colunasAlturaNatural
                       ? "Ajustar colunas à altura da tela"
-                      : "Permitir colunas maiores que a tela"
+                      : "Reajustar colunas à altura orgânica"
                   }
                   onClick={() => setColunasAlturaNatural((v) => !v)}
                 >
@@ -1239,7 +1254,9 @@ function ColumnsBoard({
                   isSearching={isSearching}
                   collapsed={collapsedColumns.has(c.id)}
                   onToggleCollapsed={() => toggleColumnCollapsed(c.id)}
-                  alturaNatural={colunasAlturaNatural}
+                  alturaNatural={colunasAlturaNatural && !colunasAlturaTelaIndividual.has(c.id)}
+                  alturaTelaIndividual={colunasAlturaTelaIndividual.has(c.id)}
+                  onToggleAlturaTelaIndividual={() => toggleColunaAlturaTelaIndividual(c.id)}
                 />
               ))}
 
@@ -1562,6 +1579,8 @@ function SortableColumn(props: {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   alturaNatural?: boolean;
+  alturaTelaIndividual?: boolean;
+  onToggleAlturaTelaIndividual?: () => void;
 }) {
   const {
     column,
@@ -1592,6 +1611,8 @@ function SortableColumn(props: {
     collapsed,
     onToggleCollapsed,
     alturaNatural = false,
+    alturaTelaIndividual = false,
+    onToggleAlturaTelaIndividual,
   } = props;
 
   const sortable = useSortable({
@@ -1821,6 +1842,16 @@ function SortableColumn(props: {
               >
                 <ChevronRight className="mr-2 h-4 w-4" /> Mover para a direita
               </DropdownMenuItem>
+              {onToggleAlturaTelaIndividual && (
+                <DropdownMenuItem onClick={onToggleAlturaTelaIndividual}>
+                  {alturaTelaIndividual ? (
+                    <UnfoldVertical className="mr-2 h-4 w-4" />
+                  ) : (
+                    <FoldVertical className="mr-2 h-4 w-4" />
+                  )}
+                  {alturaTelaIndividual ? "Reajustar à altura orgânica" : "Ajustar à altura da tela"}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive"
@@ -2203,7 +2234,7 @@ function ColumnDragPreview({ name }: { name: string }) {
 
 function CardDragPreview({ card }: { card: WorkspaceCardDto }) {
   const isCota = card.kind === "cota";
-  const Icon = isCota ? StickyNote : FileText;
+  const Icon = isCota ? ScrollText : FileText;
   return (
     <div className="w-72 rounded-md border-2 border-institutional bg-card p-3 shadow-lg opacity-90 pointer-events-none">
       <div className="flex items-start gap-2">
@@ -2349,7 +2380,7 @@ function SortableCard(props: {
           !card.canOpen && "opacity-70",
         )}
       >
-        <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+        <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
         <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
         <div className="flex shrink-0 items-center gap-0.5">
           {card.bodyText &&
@@ -2653,7 +2684,7 @@ function AddCardDialog({
                   ) : tipo === "atendimento" ? (
                     <FileText className="h-4 w-4" aria-hidden />
                   ) : (
-                    <StickyNote className="h-4 w-4" aria-hidden />
+                    <ScrollText className="h-4 w-4" aria-hidden />
                   )}
                 </Button>
               </PopoverTrigger>
@@ -2662,7 +2693,7 @@ function AddCardDialog({
                   [
                     { value: "todos", label: "Atendimentos e cotas", Icon: InfinityIcon },
                     { value: "atendimento", label: "Somente atendimentos", Icon: FileText },
-                    { value: "cota", label: "Somente cotas", Icon: StickyNote },
+                    { value: "cota", label: "Somente cotas", Icon: ScrollText },
                   ] as const
                 ).map(({ value, label, Icon }) => (
                   <button
@@ -2744,7 +2775,7 @@ function AddCardDialog({
               </p>
             ) : (
               itens.map((i) => {
-                const Icon = i.kind === "cota" ? StickyNote : FileText;
+                const Icon = i.kind === "cota" ? ScrollText : FileText;
                 const selected = selecionado === i.id;
                 const alreadyIn = existing.has(i.id);
                 return (

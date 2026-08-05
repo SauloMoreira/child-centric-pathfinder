@@ -44,6 +44,10 @@ import {
   Leaf,
   Shirt,
   HandHelping,
+  Venus,
+  HandFist,
+  Accessibility,
+  PersonStanding,
   type LucideIcon,
 } from "lucide-react";
 
@@ -101,6 +105,13 @@ export const COLUMN_ICON_ORDER = [
   "leaf",
   "shirt",
   "hand-helping",
+  // Ajuste doc — AJUSTE 27: novos ícones temáticos (Mulher, Luta Social,
+  // Pessoa com Deficiência, Pessoa Idosa). Contrato e Moradia já contam
+  // com ícones equivalentes na paleta ("file-signature" e "home").
+  "venus",
+  "hand-fist",
+  "accessibility",
+  "person-standing",
 ] as const;
 
 export type ColumnIconName = (typeof COLUMN_ICON_ORDER)[number];
@@ -150,6 +161,10 @@ const MAP: Record<ColumnIconName, LucideIcon> = {
   leaf: Leaf,
   shirt: Shirt,
   "hand-helping": HandHelping,
+  venus: Venus,
+  "hand-fist": HandFist,
+  accessibility: Accessibility,
+  "person-standing": PersonStanding,
 };
 
 /** Quantidade mínima de opções sempre disponíveis, mesmo sem nenhuma
