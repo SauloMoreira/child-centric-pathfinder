@@ -15,9 +15,10 @@ import {
   Shield,
   Inbox,
   Archive,
+  LayoutPanelTop,
   type LucideIcon,
 } from "lucide-react";
-import type { PanelIcon as PanelIconName } from "../types";
+import type { PanelIcon as PanelIconName, PanelRole } from "../types";
 
 const MAP: Record<PanelIconName, LucideIcon> = {
   layers: Layers,
@@ -41,6 +42,17 @@ const MAP: Record<PanelIconName, LucideIcon> = {
 export function panelIconComponent(name: string | null | undefined): LucideIcon {
   if (!name) return Layers;
   return (MAP as Record<string, LucideIcon>)[name] ?? Layers;
+}
+
+/**
+ * Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — "Sugere-se que os botões dos
+ * painéis próprios ou em colaboração tenham o ícone de painel com o
+ * quadradinho superior preenchido": Painéis próprios/colaborados usam
+ * `LayoutPanelTop` (retângulo com a faixa superior destacada); Painéis em
+ * que o usuário é apenas visitante mantêm o ícone padrão sem preenchimento.
+ */
+export function panelRoleIconComponent(role: PanelRole): LucideIcon {
+  return role === "visitante" ? Layers : LayoutPanelTop;
 }
 
 export function PanelIcon({

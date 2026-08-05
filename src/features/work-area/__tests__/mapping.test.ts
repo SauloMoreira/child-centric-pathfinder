@@ -25,6 +25,9 @@ describe("mapPanelRow", () => {
       position: 3,
       optimisticVersion: 7,
       archivedAt: null,
+      isPublic: false,
+      description: null,
+      role: "owner",
     });
   });
 
@@ -81,11 +84,14 @@ describe("mapPanelRow", () => {
       [
         "archivedAt",
         "defenderUserId",
+        "description",
         "icon",
         "id",
+        "isPublic",
         "name",
         "optimisticVersion",
         "position",
+        "role",
       ].sort(),
     );
     // Órgão não faz parte da identidade do Painel.
@@ -105,18 +111,37 @@ describe("mapPanelRow", () => {
 });
 
 describe("mapWorkArea", () => {
-  it("ordena Painéis por posição", () => {
+  // A ordenação (Painéis próprios pela posição, depois importados/colaborados
+  // por data de vínculo) é responsabilidade do backend — `mapWorkArea` deve
+  // preservar exatamente a ordem recebida, nunca reordenar no cliente, pois
+  // `position` só é comparável entre Painéis do mesmo dono.
+  it("preserva a ordem recebida do backend, sem reordenar por posição", () => {
     const wa = mapWorkArea({
       defenderUserId: SYN_DEFENDER_A,
       panelCount: 3,
       panels: [
-        { id: "p-b", nome: "B", order_position: 2 },
         { id: "p-a", nome: "A", order_position: 0 },
         { id: "p-c", nome: "C", order_position: 1 },
+        { id: "p-b", nome: "B", order_position: 2 },
       ],
       access: { accessMode: "owner" },
     });
     expect(wa.panels.map((p) => p.id)).toEqual(["p-a", "p-c", "p-b"]);
+  });
+
+  it("não reordena Painéis importados mesmo com position colidindo com Painéis próprios", () => {
+    const wa = mapWorkArea({
+      defenderUserId: SYN_DEFENDER_A,
+      panelCount: 2,
+      panels: [
+        { id: "own-1", nome: "Próprio", order_position: 0, panel_role: "owner" },
+        // Painel importado: position pertence ao Painel do outro Defensor,
+        // aqui coincidentemente também 0 — não deve "furar" para o topo.
+        { id: "shared-1", nome: "Importado", order_position: 0, panel_role: "visitante" },
+      ],
+      access: { accessMode: "owner" },
+    });
+    expect(wa.panels.map((p) => p.id)).toEqual(["own-1", "shared-1"]);
   });
 
   it("preserva activePanelId quando informado", () => {
@@ -133,12 +158,12 @@ describe("mapWorkArea", () => {
     expect(wa.activePanelId).toBe(SYN_PANEL_2);
   });
 
-  it("faz fallback para o primeiro Painel quando activePanelId ausente", () => {
+  it("faz fallback para o primeiro Painel da lista (já ordenada pelo backend) quando activePanelId ausente", () => {
     const wa = mapWorkArea({
       defenderUserId: SYN_DEFENDER_A,
       panels: [
-        { id: SYN_PANEL_2, order_position: 1 },
         { id: SYN_PANEL_1, order_position: 0 },
+        { id: SYN_PANEL_2, order_position: 1 },
       ],
       access: { accessMode: "owner" },
     });

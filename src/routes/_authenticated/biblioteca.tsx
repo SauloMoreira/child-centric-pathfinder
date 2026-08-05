@@ -7,8 +7,11 @@ import {
   ArrowUpDown,
   BookOpen,
   ChevronDown,
+  Download,
   FileText,
   FolderInput,
+  LayoutPanelTop,
+  Loader2,
   MoreVertical,
   Pencil,
   ScrollText,
@@ -44,7 +47,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEstadoInstitucional } from "@/hooks/use-estado-institucional";
 import { useCurrentDefenderContext } from "@/features/team/defender-bonds";
-import { useWorkArea } from "@/features/work-area";
+import {
+  useWorkArea,
+  usePublicPanelSearch,
+  useImportPanel,
+  panelErrorFromUnknown,
+  type PublicPanelSearchResult,
+} from "@/features/work-area";
 import { CotaFormSheet } from "@/components/cota/cota-form-sheet";
 import { CotaDetailSheet } from "@/components/cota/cota-detail-sheet";
 import { cotaKeys } from "@/features/cota/hooks";
@@ -83,10 +92,14 @@ type ColunaOrdenacao =
 // Ajuste doc (PÁGINA BIBLIOTECA) — o botão de tipo dentro do motor de busca
 // assume o ícone e o rótulo respectivos de Cota/Atendimento; "todos" usa a
 // lupa neutra padrão.
-const TIPO_META: Record<"todos" | ContentKind, { label: string; Icon: typeof Search; placeholder: string }> = {
+// Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — "No botão do motor de busca,
+// onde há Atendimento e Cotas, haverá também a opção Painéis".
+type TipoBusca = "todos" | ContentKind | "painel";
+const TIPO_META: Record<TipoBusca, { label: string; Icon: typeof Search; placeholder: string }> = {
   todos: { label: "Todos os tipos", Icon: Search, placeholder: "Buscar por título ou conteúdo…" },
   atendimento: { label: "Atendimentos", Icon: FileText, placeholder: "Buscar atendimentos…" },
   cota: { label: "Cotas", Icon: ScrollText, placeholder: "Buscar cotas…" },
+  painel: { label: "Painéis", Icon: LayoutPanelTop, placeholder: "Buscar Painéis públicos…" },
 };
 
 function BibliotecaPage() {
@@ -101,7 +114,7 @@ function BibliotecaPage() {
   const workArea = useWorkArea(defensorId);
   const allPanels = workArea.data?.panels ?? [];
 
-  const [kind, setKind] = useState<ContentKind | "todos">("todos");
+  const [kind, setKind] = useState<TipoBusca>("todos");
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
   const [buscaCategoria, setBuscaCategoria] = useState("");
   const [query, setQuery] = useState("");
@@ -143,9 +156,10 @@ function BibliotecaPage() {
 
   const itensQuery = useQuery({
     queryKey: ["biblioteca-itens", kind, categoriaIds, query, autoria, somenteFavoritos],
+    enabled: kind !== "painel",
     queryFn: () =>
       listarBiblioteca({
-        kind: kind === "todos" ? undefined : kind,
+        kind: kind === "todos" || kind === "painel" ? undefined : kind,
         categoria_ids: categoriaIds.length > 0 ? categoriaIds : undefined,
         query: query.trim() || undefined,
         apenas_meus: autoria === "meus",
@@ -153,6 +167,26 @@ function BibliotecaPage() {
         favoritos_apenas: somenteFavoritos,
       }),
   });
+
+  // Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — aba "Painéis" do motor de
+  // busca: lista Painéis públicos de todos os Defensores, com importação
+  // direta para a própria Área de Trabalho.
+  const panelSearchQuery = usePublicPanelSearch(query.trim(), kind === "painel");
+  const importPanel = useImportPanel(defensorId ?? "");
+  const [importingId, setImportingId] = useState<string | null>(null);
+
+  const handleImportPanel = async (panel: PublicPanelSearchResult) => {
+    setImportingId(panel.panelId);
+    try {
+      await importPanel.mutateAsync({ panelId: panel.panelId });
+      toast.success(`“${panel.name}” importado para sua Área de Trabalho`);
+      qc.invalidateQueries({ queryKey: ["public-panel-search"] });
+    } catch (err) {
+      toast.error(panelErrorFromUnknown(err).message);
+    } finally {
+      setImportingId(null);
+    }
+  };
 
   const categorias = categoriasQuery.data ?? [];
   const autores = autoresQuery.data ?? [];
@@ -321,6 +355,9 @@ function BibliotecaPage() {
                 <DropdownMenuItem onClick={() => setKind("cota")}>
                   <ScrollText className="mr-2 h-3.5 w-3.5" aria-hidden /> Cotas
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setKind("painel")}>
+                  <LayoutPanelTop className="mr-2 h-3.5 w-3.5" aria-hidden /> Painéis
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Input
@@ -331,119 +368,205 @@ function BibliotecaPage() {
             />
           </div>
 
-          <DropdownMenu onOpenChange={(v) => !v && setBuscaAutor("")}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-normal">
-                <Users className="h-3.5 w-3.5" aria-hidden />
-                {rotuloAutoria}
-                <ChevronDown className="h-3 w-3 opacity-50" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="kanban-scroll max-h-72 w-56 overflow-y-auto">
-              <DropdownMenuItem onSelect={() => setAutoria("todos")}>
-                {feminino ? "Criadas por todos" : "Criados por todos"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setAutoria("meus")}>
-                {feminino ? "Criadas por mim" : "Criados por mim"}
-              </DropdownMenuItem>
-              {autores.length > 5 && (
-                <div className="p-1.5">
-                  <Input
-                    autoFocus
-                    value={buscaAutor}
-                    onChange={(e) => setBuscaAutor(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Buscar usuário…"
-                    className="h-7 bg-background text-xs"
-                  />
-                </div>
-              )}
-              {autores
-                .filter((a) => a.user_id !== meuUserId)
-                .filter((a) => a.nome.toLowerCase().includes(buscaAutor.trim().toLowerCase()))
-                .map((a) => (
-                  <DropdownMenuItem key={a.user_id} onSelect={() => setAutoria(a.user_id)}>
-                    {a.nome}
-                  </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {kind !== "painel" && (
+            <DropdownMenu onOpenChange={(v) => !v && setBuscaAutor("")}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-normal">
+                  <Users className="h-3.5 w-3.5" aria-hidden />
+                  {rotuloAutoria}
+                  <ChevronDown className="h-3 w-3 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="kanban-scroll max-h-72 w-56 overflow-y-auto">
+                <DropdownMenuItem onSelect={() => setAutoria("todos")}>
+                  {feminino ? "Criadas por todos" : "Criados por todos"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setAutoria("meus")}>
+                  {feminino ? "Criadas por mim" : "Criados por mim"}
+                </DropdownMenuItem>
+                {autores.length > 5 && (
+                  <div className="p-1.5">
+                    <Input
+                      autoFocus
+                      value={buscaAutor}
+                      onChange={(e) => setBuscaAutor(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder="Buscar usuário…"
+                      className="h-7 bg-background text-xs"
+                    />
+                  </div>
+                )}
+                {autores
+                  .filter((a) => a.user_id !== meuUserId)
+                  .filter((a) => a.nome.toLowerCase().includes(buscaAutor.trim().toLowerCase()))
+                  .map((a) => (
+                    <DropdownMenuItem key={a.user_id} onSelect={() => setAutoria(a.user_id)}>
+                      {a.nome}
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
-          <Button
-            variant={somenteFavoritos ? "default" : "outline"}
-            size="sm"
-            className="h-7 gap-1.5 text-[11px]"
-            onClick={() => setSomenteFavoritos((v) => !v)}
-          >
-            <Star className={cn("h-3.5 w-3.5", somenteFavoritos && "fill-current")} aria-hidden />
-            Favoritos
-          </Button>
+          {kind !== "painel" && (
+            <Button
+              variant={somenteFavoritos ? "default" : "outline"}
+              size="sm"
+              className="h-7 gap-1.5 text-[11px]"
+              onClick={() => setSomenteFavoritos((v) => !v)}
+            >
+              <Star className={cn("h-3.5 w-3.5", somenteFavoritos && "fill-current")} aria-hidden />
+              Favoritos
+            </Button>
+          )}
         </div>
 
         {/* Ajuste doc — seleção de categorias, múltiplas simultaneamente,
-            no mesmo padrão do seletor usado na criação de cotas. */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <DropdownMenu onOpenChange={(v) => !v && setBuscaCategoria("")}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={categoriasQuery.isLoading || categorias.length === 0}
-                className="h-7 gap-1.5 text-[11px] font-normal"
-              >
-                {categoriaIds.length === 0
-                  ? "Categorias"
-                  : `${categoriaIds.length} categoria${categoriaIds.length > 1 ? "s" : ""}`}
-                <ChevronDown className="h-3 w-3 opacity-50" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="kanban-scroll max-h-72 w-64 overflow-y-auto">
-              {categorias.length > 5 && (
-                <div className="p-1.5">
-                  <Input
-                    autoFocus
-                    value={buscaCategoria}
-                    onChange={(e) => setBuscaCategoria(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Buscar categoria…"
-                    className="h-7 bg-background text-xs"
-                  />
-                </div>
-              )}
-              {categorias
-                .filter((c) => c.nome.toLowerCase().includes(buscaCategoria.trim().toLowerCase()))
+            no mesmo padrão do seletor usado na criação de cotas. Não se
+            aplica à aba Painéis (categorias são de Atendimentos/Cotas). */}
+        {kind !== "painel" && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <DropdownMenu onOpenChange={(v) => !v && setBuscaCategoria("")}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={categoriasQuery.isLoading || categorias.length === 0}
+                  className="h-7 gap-1.5 text-[11px] font-normal"
+                >
+                  {categoriaIds.length === 0
+                    ? "Categorias"
+                    : `${categoriaIds.length} categoria${categoriaIds.length > 1 ? "s" : ""}`}
+                  <ChevronDown className="h-3 w-3 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="kanban-scroll max-h-72 w-64 overflow-y-auto">
+                {categorias.length > 5 && (
+                  <div className="p-1.5">
+                    <Input
+                      autoFocus
+                      value={buscaCategoria}
+                      onChange={(e) => setBuscaCategoria(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder="Buscar categoria…"
+                      className="h-7 bg-background text-xs"
+                    />
+                  </div>
+                )}
+                {categorias
+                  .filter((c) => c.nome.toLowerCase().includes(buscaCategoria.trim().toLowerCase()))
+                  .map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c.id}
+                      checked={categoriaIds.includes(c.id)}
+                      onCheckedChange={() => toggleCategoria(c.id)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {c.nome}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {categoriaIds.length > 0 &&
+              categorias
+                .filter((c) => categoriaIds.includes(c.id))
                 .map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    checked={categoriaIds.includes(c.id)}
-                    onCheckedChange={() => toggleCategoria(c.id)}
-                    onSelect={(e) => e.preventDefault()}
-                  >
+                  <Badge key={c.id} variant="secondary" className="gap-1 pr-1 text-[11px]">
                     {c.nome}
-                  </DropdownMenuCheckboxItem>
+                    <button
+                      type="button"
+                      onClick={() => toggleCategoria(c.id)}
+                      className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                      aria-label={`Remover categoria ${c.nome}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
                 ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {categoriaIds.length > 0 &&
-            categorias
-              .filter((c) => categoriaIds.includes(c.id))
-              .map((c) => (
-                <Badge key={c.id} variant="secondary" className="gap-1 pr-1 text-[11px]">
-                  {c.nome}
-                  <button
-                    type="button"
-                    onClick={() => toggleCategoria(c.id)}
-                    className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-                    aria-label={`Remover categoria ${c.nome}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {itensQuery.isLoading ? (
+      {kind === "painel" ? (
+        panelSearchQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando…</p>
+        ) : (panelSearchQuery.data ?? []).length === 0 ? (
+          <div className="surface-panel p-8 text-center">
+            <p className="text-sm text-muted-foreground">Nenhum Painel público encontrado.</p>
+          </div>
+        ) : (
+          <div className="surface-panel overflow-x-auto p-0">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-border text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <th className="px-3 py-2 font-semibold">Painel</th>
+                  <th className="px-3 py-2 font-semibold">Gestor</th>
+                  <th className="px-3 py-2 text-right font-semibold">Membros</th>
+                  <th className="w-0 px-2 py-2" aria-label="Ações" />
+                </tr>
+              </thead>
+              <tbody>
+                {(panelSearchQuery.data ?? []).map((panel) => (
+                  <tr
+                    key={panel.panelId}
+                    className="border-b border-border/60 last:border-0 transition hover:bg-muted/50"
+                  >
+                    <td className="max-w-[320px] px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-institutional/[0.12] text-institutional">
+                          <LayoutPanelTop className="h-3.5 w-3.5" aria-hidden />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{panel.name}</p>
+                          {panel.description && (
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {panel.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="max-w-[160px] truncate px-3 py-2 text-muted-foreground">
+                      {panel.ownerDisplayName}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                      {panel.memberCount}
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center justify-end">
+                        {panel.isOwn ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            Seu Painel
+                          </Badge>
+                        ) : panel.alreadyImported ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            Já importado
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 gap-1.5 text-[11px]"
+                            disabled={importingId === panel.panelId}
+                            onClick={() => handleImportPanel(panel)}
+                          >
+                            {importingId === panel.panelId ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                            ) : (
+                              <Download className="h-3.5 w-3.5" aria-hidden />
+                            )}
+                            Importar
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      ) : itensQuery.isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : itens.length === 0 ? (
         <div className="surface-panel p-8 text-center">

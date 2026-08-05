@@ -8,6 +8,8 @@ export type PanelAccessMode =
   | "team_readonly"
   | "technical_readonly"
   | "technical_admin"
+  | "collaborator"
+  | "visitor"
   | "none";
 
 export type WorkspaceAccess = {
@@ -18,7 +20,13 @@ export type WorkspaceAccess = {
   canMoveCards: boolean;
   canAddItems: boolean;
   accessMode: PanelAccessMode;
+  /** Presente apenas quando o acesso foi resolvido por painel (listar_workspace_completo). */
+  canDeleteWorkspace?: boolean;
 };
+
+// Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — papel do usuário chamador em
+// relação a um Painel específico dentro da própria Área de Trabalho.
+export type PanelRole = "owner" | "colaborador" | "visitante";
 
 export type PanelSummary = {
   id: string;
@@ -28,6 +36,10 @@ export type PanelSummary = {
   position: number;
   optimisticVersion: number;
   archivedAt: string | null;
+  isPublic: boolean;
+  description: string | null;
+  /** Papel do dono da Área de Trabalho sendo visualizada em relação a este Painel. */
+  role: PanelRole;
 };
 
 export type WorkArea = {
@@ -50,6 +62,38 @@ export type PanelColumn = {
   colorToken: string;
   customColor: string | null;
   position: number;
+};
+
+// ---------- Compartilhamento de Painéis ----------
+export type PanelMemberSummary = {
+  userId: string;
+  name: string;
+  since: string;
+};
+
+export type PanelPanorama = {
+  panelId: string;
+  name: string;
+  description: string | null;
+  isPublic: boolean;
+  manager: PanelMemberSummary | null;
+  collaborators: PanelMemberSummary[];
+  visitors: PanelMemberSummary[];
+  callerAccessMode: PanelAccessMode;
+  canManageCollaborators: boolean;
+};
+
+export type PublicPanelSearchResult = {
+  panelId: string;
+  name: string;
+  icon: string | null;
+  description: string | null;
+  ownerUserId: string;
+  ownerDisplayName: string;
+  createdAt: string;
+  memberCount: number;
+  isOwn: boolean;
+  alreadyImported: boolean;
 };
 
 export type PanelCard = {

@@ -146,6 +146,8 @@ import { PanelTabs } from "@/features/work-area/components/PanelTabs";
 import { CreatePanelSheet } from "@/features/work-area/components/CreatePanelSheet";
 import { RenamePanelSheet } from "@/features/work-area/components/RenamePanelSheet";
 import { ArchivePanelDialog } from "@/features/work-area/components/ArchivePanelDialog";
+import { PanelAccessBadge } from "@/features/work-area/components/PanelAccessBadge";
+import { supabase } from "@/integrations/supabase/client";
 import { ColumnIcon, columnIconPalette } from "@/features/work-area/components/column-icon";
 import { panelIconComponent } from "@/features/work-area/components/panel-icon";
 import { RequestDefenderAccessSheet } from "@/features/team/components/request-defender-access-sheet";
@@ -293,6 +295,7 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
   }
 
   const activePanelId = selectedId ?? panels[0]?.id ?? null;
+  const activePanel = panels.find((p) => p.id === activePanelId) ?? null;
 
   return (
     // Ajuste (altura exata da tela / sem rolagem indesejada na página) —
@@ -309,10 +312,23 @@ function WorkArea({ defensorId, contextoNome }: { defensorId: string; contextoNo
           <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
             Área de Trabalho
           </h1>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <User className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
-          </p>
+          {/* Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — no lugar do nome do
+              usuário, um botão discreto resume o papel do usuário em
+              relação ao Painel selecionado (privado / gestor / colaborador
+              / visitante), abrindo o panorama do Painel ao ser clicado. */}
+          {activePanel ? (
+            <PanelAccessBadge
+              panelId={activePanel.id}
+              isPublic={activePanel.isPublic}
+              role={activePanel.role}
+              defenderUserId={defensorId}
+            />
+          ) : (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <User className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="truncate max-w-[18rem] sm:max-w-none">{contextoNome}</span>
+            </p>
+          )}
         </div>
 
         {/* Barra de Painéis */}
@@ -396,6 +412,37 @@ function PanelBoard({
     queryKey: key,
     queryFn: () => listarWorkspaceCompleto(defensorId, panelId),
   });
+
+  // Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — "as alterações feitas pelo
+  // Defensor Público no painel por ele criado ensejará a atualização
+  // também, em tempo real, para todos os visitantes que tenham importado o
+  // painel". Assina mudanças em colunas/cards/metadados do Painel aberto e
+  // revalida a leitura local ao vivo, para qualquer papel (gestor,
+  // colaborador ou visitante) — não só quem fez a alteração.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`workspace-${panelId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "defensor_workspace_columns", filter: `workspace_id=eq.${panelId}` },
+        () => qc.invalidateQueries({ queryKey: key }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "defensor_workspace_cards", filter: `workspace_id=eq.${panelId}` },
+        () => qc.invalidateQueries({ queryKey: key }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "defensor_workspaces", filter: `id=eq.${panelId}` },
+        () => qc.invalidateQueries({ queryKey: key }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panelId]);
 
   const data = workspaceQuery.data;
 

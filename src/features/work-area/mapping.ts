@@ -1,4 +1,4 @@
-import type { PanelSummary, WorkArea, WorkspaceAccess, PanelAccessMode } from "./types";
+import type { PanelSummary, WorkArea, WorkspaceAccess, PanelAccessMode, PanelRole } from "./types";
 
 // Aceita rows tanto do RPC de leitura (snake_case) quanto do ensure (camelCase).
 type PanelRowRaw = {
@@ -14,6 +14,12 @@ type PanelRowRaw = {
   optimisticVersion?: number | string;
   archived_at?: string | null;
   archivedAt?: string | null;
+  is_public?: boolean;
+  isPublic?: boolean;
+  descricao?: string | null;
+  description?: string | null;
+  panel_role?: PanelRole;
+  role?: PanelRole;
 };
 
 type WorkAreaRawResponse = {
@@ -34,31 +40,37 @@ export function mapPanelRow(defenderUserId: string, row: PanelRowRaw): PanelSumm
     position: Number(row.position ?? row.orderPosition ?? row.order_position ?? 0),
     optimisticVersion: Number(row.optimisticVersion ?? row.optimistic_version ?? 1),
     archivedAt: row.archivedAt ?? row.archived_at ?? null,
+    isPublic: row.isPublic ?? row.is_public ?? false,
+    description: row.description ?? row.descricao ?? null,
+    role: row.role ?? row.panel_role ?? "owner",
   };
 }
 
 function accessFromMode(mode: PanelAccessMode): WorkspaceAccess {
   const isOwner = mode === "owner";
   const isTechnicalAdmin = mode === "technical_admin";
-  const canEdit = isOwner || isTechnicalAdmin;
-  const isReadonly = mode === "team_readonly" || mode === "technical_readonly";
+  const isCollaborator = mode === "collaborator";
+  const canEdit = isOwner || isTechnicalAdmin || isCollaborator;
+  const isReadonly = mode === "team_readonly" || mode === "technical_readonly" || mode === "visitor";
   const canView = canEdit || isReadonly;
   return {
     canView,
     canEditWorkspace: canEdit,
-    canManagePanels: canEdit,
+    canManagePanels: isOwner || isTechnicalAdmin,
     canManageColumns: canEdit,
     canMoveCards: canEdit,
     canAddItems: canEdit,
     accessMode: mode,
+    canDeleteWorkspace: isOwner || isTechnicalAdmin,
   };
 }
 
 export function mapWorkArea(res: WorkAreaRawResponse): WorkArea {
   const defenderUserId = res.defenderUserId ?? res.defensor_user_id ?? "";
-  const panels = (res.panels ?? [])
-    .map((p) => mapPanelRow(defenderUserId, p))
-    .sort((a, b) => a.position - b.position);
+  // A ordem já vem correta do backend (Painéis próprios primeiro, depois
+  // importados/colaborados por data de vínculo) — não reordenar no cliente,
+  // pois `position` de um Painel importado pertence à lista de outro Defensor.
+  const panels = (res.panels ?? []).map((p) => mapPanelRow(defenderUserId, p));
   return {
     defenderUserId,
     activePanelId: res.activePanelId ?? panels[0]?.id ?? null,

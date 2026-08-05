@@ -30,20 +30,27 @@ export function createPanelFixture(overrides: Partial<PanelSummary> = {}): Panel
     position: overrides.position ?? panelCounter - 1,
     optimisticVersion: overrides.optimisticVersion ?? 1,
     archivedAt: overrides.archivedAt ?? null,
+    isPublic: overrides.isPublic ?? false,
+    description: overrides.description ?? null,
+    role: overrides.role ?? "owner",
   };
 }
 
 export function createAccessFixture(mode: PanelAccessMode = "owner"): WorkspaceAccess {
   const isOwner = mode === "owner";
-  const isReadonly = mode === "team_readonly" || mode === "technical_readonly";
+  const isTechnicalAdmin = mode === "technical_admin";
+  const isCollaborator = mode === "collaborator";
+  const canEdit = isOwner || isTechnicalAdmin || isCollaborator;
+  const isReadonly = mode === "team_readonly" || mode === "technical_readonly" || mode === "visitor";
   return {
     accessMode: mode,
-    canView: isOwner || isReadonly,
-    canEditWorkspace: isOwner,
-    canManagePanels: isOwner,
-    canManageColumns: isOwner,
-    canMoveCards: isOwner,
-    canAddItems: isOwner,
+    canView: canEdit || isReadonly,
+    canEditWorkspace: canEdit,
+    canManagePanels: isOwner || isTechnicalAdmin,
+    canManageColumns: canEdit,
+    canMoveCards: canEdit,
+    canAddItems: canEdit,
+    canDeleteWorkspace: isOwner || isTechnicalAdmin,
   };
 }
 

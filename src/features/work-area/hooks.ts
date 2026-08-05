@@ -14,6 +14,15 @@ import {
   readWorkArea,
   renamePanel,
   reorderPanels,
+  setPanelVisibility,
+  importPanel,
+  removeImportedPanel,
+  setPanelCollaborator,
+  removePanelCollaborator,
+  leavePanelCollaboration,
+  getPanelPanorama,
+  searchPublicPanels,
+  searchCollaboratorCandidates,
   WorkAreaForbiddenError,
   WorkAreaNotInitializedError,
   type CreatePanelInput,
@@ -87,7 +96,13 @@ export function useCreatePanel(
 ): UseMutationResult<
   Awaited<ReturnType<typeof createPanel>>,
   unknown,
-  { name: string; icon?: string | null; expectedCount: number }
+  {
+    name: string;
+    icon?: string | null;
+    expectedCount: number;
+    description?: string | null;
+    isPublic?: boolean;
+  }
 > {
   const qc = useQueryClient();
   // uma idempotency key por "ação do usuário" — regenerada a cada mutate()
@@ -102,6 +117,8 @@ export function useCreatePanel(
         icon: vars.icon ?? null,
         expectedCount: vars.expectedCount,
         idempotencyKey: keyRef.current,
+        description: vars.description ?? null,
+        isPublic: vars.isPublic ?? false,
       };
       return createPanel(input);
     },
@@ -126,6 +143,7 @@ export function useRenamePanel(defenderUserId: string) {
       name: string;
       icon?: string | null;
       expectedVersion: number;
+      description?: string | null;
     }) => {
       if (!keyRef.current) keyRef.current = uuid();
       const input: RenamePanelInput = {
@@ -134,6 +152,7 @@ export function useRenamePanel(defenderUserId: string) {
         icon: vars.icon ?? null,
         expectedVersion: vars.expectedVersion,
         idempotencyKey: keyRef.current,
+        description: vars.description ?? null,
       };
       return renamePanel(input);
     },
@@ -144,7 +163,14 @@ export function useRenamePanel(defenderUserId: string) {
         qc.setQueryData<WorkArea>(workAreaKeys.panels(defenderUserId), {
           ...prev,
           panels: prev.panels.map((p) =>
-            p.id === vars.panelId ? { ...p, name: vars.name, icon: vars.icon ?? p.icon } : p,
+            p.id === vars.panelId
+              ? {
+                  ...p,
+                  name: vars.name,
+                  icon: vars.icon ?? p.icon,
+                  description: vars.description !== undefined ? vars.description : p.description,
+                }
+              : p,
           ),
         });
       }
@@ -271,7 +297,10 @@ export function useSelectedPanel(
       setSelectedIdState(stored);
       return;
     }
-    const fallback = [...list].sort((a, b) => a.position - b.position)[0]?.id ?? null;
+    // A lista já vem ordenada pelo backend (Painéis próprios primeiro, na
+    // ordem de exibição, seguidos dos importados/colaborados) — não reordenar
+    // por `position`, que só é comparável entre Painéis do mesmo dono.
+    const fallback = list[0]?.id ?? null;
     setSelectedIdState(fallback);
     writeSelected(defenderUserId, fallback);
   }, [defenderUserId, panels]);
@@ -301,10 +330,14 @@ export function usePanelPermissions(access: WorkspaceAccess | undefined) {
     const isOwner = a?.accessMode === "owner";
     const isTeamReadonly = a?.accessMode === "team_readonly";
     const isTechnicalReadonly = a?.accessMode === "technical_readonly";
+    const isCollaborator = a?.accessMode === "collaborator";
+    const isVisitor = a?.accessMode === "visitor";
     return {
       isOwner,
       isTeamReadonly,
       isTechnicalReadonly,
+      isCollaborator,
+      isVisitor,
       canCreatePanel: !!a?.canManagePanels,
       canRenamePanel: !!a?.canManagePanels,
       canReorderPanels: !!a?.canManagePanels,
@@ -312,8 +345,99 @@ export function usePanelPermissions(access: WorkspaceAccess | undefined) {
       canManageColumns: !!a?.canManageColumns,
       canMoveCards: !!a?.canMoveCards,
       canAddItems: !!a?.canAddItems,
+      canDeleteWorkspace: !!a?.canDeleteWorkspace,
+      canManageCollaborators: isOwner || a?.accessMode === "technical_admin",
     };
   }, [access]);
+}
+
+// -------- Compartilhamento de Painéis --------
+
+export function useSetPanelVisibility(defenderUserId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: setPanelVisibility,
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: workAreaKeys.panels(defenderUserId) });
+    },
+  });
+}
+
+export function useImportPanel(defenderUserId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: importPanel,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: workAreaKeys.panels(defenderUserId) });
+    },
+  });
+}
+
+export function useRemoveImportedPanel(defenderUserId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: removeImportedPanel,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: workAreaKeys.panels(defenderUserId) });
+    },
+  });
+}
+
+export function useSetPanelCollaborator(panelId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: setPanelCollaborator,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["panel-panorama", panelId] });
+    },
+  });
+}
+
+export function useRemovePanelCollaborator(panelId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: removePanelCollaborator,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["panel-panorama", panelId] });
+    },
+  });
+}
+
+export function useLeavePanelCollaboration(defenderUserId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: leavePanelCollaboration,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: workAreaKeys.panels(defenderUserId) });
+    },
+  });
+}
+
+export function usePanelPanorama(panelId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["panel-panorama", panelId],
+    queryFn: () => getPanelPanorama(panelId as string),
+    enabled: !!panelId && enabled,
+    staleTime: 10_000,
+  });
+}
+
+export function usePublicPanelSearch(query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["public-panel-search", query],
+    queryFn: () => searchPublicPanels({ query }),
+    enabled,
+    staleTime: 5_000,
+  });
+}
+
+export function useCollaboratorCandidates(panelId: string, query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["collaborator-candidates", panelId, query],
+    queryFn: () => searchCollaboratorCandidates({ panelId, query }),
+    enabled: enabled && query.trim().length >= 2,
+    staleTime: 5_000,
+  });
 }
 
 // -------- Handler compartilhado de erro (i18n) --------

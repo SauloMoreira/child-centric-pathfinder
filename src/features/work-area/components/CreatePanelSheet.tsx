@@ -13,8 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   PANEL_NAME_MAX,
+  PANEL_DESCRIPTION_MAX,
   createPanelSchema,
   panelErrorFromUnknown,
   type CreatePanelFormInput,
@@ -35,6 +38,7 @@ export function CreatePanelSheet({
   onCreated?: (panelId: string) => void;
 }) {
   const [icon, setIcon] = useState<string | null>("layers");
+  const [isPublic, setIsPublic] = useState(false);
   const {
     register,
     handleSubmit,
@@ -42,7 +46,7 @@ export function CreatePanelSheet({
     formState: { errors },
   } = useForm<CreatePanelFormInput>({
     resolver: zodResolver(createPanelSchema),
-    defaultValues: { name: "", icon: "layers" },
+    defaultValues: { name: "", icon: "layers", description: "" },
   });
   const mut = useCreatePanel(defenderUserId);
 
@@ -52,11 +56,14 @@ export function CreatePanelSheet({
         name: values.name,
         icon,
         expectedCount: currentCount,
+        description: values.description || null,
+        isPublic,
       });
       toast.success("Painel criado");
       onCreated?.(res.panelId);
-      reset({ name: "", icon: "layers" });
+      reset({ name: "", icon: "layers", description: "" });
       setIcon("layers");
+      setIsPublic(false);
       onOpenChange(false);
     } catch (err) {
       toast.error(panelErrorFromUnknown(err).message);
@@ -89,6 +96,31 @@ export function CreatePanelSheet({
               {...register("name")}
             />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="panel-description">Descrição (opcional)</Label>
+            <Textarea
+              id="panel-description"
+              rows={3}
+              maxLength={PANEL_DESCRIPTION_MAX}
+              placeholder="Do que trata este Painel?"
+              {...register("description")}
+            />
+            {errors.description && (
+              <p className="text-xs text-destructive">{errors.description.message}</p>
+            )}
+          </div>
+
+          <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-surface/40 p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="panel-is-public">Tornar este Painel público</Label>
+              <p className="text-xs text-muted-foreground">
+                Painéis públicos podem ser encontrados na Biblioteca e importados por outros
+                usuários, que passam a visualizá-lo como visitantes.
+              </p>
+            </div>
+            <Switch id="panel-is-public" checked={isPublic} onCheckedChange={setIsPublic} />
           </div>
 
           <SheetFooter>

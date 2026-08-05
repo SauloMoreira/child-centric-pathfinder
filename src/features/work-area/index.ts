@@ -4,6 +4,8 @@ export {
   createPanelSchema,
   renamePanelSchema,
   panelNameSchema,
+  panelDescriptionSchema,
+  PANEL_DESCRIPTION_MAX,
   type CreatePanelInput as CreatePanelFormInput,
   type RenamePanelInput as RenamePanelFormInput,
 } from "./schemas";

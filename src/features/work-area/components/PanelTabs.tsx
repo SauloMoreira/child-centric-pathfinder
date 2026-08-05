@@ -18,7 +18,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { LogOut, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -31,10 +31,11 @@ import { cn } from "@/lib/utils";
 import {
   panelErrorFromUnknown,
   useReorderPanels,
+  useRemoveImportedPanel,
   type PanelSummary,
   type WorkspaceAccess,
 } from "@/features/work-area";
-import { panelIconComponent } from "./panel-icon";
+import { panelRoleIconComponent } from "./panel-icon";
 
 type Props = {
   defenderUserId: string;
@@ -59,6 +60,13 @@ export function PanelTabs({
 }: Props) {
   const canManage = access.canManagePanels;
   const reorder = useReorderPanels(defenderUserId);
+  const removeImported = useRemoveImportedPanel(defenderUserId);
+  // Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — Painéis importados/colaborados
+  // não fazem parte da reordenação por arraste (o `order_position` pertence
+  // ao Painel do Defensor que o criou), então ficam num grupo à parte,
+  // sempre depois dos Painéis próprios.
+  const ownPanels = panels.filter((p) => p.role === "owner");
+  const sharedPanels = panels.filter((p) => p.role !== "owner");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
@@ -67,11 +75,11 @@ export function PanelTabs({
   );
   const [activeId, setActiveId] = useState<string | null>(null);
   const activePanel = useMemo(
-    () => panels.find((p) => p.id === activeId) ?? null,
-    [activeId, panels],
+    () => ownPanels.find((p) => p.id === activeId) ?? null,
+    [activeId, ownPanels],
   );
 
-  const items = useMemo(() => panels.map((p) => p.id), [panels]);
+  const items = useMemo(() => ownPanels.map((p) => p.id), [ownPanels]);
 
   const onDragStart = (e: DragStartEvent) => {
     setActiveId(String(e.active.id));
@@ -81,16 +89,25 @@ export function PanelTabs({
     setActiveId(null);
     const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const oldIndex = panels.findIndex((p) => p.id === active.id);
-    const newIndex = panels.findIndex((p) => p.id === over.id);
+    const oldIndex = ownPanels.findIndex((p) => p.id === active.id);
+    const newIndex = ownPanels.findIndex((p) => p.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
-    const reordered = arrayMove(panels, oldIndex, newIndex);
+    const reordered = arrayMove(ownPanels, oldIndex, newIndex);
     try {
       await reorder.mutateAsync({ items: reordered });
     } catch (err) {
       toast.error(panelErrorFromUnknown(err).message);
     }
   };
+
+  async function handleRemoveImported(panel: PanelSummary) {
+    try {
+      await removeImported.mutateAsync({ panelId: panel.id });
+      toast.success("Painel removido da sua Área de Trabalho");
+    } catch (err) {
+      toast.error(panelErrorFromUnknown(err).message);
+    }
+  }
 
   // Ajuste doc (AJUSTE 13) — sem limite de Painéis e sem rolagem lateral:
   // quando a linha não comporta mais abas, os novos Painéis passam a ser
@@ -106,7 +123,7 @@ export function PanelTabs({
           onDragEnd={onDragEnd}
         >
           <SortableContext items={items} strategy={horizontalListSortingStrategy}>
-            {panels.map((p) => (
+            {ownPanels.map((p) => (
               <SortablePanelTab
                 key={p.id}
                 panel={p}
@@ -123,7 +140,7 @@ export function PanelTabs({
           </DragOverlay>
         </DndContext>
       ) : (
-        panels.map((p) => (
+        ownPanels.map((p) => (
           <PanelTabButton
             key={p.id}
             panel={p}
@@ -132,6 +149,40 @@ export function PanelTabs({
           />
         ))
       )}
+
+      {sharedPanels.map((p) => (
+        <PanelTabButton
+          key={p.id}
+          panel={p}
+          selected={p.id === selectedId}
+          onClick={() => onSelect(p.id)}
+          actions={
+            p.role === "visitante" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label={`Ações do Painel ${p.name}`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => handleRemoveImported(p)}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" /> Remover painel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null
+          }
+        />
+      ))}
 
       {canManage && (
         <button
@@ -230,8 +281,11 @@ function PanelTabButton({
   dragging?: boolean;
 }) {
   // Ajuste doc — a personalização de ícone por painel foi retirada; todos
-  // os botões de painel usam o mesmo ícone, simbolizando um painel.
-  const Icon = panelIconComponent(null);
+  // os botões de painel usam o mesmo ícone-base, simbolizando um painel.
+  // Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — Painéis próprios/colaborados
+  // usam a variante com o quadradinho superior preenchido; Painéis em que o
+  // usuário é apenas visitante usam o ícone padrão (sem preenchimento).
+  const Icon = panelRoleIconComponent(panel.role);
   return (
     <div
       className={cn(
