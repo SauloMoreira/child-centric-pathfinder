@@ -68,10 +68,14 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
   const detalhe = useCotaDetalhe(itemId);
   const excluir = useExcluirCota();
   const qc = useQueryClient();
-  // Ajuste doc (AJUSTE 21) — lupas de aumentar/diminuir o texto da cota;
-  // o tamanho escolhido persiste para o usuário (localStorage, preferência
-  // só de exibição, nada sensível) em novas aberturas da layer.
-  const ZOOM_STEPS = [0.85, 1, 1.15, 1.3, 1.45];
+  // Ajuste doc (AJUSTE 21, passos ampliados a pedido do Saulo) — lupas de
+  // aumentar/diminuir o texto da cota; o tamanho escolhido persiste para o
+  // usuário (localStorage, preferência só de exibição, nada sensível) em
+  // novas aberturas da layer. Os passos anteriores (0.85/1/1.15/1.3/1.45,
+  // 15pp por clique) eram sutis demais para perceber de cara — agora cada
+  // clique muda o tamanho em pelo menos 25-30%, bem perceptível tanto para
+  // aumentar quanto para diminuir.
+  const ZOOM_STEPS = [0.8, 1, 1.3, 1.6, 2];
   const [zoomIndex, setZoomIndex] = useState(() => {
     const salvo = Number(localStorage.getItem("agora-cota-zoom-index"));
     return Number.isInteger(salvo) && salvo >= 0 && salvo < ZOOM_STEPS.length ? salvo : 1;
