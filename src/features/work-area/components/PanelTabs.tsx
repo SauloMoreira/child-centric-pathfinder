@@ -35,7 +35,7 @@ import {
   type PanelSummary,
   type WorkspaceAccess,
 } from "@/features/work-area";
-import { panelRoleIconComponent } from "./panel-icon";
+import { panelIconComponent } from "./panel-icon";
 
 type Props = {
   defenderUserId: string;
@@ -282,10 +282,10 @@ function PanelTabButton({
 }) {
   // Ajuste doc — a personalização de ícone por painel foi retirada; todos
   // os botões de painel usam o mesmo ícone-base, simbolizando um painel.
-  // Ajuste doc (COMPARTILHAMENTO DE PAINÉIS) — Painéis próprios/colaborados
-  // usam a variante com o quadradinho superior preenchido; Painéis em que o
-  // usuário é apenas visitante usam o ícone padrão (sem preenchimento).
-  const Icon = panelRoleIconComponent(panel.role);
+  // Ajuste doc (AJUSTE 32) — a variante diferenciada por papel (quadradinho
+  // superior preenchido para Painéis próprios/colaborados) foi revertida a
+  // pedido: volta ao ícone único (Layers) para todos os papéis.
+  const Icon = panelIconComponent(null);
   return (
     <div
       className={cn(

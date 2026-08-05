@@ -383,7 +383,11 @@ export function FormRenderer({
                     <div className="mt-2 rounded-md border border-warning/30 bg-warning/[0.08] p-2">
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                          <Info className="h-3 w-3" aria-hidden /> Orientação
+                          {/* Ajuste doc (AJUSTE 31, doc novo) — título específico
+                              para distinguir esta orientação (gerada pela IA,
+                              sobre o motivo da própria pergunta) das demais
+                              orientações do sistema, escritas pelo Defensor. */}
+                          <Info className="h-3 w-3" aria-hidden /> Sobre a pergunta:
                         </p>
                         <div className="flex items-center gap-0.5">
                           {onToggleJustificativaMinimizada && (

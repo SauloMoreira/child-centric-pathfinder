@@ -3,13 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   FileSymlink,
+  FileText,
   Info,
   Link as LinkIcon,
   Loader2,
   Pencil,
   Settings2,
   Star,
-  ScrollText,
   Trash2,
   ZoomIn,
   ZoomOut,
@@ -153,7 +153,7 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
             <>
               <SheetHeader className="shrink-0">
                 <SheetTitle className="flex items-start gap-2 pr-6 text-base">
-                  <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
+                  <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" />
                   <span className="min-w-0 flex-1 break-words">{detalhe.data.titulo}</span>
                   <FavoritoEstatisticasTooltip itemId={itemId} kind="cota">
                     <button

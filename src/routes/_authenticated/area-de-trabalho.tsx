@@ -8,9 +8,7 @@ import {
   Eraser,
   FileText,
   FileSymlink,
-  ScrollText,
   MessageSquare,
-  Bot,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
@@ -1150,7 +1148,7 @@ function ColumnsBoard({
                     setCotaFormOpen(true);
                   }}
                 >
-                  <ScrollText className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar cota
+                  <FileText className="mr-2 h-3.5 w-3.5" aria-hidden /> Criar cota
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1249,13 +1247,25 @@ function ColumnsBoard({
           </div>
         )}
 
-        {/* Board — altura calculada para permitir rolagem vertical dentro das colunas */}
+        {/* Board — altura calculada para permitir rolagem vertical dentro das colunas.
+            Ajuste doc (AJUSTE 26) — o botão "Ajustar à altura da tela" de uma
+            coluna individual só tem efeito visível se a linha que contém as
+            colunas também ganhar uma altura própria (h-full): com a linha em
+            h-auto (modo global natural), um h-full aplicado a uma única
+            coluna não tem "o quê" preencher — a linha cresce com o conteúdo,
+            então a coluna "de altura de tela" acaba esticando junto com as
+            demais, como se o botão não tivesse feito nada. Sempre que houver
+            ao menos uma coluna com o ajuste individual ativo, a linha passa a
+            se comportar como no modo global de altura de tela (h-full), mas
+            mantendo overflow-y-auto (em vez de hidden) para que as colunas
+            que seguem no modo natural continuem podendo crescer além da
+            altura do quadro, reveladas por rolagem da própria linha. */}
         <div
           ref={boardScrollRef}
           onScroll={handleBoardScroll}
           className={cn(
             "kanban-scroll flex-1 overflow-x-auto pl-2 pr-4 py-4 lg:pl-3 lg:pr-8",
-            colunasAlturaNatural ? "overflow-y-auto" : "overflow-y-hidden",
+            !colunasAlturaNatural ? "overflow-y-hidden" : "overflow-y-auto",
           )}
           style={{
             minHeight: 0,
@@ -1266,7 +1276,9 @@ function ColumnsBoard({
               ref={boardContentRef}
               className={cn(
                 "flex min-w-max items-stretch gap-4",
-                colunasAlturaNatural ? "h-auto items-start" : "h-full",
+                colunasAlturaNatural && colunasAlturaTelaIndividual.size === 0
+                  ? "h-auto items-start"
+                  : "h-full",
               )}
             >
               {orderedColumns.map((c, idx) => (
@@ -2291,8 +2303,9 @@ function ColumnDragPreview({ name }: { name: string }) {
 }
 
 function CardDragPreview({ card }: { card: WorkspaceCardDto }) {
-  const isCota = card.kind === "cota";
-  const Icon = isCota ? ScrollText : FileText;
+  // Ajuste doc (AJUSTE 36) — ícone de Cota passa a ser igual ao de
+  // Atendimento (o mesmo exibido ao arrastar um card de Atendimento).
+  const Icon = FileText;
   return (
     <div className="w-72 rounded-md border-2 border-institutional bg-card p-3 shadow-lg opacity-90 pointer-events-none">
       <div className="flex items-start gap-2">
@@ -2438,7 +2451,7 @@ function SortableCard(props: {
           !card.canOpen && "opacity-70",
         )}
       >
-        <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
+        <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-institutional" aria-hidden />
         <p className="min-w-0 flex-1 text-xs font-medium leading-snug">{card.title}</p>
         <div className="flex shrink-0 items-center gap-0.5">
           {card.bodyText &&
@@ -2739,10 +2752,8 @@ function AddCardDialog({
                 >
                   {tipo === "todos" ? (
                     <InfinityIcon className="h-4 w-4" aria-hidden />
-                  ) : tipo === "atendimento" ? (
-                    <FileText className="h-4 w-4" aria-hidden />
                   ) : (
-                    <ScrollText className="h-4 w-4" aria-hidden />
+                    <FileText className="h-4 w-4" aria-hidden />
                   )}
                 </Button>
               </PopoverTrigger>
@@ -2751,7 +2762,7 @@ function AddCardDialog({
                   [
                     { value: "todos", label: "Atendimentos e cotas", Icon: InfinityIcon },
                     { value: "atendimento", label: "Somente atendimentos", Icon: FileText },
-                    { value: "cota", label: "Somente cotas", Icon: ScrollText },
+                    { value: "cota", label: "Somente cotas", Icon: FileText },
                   ] as const
                 ).map(({ value, label, Icon }) => (
                   <button
@@ -2833,7 +2844,7 @@ function AddCardDialog({
               </p>
             ) : (
               itens.map((i) => {
-                const Icon = i.kind === "cota" ? ScrollText : FileText;
+                const Icon = FileText;
                 const selected = selecionado === i.id;
                 const alreadyIn = existing.has(i.id);
                 return (
@@ -3221,10 +3232,11 @@ function ColumnPanelPickerDialog({
 // -----------------------------------------------------------------------------
 // Ícones das modalidades de Atendimento — Ajuste doc (reformulação das
 // modalidades). Livre = balão sem preenchimento; Guiado = balão
-// preenchido. Dinâmico (AJUSTE 33) — o combo balão+estrelinhas ficava
-// parecido demais com o do Guiado em tamanho pequeno; trocado por um
-// glifo totalmente distinto (robô), que remete ao mesmo tempo a diálogo
-// (chatbot) e a inteligência artificial.
+// preenchido. Dinâmico (AJUSTE 30, doc novo) — volta a ser um ícone
+// composto: o mesmo balão preenchido do Guiado com a estrela do
+// Atendimento IA sobreposta, para deixar clara a relação com as outras
+// duas modalidades (em vez do glifo de robô, sem vínculo visual algum
+// com "balão de atendimento").
 // -----------------------------------------------------------------------------
 function AtendimentoLivreIcon({ className }: { className?: string }) {
   return <MessageSquare className={className} aria-hidden />;
@@ -3235,7 +3247,12 @@ function AtendimentoGuiadoIcon({ className }: { className?: string }) {
 }
 
 function AtendimentoDinamicoIcon({ className }: { className?: string }) {
-  return <Bot className={className} aria-hidden />;
+  return (
+    <span className={cn("relative inline-flex shrink-0 items-center justify-center", className)}>
+      <MessageSquare className="h-full w-full" fill="currentColor" aria-hidden />
+      <Sparkles className="absolute -right-1 -top-1 h-2.5 w-2.5 text-institutional" aria-hidden />
+    </span>
+  );
 }
 
 // -----------------------------------------------------------------------------

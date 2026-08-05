@@ -14,7 +14,6 @@ import {
   Loader2,
   MoreVertical,
   Pencil,
-  ScrollText,
   Search,
   Star,
   Users,
@@ -98,7 +97,9 @@ type TipoBusca = "todos" | ContentKind | "painel";
 const TIPO_META: Record<TipoBusca, { label: string; Icon: typeof Search; placeholder: string }> = {
   todos: { label: "Todos os tipos", Icon: Search, placeholder: "Buscar por título ou conteúdo…" },
   atendimento: { label: "Atendimentos", Icon: FileText, placeholder: "Buscar atendimentos…" },
-  cota: { label: "Cotas", Icon: ScrollText, placeholder: "Buscar cotas…" },
+  // Ajuste doc (AJUSTE 36) — ícone de Cota = ícone de Atendimento (mesmo
+  // símbolo exibido ao arrastar um card de Atendimento na Área de Trabalho).
+  cota: { label: "Cotas", Icon: FileText, placeholder: "Buscar cotas…" },
   painel: { label: "Painéis", Icon: LayoutPanelTop, placeholder: "Buscar Painéis públicos…" },
 };
 
@@ -353,7 +354,7 @@ function BibliotecaPage() {
                   <FileText className="mr-2 h-3.5 w-3.5" aria-hidden /> Atendimentos
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setKind("cota")}>
-                  <ScrollText className="mr-2 h-3.5 w-3.5" aria-hidden /> Cotas
+                  <FileText className="mr-2 h-3.5 w-3.5" aria-hidden /> Cotas
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setKind("painel")}>
                   <LayoutPanelTop className="mr-2 h-3.5 w-3.5" aria-hidden /> Painéis
@@ -735,7 +736,9 @@ function BibliotecaLinha({
   onFavoritar: () => void;
 }) {
   const isAtendimento = item.kind === "atendimento";
-  const Icon = isAtendimento ? FileText : ScrollText;
+  // Ajuste doc (AJUSTE 36) — Cota e Atendimento passam a compartilhar o
+  // mesmo ícone; a cor de fundo do símbolo continua diferenciando os dois.
+  const Icon = FileText;
 
   return (
     <tr
