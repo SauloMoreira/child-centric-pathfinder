@@ -42,14 +42,30 @@ import {
   ShoppingCart,
   Banknote,
   Leaf,
-  Shirt,
   HandHelping,
   Venus,
   HandFist,
   Accessibility,
   PersonStanding,
+  createLucideIcon,
   type LucideIcon,
 } from "lucide-react";
+
+/** Ajuste doc (AJUSTE 27 — Gravata) — lucide-react não tem um ícone
+ *  literal de gravata; a paleta usava "Shirt" (camisa) como aproximação,
+ *  mas o Saulo pediu um ícone fiel ao tema. Ícone customizado no mesmo
+ *  estilo dos demais (stroke, viewBox 24x24, via createLucideIcon):
+ *  silhueta de gravata — nó no topo, alargando levemente no peito e
+ *  afunilando até a ponta. */
+const Necktie = createLucideIcon("Necktie", [
+  [
+    "path",
+    {
+      d: "M9 3 L15 3 L13.5 7 L14.5 11 L12 21 L9.5 11 L10.5 7 Z",
+      key: "necktie-outline",
+    },
+  ],
+]);
 
 /** Ajuste doc (AJUSTE 1 — Ícones na área de trabalho) — paleta curada de
  *  ícones para colunas. Não há vínculo real entre um ícone e qualquer
@@ -159,7 +175,11 @@ const MAP: Record<ColumnIconName, LucideIcon> = {
   "shopping-cart": ShoppingCart,
   banknote: Banknote,
   leaf: Leaf,
-  shirt: Shirt,
+  // Ajuste doc (AJUSTE 27 — Gravata) — chave interna "shirt" preservada de
+  // propósito (colunas já salvas com esse valor no banco continuam
+  // resolvendo o ícone certo); o glifo exibido agora é a gravata
+  // customizada (Necktie), não mais uma camisa.
+  shirt: Necktie,
   "hand-helping": HandHelping,
   venus: Venus,
   "hand-fist": HandFist,
