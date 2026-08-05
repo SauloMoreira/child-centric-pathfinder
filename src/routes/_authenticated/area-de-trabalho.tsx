@@ -2075,14 +2075,10 @@ function EditColumnSheet(props: {
   const [icone, setIcone] = useState<string | null>(column.icone ?? null);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Ajuste doc (AJUSTE 1) — a paleta de ícones da coluna cresce conforme
-  // mais categorias existem no sistema (sem vínculo real com elas).
-  const categoriasQuery = useQuery({
-    queryKey: ["biblioteca-categorias"],
-    queryFn: () => listarCategoriasBiblioteca(),
-    enabled: open,
-  });
-  const paletaIcones = columnIconPalette(categoriasQuery.data?.length ?? 0);
+  // Ajuste doc — a paleta de ícones da coluna sempre mostra todas as
+  // opções disponíveis (o crescimento artificial atrelado à quantidade
+  // de categorias da Biblioteca foi removido a pedido do Saulo).
+  const paletaIcones = columnIconPalette();
 
   useEffect(() => {
     if (open) {

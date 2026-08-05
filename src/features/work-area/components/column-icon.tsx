@@ -187,21 +187,22 @@ const MAP: Record<ColumnIconName, LucideIcon> = {
   "person-standing": PersonStanding,
 };
 
-/** Quantidade mínima de opções sempre disponíveis, mesmo sem nenhuma
- *  categoria cadastrada ainda. */
-const BASE_POOL_SIZE = 10;
-
 export function columnIconComponent(name: string | null | undefined): LucideIcon | null {
   if (!name) return null;
   return (MAP as Record<string, LucideIcon>)[name] ?? null;
 }
 
-/** Paleta disponível para o seletor de ícone de coluna, cujo tamanho
- *  cresce (até o limite da paleta total) conforme a quantidade de
- *  categorias já criadas no sistema — sem vínculo real com elas. */
-export function columnIconPalette(categoriasCount: number): ColumnIconName[] {
-  const tamanho = Math.min(COLUMN_ICON_ORDER.length, BASE_POOL_SIZE + Math.max(0, categoriasCount));
-  return COLUMN_ICON_ORDER.slice(0, tamanho);
+/** Paleta disponível para o seletor de ícone de coluna.
+ *  Ajuste doc — a paleta antes crescia artificialmente conforme a
+ *  quantidade de categorias já criadas no sistema (BASE_POOL_SIZE +
+ *  categoriasCount, sem vínculo real com elas); isso escondia os ícones
+ *  temáticos mais recentes do seletor até haver categorias suficientes
+ *  cadastradas. A pedido do Saulo, a paleta inteira fica sempre
+ *  disponível — sem nenhum corte por quantidade de categoria. O
+ *  parâmetro é mantido apenas por compatibilidade de assinatura com o
+ *  call site existente. */
+export function columnIconPalette(_categoriasCount?: number): ColumnIconName[] {
+  return [...COLUMN_ICON_ORDER];
 }
 
 export function ColumnIcon({
