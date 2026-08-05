@@ -442,7 +442,13 @@ export const RichTextViewer = forwardRef<
   return (
     <div
       ref={innerRef}
-      className={cn("cota-rich-text-content text-xs leading-relaxed", className)}
+      // Ajuste doc (AJUSTE 31, correção) — o "text-xs" fixo (rem, relativo
+      // à raiz do documento) anulava o zoom de texto da Cota, que aplica
+      // fontSize em "em" no wrapper (cota-detail-sheet.tsx): rem sempre
+      // vence em cima de em herdado, então a fonte nunca mudava de
+      // tamanho ao clicar em Aumentar/Diminuir texto. Sem tamanho fixo
+      // aqui, o texto passa a herdar o fontSize do wrapper de verdade.
+      className={cn("cota-rich-text-content leading-relaxed", className)}
       dangerouslySetInnerHTML={{ __html: sanitizeCotaHtml(html) }}
     />
   );

@@ -210,7 +210,15 @@ export function CotaDetailSheet({ itemId, onOpenChange, onEdit, onDeleted, onIns
                       border/bg fica só neste wrapper interno, e o flex-1 +
                       overflow-y-auto ficam no wrapper externo). */}
                   <div
-                    style={{ fontSize: `${ZOOM_STEPS[zoomIndex]}em` }}
+                    // Ajuste doc (AJUSTE 31, correção) — ancorado em rem (não
+                    // em em puro): 0.75rem é o tamanho base que o texto da
+                    // Cota sempre teve (equivalente ao antigo "text-xs" que
+                    // vivia dentro do RichTextViewer); multiplicar esse valor
+                    // fixo pelo passo de zoom garante que o tamanho padrão
+                    // (zoomIndex central) fica idêntico ao de sempre, e que o
+                    // zoom escala de forma previsível independente de
+                    // qualquer font-size herdado do entorno.
+                    style={{ fontSize: `calc(0.75rem * ${ZOOM_STEPS[zoomIndex]})` }}
                     className="rounded-md border border-border bg-muted/30 p-3"
                   >
                     <RichTextViewer
