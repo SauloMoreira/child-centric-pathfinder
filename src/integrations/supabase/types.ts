@@ -199,7 +199,9 @@ export type Database = {
           kind: Database["public"]["Enums"]["content_kind"]
           optimistic_version: number
           orgao_id: string | null
+          origem_item_id: string | null
           owner_user_id: string
+          panel_insert_count: number
           status: Database["public"]["Enums"]["content_status"]
           updated_at: string
           visibility: Database["public"]["Enums"]["content_visibility"]
@@ -215,7 +217,9 @@ export type Database = {
           kind: Database["public"]["Enums"]["content_kind"]
           optimistic_version?: number
           orgao_id?: string | null
+          origem_item_id?: string | null
           owner_user_id: string
+          panel_insert_count?: number
           status?: Database["public"]["Enums"]["content_status"]
           updated_at?: string
           visibility?: Database["public"]["Enums"]["content_visibility"]
@@ -231,7 +235,9 @@ export type Database = {
           kind?: Database["public"]["Enums"]["content_kind"]
           optimistic_version?: number
           orgao_id?: string | null
+          origem_item_id?: string | null
           owner_user_id?: string
+          panel_insert_count?: number
           status?: Database["public"]["Enums"]["content_status"]
           updated_at?: string
           visibility?: Database["public"]["Enums"]["content_visibility"]
@@ -263,6 +269,13 @@ export type Database = {
             columns: ["orgao_id"]
             isOneToOne: false
             referencedRelation: "orgaos_execucao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_origem_item_id_fkey"
+            columns: ["origem_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]
@@ -459,8 +472,10 @@ export type Database = {
           archived_at: string | null
           created_at: string
           defensor_user_id: string
+          descricao: string | null
           icone: string | null
           id: string
+          is_public: boolean
           nome: string
           nome_normalizado: string | null
           optimistic_version: number
@@ -472,8 +487,10 @@ export type Database = {
           archived_at?: string | null
           created_at?: string
           defensor_user_id: string
+          descricao?: string | null
           icone?: string | null
           id?: string
+          is_public?: boolean
           nome: string
           nome_normalizado?: string | null
           optimistic_version?: number
@@ -485,8 +502,10 @@ export type Database = {
           archived_at?: string | null
           created_at?: string
           defensor_user_id?: string
+          descricao?: string | null
           icone?: string | null
           id?: string
+          is_public?: boolean
           nome?: string
           nome_normalizado?: string | null
           optimistic_version?: number
@@ -728,6 +747,41 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          member_user_id: string
+          role: string
+          workspace_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          member_user_id: string
+          role: string
+          workspace_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          member_user_id?: string
+          role?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "defensor_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -932,8 +986,16 @@ export type Database = {
         Args: { p_limit?: number; p_termo?: string }
         Returns: Json
       }
+      buscar_paineis_publicos: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string }
+        Returns: Json
+      }
       buscar_usuarios_membro_equipe: {
         Args: { p_termo: string }
+        Returns: Json
+      }
+      buscar_usuarios_para_colaborador: {
+        Args: { p_panel_id: string; p_termo: string }
         Returns: Json
       }
       cancelar_convite_equipe: {
@@ -961,6 +1023,7 @@ export type Database = {
           p_category_ids?: string[]
           p_descricao: string
           p_form_schema: Json
+          p_origem_item_id?: string
           p_titulo: string
         }
         Returns: Json
@@ -1009,6 +1072,7 @@ export type Database = {
           p_links?: Json
           p_orientacao?: string
           p_orientacao_nivel?: string
+          p_origem_item_id?: string
           p_titulo: string
         }
         Returns: Json
@@ -1016,9 +1080,11 @@ export type Database = {
       criar_painel: {
         Args: {
           p_defensor_user_id: string
+          p_descricao?: string
           p_expected_count?: number
           p_icone?: string
           p_idempotency_key?: string
+          p_is_public?: boolean
           p_nome: string
         }
         Returns: Json
@@ -1032,6 +1098,23 @@ export type Database = {
       }
       defensor_autovincular_orgao: {
         Args: { p_idempotency_key?: string; p_orgao_id: string }
+        Returns: Json
+      }
+      definir_colaborador_painel: {
+        Args: {
+          p_idempotency_key?: string
+          p_member_user_id: string
+          p_panel_id: string
+        }
+        Returns: Json
+      }
+      definir_visibilidade_painel: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key?: string
+          p_is_public: boolean
+          p_panel_id: string
+        }
         Returns: Json
       }
       duplicar_coluna_workspace: {
@@ -1096,6 +1179,10 @@ export type Database = {
         }
         Returns: Json
       }
+      importar_painel: {
+        Args: { p_idempotency_key?: string; p_panel_id: string }
+        Returns: Json
+      }
       listar_area_trabalho_defensor: {
         Args: { p_defensor_user_id: string }
         Returns: Json
@@ -1110,7 +1197,7 @@ export type Database = {
       listar_biblioteca: {
         Args: {
           p_apenas_meus?: boolean
-          p_category_id?: string
+          p_category_ids?: string[]
           p_favoritos_apenas?: boolean
           p_kind?: Database["public"]["Enums"]["content_kind"]
           p_limit?: number
@@ -1124,12 +1211,14 @@ export type Database = {
           categoria_id: string
           categoria_nome: string
           categorias: Json
+          criados_a_partir_count: number
           favorite_count: number
           id: string
           is_favorited: boolean
           kind: Database["public"]["Enums"]["content_kind"]
           owner_nome: string
           owner_user_id: string
+          panel_insert_count: number
           status: Database["public"]["Enums"]["content_status"]
           titulo: string
           updated_at: string
@@ -1269,6 +1358,10 @@ export type Database = {
       }
       obter_atendimento_detalhe: { Args: { p_item_id: string }; Returns: Json }
       obter_cota_detalhe: { Args: { p_item_id: string }; Returns: Json }
+      obter_estatisticas_biblioteca: {
+        Args: { p_item_id: string }
+        Returns: Json
+      }
       obter_item_biblioteca: {
         Args: { p_item_id: string }
         Returns: {
@@ -1290,6 +1383,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["content_visibility"]
         }[]
       }
+      obter_panorama_painel: { Args: { p_panel_id: string }; Returns: Json }
       obter_preferencias_atendimento_ia: { Args: never; Returns: Json }
       promover_admin_tecnico: {
         Args: { p_justificativa: string; p_target_user_id: string }
@@ -1363,8 +1457,21 @@ export type Database = {
         }
         Returns: number
       }
+      remover_colaborador_painel: {
+        Args: {
+          p_idempotency_key?: string
+          p_member_user_id: string
+          p_panel_id: string
+        }
+        Returns: Json
+      }
+      remover_painel_importado: {
+        Args: { p_idempotency_key?: string; p_panel_id: string }
+        Returns: Json
+      }
       renomear_painel: {
         Args: {
+          p_descricao?: string
           p_expected_version: number
           p_icone: string
           p_idempotency_key: string
@@ -1388,6 +1495,10 @@ export type Database = {
           p_idempotency_key: string
           p_items: Json
         }
+        Returns: Json
+      }
+      sair_de_colaborador_painel: {
+        Args: { p_idempotency_key?: string; p_panel_id: string }
         Returns: Json
       }
       salvar_contexto_atendimento_ia: {
