@@ -1302,8 +1302,8 @@ export function FieldEditor({
                 Respostas sugeridas
               </p>
               <p className="text-[10px] text-muted-foreground">
-                Aparecem como botões de preenchimento rápido para quem preenche o atendimento; não são
-                opções obrigatórias, apenas um atalho.
+                Aparecem como botões de preenchimento rápido; não são opções obrigatórias, apenas um
+                atalho.
               </p>
               {sugestoesResposta.map((s, i) => (
                 <div key={i} className="flex items-center gap-1.5">

@@ -360,7 +360,7 @@ export function RichTextEditor({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => wrapSelection("span", "cota-editable")}
             aria-label="Tornar seleção um trecho editável"
-            title="Tornar seleção um trecho editável (clique novamente na seleção já editável para desfazer)"
+            title="Tornar seleção um trecho editável"
           >
             <PencilLine className="h-3.5 w-3.5" />
           </Button>
@@ -373,8 +373,8 @@ export function RichTextEditor({
             className="h-7 w-7"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => wrapSelection("mark", "cota-highlight")}
-            aria-label="Cor de destaque/grifo"
-            title="Destacar/grifar seleção (clique novamente na seleção já grifada para desgrifar)"
+            aria-label="Destacar/grifar"
+            title="Destacar/grifar"
           >
             <Highlighter className="h-3.5 w-3.5" />
           </Button>

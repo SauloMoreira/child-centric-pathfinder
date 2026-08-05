@@ -1,5 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ShieldCheck, Users, LayoutDashboard } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { precisaStepUpMfa } from "@/components/mfa-challenge-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SignInForm, SignUpForm } from "@/routes/auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,121 +23,61 @@ export const Route = createFileRoute("/")({
   component: PublicLanding,
 });
 
+// Ajuste doc (PÁGINA INICIAL) — a página inicial deixou de ser uma landing
+// page institucional (hero, lista de recursos, rodapé) e passou a ser
+// enxuta: só o formulário de login/criação de conta, título do site e
+// logo da Defensoria, no mesmo design do resto do sistema Ágora.
 function PublicLanding() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!alive || !data.session) return;
+      if (await precisaStepUpMfa()) return;
+      navigate({ to: "/painel", replace: true });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
+
   return (
-    <div className="min-h-screen bg-canvas text-foreground">
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <div
-              aria-hidden
-              className="h-8 w-8 rounded-md bg-sidebar"
-              style={{ boxShadow: "inset 0 0 0 2px var(--color-institutional)" }}
-            />
-            <div className="leading-tight">
-              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-                DPE-RS
-              </p>
-              <p className="text-sm font-semibold">Ágora</p>
-            </div>
-          </div>
-          <Link
-            to="/auth"
-            search={{}}
-            className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-          >
-            Acessar sistema <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-12">
+      <div className="flex flex-col items-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-md bg-sidebar">
+          <img src="/dpe-rs-logo-branco.png" alt="" aria-hidden className="h-8 w-8 object-contain" />
         </div>
-      </header>
+        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+          DPE-RS
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Ágora</h1>
+      </div>
 
-      <main className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-          <section>
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Plataforma institucional · uso interno
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Plataforma colaborativa de atendimentos e cotas da Defensoria Pública.
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Espaço institucional para criar, organizar e utilizar modelos reutilizáveis de
-              atendimento e cotas. O acesso é concedido mediante aprovação institucional.
-            </p>
+      <div className="mt-8 w-full max-w-md">
+        <Tabs defaultValue="entrar">
+          <TabsList className="w-full">
+            <TabsTrigger value="entrar" className="flex-1">
+              Entrar
+            </TabsTrigger>
+            <TabsTrigger value="cadastro" className="flex-1">
+              Criar acesso
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="entrar" className="mt-6">
+            <SignInForm />
+          </TabsContent>
+          <TabsContent value="cadastro" className="mt-6">
+            <SignUpForm />
+          </TabsContent>
+        </Tabs>
+      </div>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/auth"
-                search={{}}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
-              >
-                Entrar com e-mail institucional
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-              <Link
-                to="/auth"
-                search={{ modo: "cadastro" }}
-                className="inline-flex items-center rounded-md border border-border-strong bg-surface px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
-              >
-                Solicitar acesso institucional
-              </Link>
-            </div>
-
-            <p className="mt-6 max-w-xl text-xs text-muted-foreground">
-              Somente servidores com e-mail institucional válido e vínculo funcional aprovado podem
-              operar o sistema. Todo acesso é registrado em auditoria.
-            </p>
-          </section>
-
-          <aside className="surface-panel p-6">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-              Fase 1 · Fundação
-            </p>
-            <h2 className="mt-2 text-lg font-semibold">O que já está ativo</h2>
-            <ul className="mt-4 space-y-4 text-sm">
-              <li className="flex gap-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 text-institutional" aria-hidden />
-                <div>
-                  <p className="font-medium">Autenticação institucional</p>
-                  <p className="text-muted-foreground">
-                    E-mail e senha, confirmação de e-mail, recuperação, MFA obrigatório para
-                    administradores.
-                  </p>
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <Users className="mt-0.5 h-5 w-5 text-institutional" aria-hidden />
-                <div>
-                  <p className="font-medium">Aprovação institucional</p>
-                  <p className="text-muted-foreground">
-                    Novos usuários passam por revisão do Administrador Institucional antes de operar
-                    o sistema.
-                  </p>
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <LayoutDashboard className="mt-0.5 h-5 w-5 text-institutional" aria-hidden />
-                <div>
-                  <p className="font-medium">Prévia do centro de comando</p>
-                  <p className="text-muted-foreground">
-                    Quadro Kanban estrutural pronto para receber os módulos operacionais nas
-                    próximas fases.
-                  </p>
-                </div>
-              </li>
-            </ul>
-          </aside>
-        </div>
-      </main>
-
-      <footer className="border-t border-border bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Defensoria Pública do Estado do Rio Grande do Sul.</p>
-          <p className="font-mono uppercase tracking-[0.18em]">
-            Dados fictícios · homologação institucional
-          </p>
-        </div>
-      </footer>
+      <p className="mt-8 max-w-sm text-center text-xs text-muted-foreground">
+        Acesso institucional restrito a servidores autorizados. Novos acessos passam por aprovação
+        do Administrador Institucional.
+      </p>
     </div>
   );
 }

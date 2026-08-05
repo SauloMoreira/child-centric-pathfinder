@@ -10,6 +10,7 @@ import {
   FileSymlink,
   ScrollText,
   MessageSquare,
+  Bot,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
@@ -71,6 +72,7 @@ import {
   isConcurrentChangeError,
   listarBiblioteca,
   alternarFavoritoBiblioteca,
+  registrarAcessoBiblioteca,
   gerarRelatoAtendimentoLivre,
   listarWorkspaceCompleto,
   obterCotaDetalhe,
@@ -1069,7 +1071,7 @@ function ColumnsBoard({
             className="h-8 shrink-0 gap-1.5"
             onClick={() => setModalidadePickerOpen(true)}
           >
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" aria-hidden />
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
             Atendimento IA
           </Button>
           {access.accessMode === "owner" && (
@@ -1244,10 +1246,19 @@ function ColumnsBoard({
                     moverCard.mutate({ cardId, targetColumnId, newPosition })
                   }
                   onCopyToPanel={(card) => setCopyTarget(card)}
-                  onOpenCota={(card) => setCotaDetailId(card.itemId)}
+                  onOpenCota={(card) => {
+                    // Ajuste doc (AJUSTE 34) — estatística de acessos deve
+                    // contar cliques de abertura também a partir da Área de
+                    // Trabalho, não só da Biblioteca.
+                    registrarAcessoBiblioteca(card.itemId).catch(() => {});
+                    setCotaDetailId(card.itemId);
+                  }}
                   onEditCota={handleEditCota}
                   onInspireCota={handleInspireCota}
-                  onOpenAtendimento={(card) => setAtendimentoDetailId(card.itemId)}
+                  onOpenAtendimento={(card) => {
+                    registrarAcessoBiblioteca(card.itemId).catch(() => {});
+                    setAtendimentoDetailId(card.itemId);
+                  }}
                   onEditAtendimento={handleEditAtendimento}
                   onInspireAtendimento={handleInspireAtendimento}
                   onAdded={onRefetch}
@@ -2584,7 +2595,7 @@ function AddCardDialog({
       listarBiblioteca({
         query: query.trim() || undefined,
         kind: tipo === "todos" ? undefined : tipo,
-        categoria_id: categoriaId === "todas" ? undefined : categoriaId,
+        categoria_ids: categoriaId === "todas" ? undefined : [categoriaId],
         apenas_meus: autoria === "meus",
         favoritos_apenas: somenteFavoritos,
         order_by: ranking,
@@ -3163,8 +3174,10 @@ function ColumnPanelPickerDialog({
 // -----------------------------------------------------------------------------
 // Ícones das modalidades de Atendimento — Ajuste doc (reformulação das
 // modalidades). Livre = balão sem preenchimento; Guiado = balão
-// preenchido; Dinâmico = balão preenchido + estrelinhas ao redor (junção
-// visual do ícone do Guiado com o do antigo "Atendimento IA").
+// preenchido. Dinâmico (AJUSTE 33) — o combo balão+estrelinhas ficava
+// parecido demais com o do Guiado em tamanho pequeno; trocado por um
+// glifo totalmente distinto (robô), que remete ao mesmo tempo a diálogo
+// (chatbot) e a inteligência artificial.
 // -----------------------------------------------------------------------------
 function AtendimentoLivreIcon({ className }: { className?: string }) {
   return <MessageSquare className={className} aria-hidden />;
@@ -3175,12 +3188,7 @@ function AtendimentoGuiadoIcon({ className }: { className?: string }) {
 }
 
 function AtendimentoDinamicoIcon({ className }: { className?: string }) {
-  return (
-    <span className={cn("relative inline-flex", className)}>
-      <MessageSquare className="h-full w-full" fill="currentColor" aria-hidden />
-      <Sparkles className="absolute -right-1 -top-1 h-[55%] w-[55%] text-institutional" aria-hidden />
-    </span>
-  );
+  return <Bot className={className} aria-hidden />;
 }
 
 // -----------------------------------------------------------------------------
@@ -3205,7 +3213,7 @@ function AtendimentoModalidadePicker({
     {
       modo: "livre",
       titulo: "Atendimento Livre",
-      descricao: "Narre livremente o teor do atendimento, enquanto dialoga com a pessoa assistida.",
+      descricao: "Narre livremente o teor do atendimento enquanto dialoga com a pessoa assistida.",
       Icon: AtendimentoLivreIcon,
     },
     {
@@ -3227,7 +3235,7 @@ function AtendimentoModalidadePicker({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 shrink-0 animate-pulse text-institutional" aria-hidden />
+            <Sparkles className="h-4 w-4 shrink-0 text-institutional" aria-hidden />
             Atendimento IA
           </DialogTitle>
           <DialogDescription>Escolha a modalidade de atendimento.</DialogDescription>
@@ -3295,7 +3303,7 @@ function AtendimentoGuiadoDialog({
       listarBiblioteca({
         kind: "atendimento",
         query: query.trim() || undefined,
-        categoria_id: categoriaId === "todas" ? undefined : categoriaId,
+        categoria_ids: categoriaId === "todas" ? undefined : [categoriaId],
         favoritos_apenas: somenteFavoritos,
         order_by: "recentes",
         limit: 30,
@@ -3447,15 +3455,22 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
   const [narrativa, setNarrativa] = useState("");
   const [gerando, setGerando] = useState(false);
   const [resultado, setResultado] = useState<{ relato: string; orientacao: string | null } | null>(null);
+  // Ajuste doc (AJUSTE 30) — guarda o texto no momento do último relato
+  // gerado, para saber se o usuário alterou a narrativa depois (e então
+  // trocar "Gerar relato" por "Atualizar relato").
+  const [narrativaGerada, setNarrativaGerada] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
 
   useEffect(() => {
     if (open) {
       setNarrativa("");
       setResultado(null);
+      setNarrativaGerada(null);
       setGerando(false);
     }
   }, [open]);
+
+  const alterouAposGerar = !!resultado && narrativa.trim() !== narrativaGerada;
 
   const handleGerar = async () => {
     if (!narrativa.trim()) {
@@ -3466,6 +3481,7 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
     try {
       const r = await gerarRelatoAtendimentoLivre({ narrativa: narrativa.trim() });
       setResultado(r);
+      setNarrativaGerada(narrativa.trim());
     } catch (e) {
       toast.error(mensagemErroResumoIA(e));
     } finally {
@@ -3501,8 +3517,7 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
             Atendimento Livre
           </DialogTitle>
           <DialogDescription>
-            Narre livremente o atendimento, sem se preocupar com organização, grafia ou gramática.
-            Ao concluir, a IA organiza um relato limpo e coeso a partir do que foi narrado.
+            Narre livremente o teor do atendimento enquanto dialoga com a pessoa assistida.
           </DialogDescription>
         </DialogHeader>
 
@@ -3510,10 +3525,9 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
           <Textarea
             value={narrativa}
             onChange={(e) => setNarrativa(e.target.value)}
-            placeholder="Narre aqui tudo o que a pessoa atendida relatou, na ordem que for mais prática…"
             rows={10}
             className="resize-none bg-surface text-sm"
-            disabled={gerando || !!resultado}
+            disabled={gerando}
           />
 
           {resultado?.orientacao && (
@@ -3529,28 +3543,38 @@ function AtendimentoLivreDialog({ open, onOpenChange }: { open: boolean; onOpenC
           )}
 
           {resultado && (
-            <div className="rounded-md border border-border bg-muted/30 p-3">
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Relato do atendimento
-              </p>
+            <div className="rounded-md border border-institutional/30 bg-institutional/[0.06] p-2.5">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-institutional">
+                  Relato do atendimento
+                </p>
+                <button
+                  type="button"
+                  className="rounded p-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Copiar relato do atendimento"
+                  onClick={handleCopiar}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
               <p className="whitespace-pre-wrap text-xs text-foreground">{resultado.relato}</p>
             </div>
           )}
         </div>
 
         <DialogFooter className="shrink-0">
-          {resultado ? (
-            <Button type="button" variant="outline" onClick={handleCopiar} className="gap-1.5">
-              <Copy className="h-3.5 w-3.5" aria-hidden /> Copiar relato
-            </Button>
-          ) : (
+          {!resultado && (
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancelar
             </Button>
           )}
-          <Button type="button" disabled={gerando || !!resultado || !narrativa.trim()} onClick={handleGerar}>
+          <Button
+            type="button"
+            disabled={gerando || !narrativa.trim() || (!!resultado && !alterouAposGerar)}
+            onClick={handleGerar}
+          >
             {gerando && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-            Gerar relato
+            {resultado ? "Atualizar relato" : "Gerar relato"}
           </Button>
         </DialogFooter>
       </DialogContent>

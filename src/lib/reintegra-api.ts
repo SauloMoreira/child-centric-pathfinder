@@ -22,6 +22,10 @@ export type BibliotecaItem = {
   favorite_count: number;
   is_favorited: boolean;
   access_count: number;
+  // Ajuste doc — PÁGINA BIBLIOTECA: contagens para a tabela (antes só
+  // disponíveis via obter_estatisticas_biblioteca, uma a uma).
+  panel_insert_count: number;
+  criados_a_partir_count: number;
 };
 
 export type BibliotecaCategoria = {
@@ -664,7 +668,9 @@ export async function excluirContextoAtendimentoIA(params: { contextId: string }
 // -------- BIBLIOTECA --------
 export async function listarBiblioteca(params: {
   kind?: ContentKind;
-  categoria_id?: string;
+  // Ajuste doc — PÁGINA BIBLIOTECA: seleção de várias categorias
+  // simultaneamente (substituiu o filtro de categoria única).
+  categoria_ids?: string[];
   query?: string;
   apenas_meus?: boolean;
   owner_user_id?: string;
@@ -675,7 +681,8 @@ export async function listarBiblioteca(params: {
 }): Promise<BibliotecaItem[]> {
   const { data, error } = await supabase.rpc("listar_biblioteca", {
     p_kind: params.kind ?? undefined,
-    p_category_id: params.categoria_id ?? undefined,
+    p_category_ids:
+      params.categoria_ids && params.categoria_ids.length > 0 ? params.categoria_ids : undefined,
     p_query: params.query ?? undefined,
     p_apenas_meus: params.apenas_meus ?? false,
     p_owner_user_id: params.owner_user_id ?? undefined,

@@ -131,10 +131,10 @@ function AuthPage() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="entrar" className="mt-6">
-                <SignInForm />
+                <SignInForm next={next} />
               </TabsContent>
               <TabsContent value="cadastro" className="mt-6">
-                <SignUpForm />
+                <SignUpForm next={next} />
               </TabsContent>
               <TabsContent value="recuperar" className="mt-6">
                 <RecoveryForm />
@@ -147,13 +147,15 @@ function AuthPage() {
   );
 }
 
-function SignInForm() {
+// Ajuste doc (PÁGINA INICIAL) — exportados e desacoplados de useSearch
+// (que só existe na rota /auth) para poderem ser reaproveitados também na
+// página inicial enxuta, via prop `next` opcional.
+export function SignInForm({ next }: { next?: string } = {}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [mfaOpen, setMfaOpen] = useState(false);
   const navigate = useNavigate();
-  const { next } = useSearch({ from: "/auth" });
   const retorno = caminhoSeguro(next);
 
   function concluirRedirect() {
@@ -246,14 +248,13 @@ function SignInForm() {
   );
 }
 
-function SignUpForm() {
+export function SignUpForm({ next }: { next?: string } = {}) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { next } = useSearch({ from: "/auth" });
   const retorno = caminhoSeguro(next);
 
   async function onSubmit(e: React.FormEvent) {
